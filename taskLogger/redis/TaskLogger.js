@@ -83,15 +83,19 @@ class RedisTaskLogger extends TaskLogger {
         const keyToStatus = await this.writter.child(STEPS_REFERENCES_KEY).getHash();
         if (keyToStatus) {
             const stepFromRedis = Object.keys(keyToStatus);
+            const StepLogger = require('./StepLogger');
             this.steps = stepFromRedis.reduce((acc, current) => {
-                acc[current] = {
-                    status: keyToStatus[current],
+                acc[current] = 
+                new StepLogger({
                     name: current,
-                    ...(keyToStatus[current] === STATUS.PENDING_APPROVAL && { pendingApproval: true })
-                };
+                    jobId: this.jobId,
+                    accountId: this.accountId
+                }, this.opts);
+                acc[current].pendingApproval = keyToStatus[current] === STATUS.PENDING_APPROVAL;
+                acc[current].status = keyToStatus[current]; 
                 return acc;
-
-            }, {});
+                
+            },{});
         }
 
     }

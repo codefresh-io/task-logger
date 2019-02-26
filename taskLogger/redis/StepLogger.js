@@ -14,22 +14,6 @@ class RedisStepLogger extends BaseStepLogger {
         this.writter = new RedisPubDecorator(extendOpts, new RedisLogger(redisConnection, extendOpts));
         this.writter.setStrategies(`${step.accountId}:${step.jobId}`);
     }
-    async restore() {
-
-        const keyToStatus = await self.loggerImpl.child(STEPS_REFERENCES_KEY).getHash();
-        if (keyToStatus) {
-            const stepFromRedis = Object.keys(keyToStatus);
-            steps = stepFromRedis.reduce((acc, current) => {
-                acc[current] = {
-                    status: keyToStatus[current],
-                    name: current,
-                    ...(keyToStatus[current] === STATUS.PENDING_APPROVAL && { pendingApproval: true })
-                };
-                return acc;
-
-            }, {});
-        }
-    }
 
     _reportLog(message) {
         this.writter.child('logs').push(message);
