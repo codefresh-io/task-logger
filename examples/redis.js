@@ -66,9 +66,9 @@ const main = async () => {
     const redisRestoredStepLogger = redisRestoredTaskLogger.create('stepName', undefined, undefined, true); // eslint-disable-line
     redisRestoredStepLogger.write('makore');
 
-    // redisRestoredTaskLogger.addErrorMessageToEndOfSteps('my error!');
+    redisRestoredTaskLogger.addErrorMessageToEndOfSteps('my error!');
 
-    // redisTaskLogger.setStatus('success');
+    redisTaskLogger.setStatus('success');
 };
 
 main();
