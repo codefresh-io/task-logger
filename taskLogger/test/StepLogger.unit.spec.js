@@ -1,14 +1,14 @@
-const _ = require('lodash');
 const proxyquire = require('proxyquire').noCallThru();
-const Q          = require('q');
 const chai       = require('chai');
+
 const expect     = chai.expect;
 const sinon      = require('sinon');
 const sinonChai  = require('sinon-chai');
-chai.use(sinonChai);
-const { STATUS, VISIBILITY } = require('../enums');
 
-const getStepLoggerInstance = (task = {accountId: 'accountId', jobId: 'jobId', name: 'name'}, opts = {}) => {
+chai.use(sinonChai);
+const { STATUS } = require('../enums');
+
+const getStepLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId', name: 'name' }, opts = {}) => {
     const StepLogger = proxyquire('../StepLogger', {});
 
     const stepLogger = new StepLogger(task, opts);
@@ -33,13 +33,13 @@ const getStepLoggerInstance = (task = {accountId: 'accountId', jobId: 'jobId', n
     return stepLogger;
 };
 
-describe('Base StepLogger tests', function () {
+describe('Base StepLogger tests', () => {
 
     describe('constructor', () => {
 
         describe('positive', () => {
             it('should succeeded instantiating a new TaskLogger instance', () => {
-                getStepLoggerInstance({accountId: 'accountId', jobId: 'jobId', name: 'name'}, {});
+                getStepLoggerInstance({ accountId: 'accountId', jobId: 'jobId', name: 'name' }, {});
             });
         });
 
@@ -55,7 +55,7 @@ describe('Base StepLogger tests', function () {
 
             it('should fail in case jobId is missing', () => {
                 try {
-                    getStepLoggerInstance({accountId: 'accountId'}, {});
+                    getStepLoggerInstance({ accountId: 'accountId' }, {});
                     throw new Error('should have failed');
                 } catch (err) {
                     expect(err.toString()).to.equal('Error: failed to create stepLogger because jobId must be provided');
@@ -64,7 +64,7 @@ describe('Base StepLogger tests', function () {
 
             it('should fail in case name is missing', () => {
                 try {
-                    getStepLoggerInstance({accountId: 'accountId', jobId: 'jobId'}, {});
+                    getStepLoggerInstance({ accountId: 'accountId', jobId: 'jobId' }, {});
                     throw new Error('should have failed');
                 } catch (err) {
                     expect(err.toString()).to.equal('Error: failed to create stepLogger because name must be provided');
@@ -125,7 +125,7 @@ describe('Base StepLogger tests', function () {
                 const stepLogger = getStepLoggerInstance();
                 const message = 'message';
                 stepLogger.debug(message);
-                expect(stepLogger._reportLog).to.have.been.calledWith(message + '\r\n');
+                expect(stepLogger._reportLog).to.have.been.calledWith(`${message}\r\n`);
                 expect(stepLogger.updateLastUpdate).to.have.been.calledWith();
             });
         });
@@ -173,7 +173,7 @@ describe('Base StepLogger tests', function () {
                 const stepLogger = getStepLoggerInstance();
                 const message = 'message';
                 stepLogger.info(message);
-                expect(stepLogger._reportLog).to.have.been.calledWith(message + '\r\n');
+                expect(stepLogger._reportLog).to.have.been.calledWith(`${message}\r\n`);
                 expect(stepLogger.updateLastUpdate).to.have.been.calledWith();
             });
         });
@@ -322,7 +322,7 @@ describe('Base StepLogger tests', function () {
             stepLogger.markPendingApproval();
             expect(stepLogger.emit).to.have.been.calledWith('finished');
             expect(stepLogger.pendingApproval).to.equal(true);
-            expect(stepLogger.getStatus()).to.equal(STATUS.PENDING_APPROVAL)
+            expect(stepLogger.getStatus()).to.equal(STATUS.PENDING_APPROVAL);
         });
 
     });

@@ -1,5 +1,3 @@
-'use strict';
-
 const _                                = require('lodash');
 const Firebase                         = require('firebase');
 const debug                            = require('debug')('codefresh:taskLogger');
@@ -20,15 +18,15 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     static async factory(task, opts) {
         const taskLogger = new FirebaseTaskLogger(task, opts);
 
-        const {baseFirebaseUrl, firebaseSecret} = opts;
+        const { baseFirebaseUrl, firebaseSecret } = opts;
 
         if (!baseFirebaseUrl) {
-            throw new CFError("failed to create taskLogger because baseFirebaseUrl must be provided");
+            throw new CFError('failed to create taskLogger because baseFirebaseUrl must be provided');
         }
         taskLogger.baseFirebaseUrl = baseFirebaseUrl;
 
         if (!firebaseSecret) {
-            throw new CFError("failed to create taskLogger because Firebase secret reference must be provided");
+            throw new CFError('failed to create taskLogger because Firebase secret reference must be provided');
         }
         taskLogger.firebaseSecret = firebaseSecret;
 
@@ -62,11 +60,11 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     newStepAdded(step) {
-        step.stepRef.on("value", (snapshot) => {
-            var val = snapshot.val();
+        step.stepRef.on('value', (snapshot) => {
+            const val = snapshot.val();
             if (val && val.name === step.name) {
-                step.stepRef.off("value");
-                this.emit("step-pushed", step.name);
+                step.stepRef.off('value');
+                this.emit('step-pushed', step.name);
                 this._updateCurrentStepReferences();
             }
         });
@@ -75,13 +73,13 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     async restore() {
         let settled = false;
         const deferred = Q.defer();
-        this.baseRef.child(STEPS_REFERENCES_KEY).once("value", (snapshot) => {
+        this.baseRef.child(STEPS_REFERENCES_KEY).once('value', (snapshot) => {
             const stepsReferences = snapshot.val();
             if (!stepsReferences) {
                 deferred.resolve();
             }
 
-            Q.all(_.map(stepsReferences, async (name, key) => {
+            Q.all(_.map(stepsReferences, async (name, key) => { // eslint-disable-line
                 const step = new StepLogger({
                     accountId: this.accountId,
                     jobId: this.jobId,
@@ -125,7 +123,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     async addErrorMessageToEndOfSteps(message) {
-        var deferred = Q.defer();
+        const deferred = Q.defer();
 
         this.stepsRef.limitToLast(1).once('value', (snapshot) => {
             try {
@@ -143,7 +141,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     _reportMemoryUsage(time, memoryUsage) {
-        this.baseRef.child('metrics').child('memory').push({time, usage: memoryUsage});
+        this.baseRef.child('metrics').child('memory').push({ time, usage: memoryUsage });
     }
 
     _reportMemoryLimit() {
@@ -175,10 +173,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     async getLastUpdate() {
-        var deferred = Promise.defer();
+        const deferred = Q.defer();
 
-        this.lastUpdateRef.once("value", function (snapshot) {
-            var lastUpdate = snapshot.val();
+        this.lastUpdateRef.once('value', (snapshot) => {
+            const lastUpdate = snapshot.val();
             deferred.resolve(lastUpdate);
         }, function (errorObject) {
             deferred.reject(new CFError({
@@ -199,10 +197,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     async getRaw() {
-        var deferred = Promise.defer();
+        const deferred = Q.defer();
 
-        this.baseRef.once("value", function (snapshot) {
-            var data     = snapshot.val();
+        this.baseRef.once('value', (snapshot) => {
+            const data     = snapshot.val();
             deferred.resolve(data);
         }, function (errorObject) {
             deferred.reject(new CFError({

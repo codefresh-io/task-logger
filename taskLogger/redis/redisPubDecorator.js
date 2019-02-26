@@ -1,35 +1,35 @@
 const NRP = require('node-redis-pubsub');
-const logger = require('cf-logs').Logger('codefresh:containerLogger');
+const debug = require('debug')('codefresh:taskLogger:redis:pubDecorator');
 
-const scope = "codefresh";
+const scope = 'codefresh';
 
 class RedisPubDecorator {
     constructor(opts, redisLogger) {
         this.jobId = opts.jobId;
         this.redisLogger = redisLogger;
-        this.nrp = new NRP( Object.assign( {},
+        this.nrp = new NRP(Object.assign({},
              opts.config,
-             {scope: scope}
-            
+             { scope }
+
         ));
         this.keyToAction = opts.keyToMapper || {
             'logs': 'e',
             'memory': 'e',
             'cpu': 'e'
-        }
+        };
 
         this.nrp.on(this.jobId, (data) => {
-            logger.debug(`###NRP: ${data}`);
-        })
+            debug(`###NRP: ${data}`);
+        });
 
     }
 
     setStrategies(baseKey) {
         this.redisLogger.setStrategies(baseKey);
-        
+
     }
 
-    
+
     _wrapper(toBeWrappedObject, thisArg) {
         const wrappingObj = {
             push: (obj) => {
@@ -61,7 +61,7 @@ class RedisPubDecorator {
                 return toBeWrappedObject.children();
             }
 
-        }
+        };
         return wrappingObj;
 
     }
@@ -70,24 +70,24 @@ class RedisPubDecorator {
 
     }
     _emit(key, obj) {
-    
-            this.nrp.emit(this.jobId, JSON.stringify({
-                slot: this._reFormatKey(key.key),
-                payload:  obj,
-                action:  this._getAction(key.key),
-                ...(key.id > 0 && {id : key.id})
-            }));
 
-        
+        this.nrp.emit(this.jobId, JSON.stringify({
+            slot: this._reFormatKey(key.key),
+            payload: obj,
+            action: this._getAction(key.key),
+            ...(key.id > 0 && { id: key.id })
+        }));
+
+
     }
 
     _reFormatKey(key) {
         return key.replace(new RegExp(':', 'g'), '.').replace('.[', '[');
     }
-    _getAction(key = "") {
-        const splittedKeys = key.split(":");
+    _getAction(key = '') {
+        const splittedKeys = key.split(':');
         if (splittedKeys && splittedKeys.length > 0) {
-            const endsWith = splittedKeys[splittedKeys.length -1];
+            const endsWith = splittedKeys[splittedKeys.length - 1];
             const actionFromMapper = this.keyToAction[endsWith];
             if (actionFromMapper) {
                 return actionFromMapper;

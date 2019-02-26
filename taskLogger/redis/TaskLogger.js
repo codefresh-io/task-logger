@@ -1,9 +1,9 @@
-'use strict'
 
-const TaskLogger                        = require('../taskLogger');
+const TaskLogger                        = require('../TaskLogger');
 const redis                             = require('redis');
-const logger = require('cf-logs').Logger('codefresh:RedisTaskLogger');
+const debug                            = require('debug')('codefresh:taskLogger:redis:taskLogger');
 const CFError                          = require('cf-errors');
+
 const ErrorTypes                       = CFError.errorTypes;
 const RedisPubDecorator                = require('./redisPubDecorator');
 const RedisLogger                      = require('./RedisLogger');
@@ -20,7 +20,7 @@ class RedisTaskLogger extends TaskLogger {
         this.writter = new RedisPubDecorator(extendOpts, new RedisLogger(redisConnection, extendOpts));
         this.writter.setStrategies(extendOpts.key);
         this.type = TYPES.REDIS;
-        
+
 
     }
 
@@ -30,38 +30,38 @@ class RedisTaskLogger extends TaskLogger {
         }
         const redisConnection = await RedisTaskLogger.createRedisConnection(task, opts);
         return new RedisTaskLogger(task, opts, redisConnection);
-        
+
     }
 
     static async createRedisConnection(task, opts) {
         return new Promise((resolve, reject) => {
 
-            const {config} = opts;
+            const { config } = opts;
             const key = `${config.url}.${config.port}.${config.db}`;
             if (!redisCacheMap.has(key)) {
                 const client = redis.createClient(config);
                 client.on('ready', () => {
-                    logger.info(`redis client initilzed from task : ${JSON.stringify(task)}`);
+                    debug(`redis client initilzed from task : ${JSON.stringify(task)}`);
                     redisCacheMap.set(key, client);
                     resolve(client);
                 });
                 client.on('error', (err) => {
-                    logger.error(`redis client error ; ${err.message}`);
+                    debug(`redis client error ; ${err.message}`);
                     reject(new CFError({
                         cause: err,
                         message: `Failed to create redis taskLogger`
                     }));
                 });
-            }else {
+            } else {
                 resolve(redisCacheMap.get(key));
             }
-            
+
 
         });
     }
 
     static getRedisConnectionFromCache(opts) {
-        const {config} = opts;
+        const { config } = opts;
         const key = `${config.url}.${config.port}.${config.db}`;
         if (redisCacheMap.has(key)) {
             return redisCacheMap.get(key);
@@ -69,13 +69,13 @@ class RedisTaskLogger extends TaskLogger {
     }
 
     newStepAdded(step) {
-       
+
         this.writter.child(STEPS_REFERENCES_KEY).push({
-            [step.name] : step.status
+            [step.name]: step.status
         });
-       
-        this.emit("step-pushed", step.name);
-       
+
+        this.emit('step-pushed', step.name);
+
 
     }
     async restore() {
@@ -87,11 +87,11 @@ class RedisTaskLogger extends TaskLogger {
                 acc[current] = {
                     status: keyToStatus[current],
                     name: current,
-                    ...(keyToStatus[current] === STATUS.PENDING_APPROVAL && {pendingApproval : true})
-                }
+                    ...(keyToStatus[current] === STATUS.PENDING_APPROVAL && { pendingApproval: true })
+                };
                 return acc;
-                
-            },{});
+
+            }, {});
         }
 
     }
@@ -103,7 +103,7 @@ class RedisTaskLogger extends TaskLogger {
         this.writter.child('accountId').set(this.accountId);
     }
     _reportMemoryUsage(time, memoryUsage) {
-        this.writter.child('metrics').child('memory').push({time, usage:memoryUsage});
+        this.writter.child('metrics').child('memory').push({ time, usage: memoryUsage });
     }
 
     _reportMemoryLimit() {
@@ -121,8 +121,6 @@ class RedisTaskLogger extends TaskLogger {
     _reportStatus() {
         this.writter.child('status').set(this.status);
     }
-
-
 
 
 }

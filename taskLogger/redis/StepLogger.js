@@ -1,3 +1,4 @@
+
 const BaseStepLogger                   = require('../StepLogger');
 const { STATUS }                       = require('../enums');
 const RedisPubDecorator                = require('./redisPubDecorator');
@@ -22,16 +23,16 @@ class RedisStepLogger extends BaseStepLogger {
                 acc[current] = {
                     status: keyToStatus[current],
                     name: current,
-                    ...(keyToStatus[current] === STATUS.PENDING_APPROVAL && {pendingApproval : true})
-                }
+                    ...(keyToStatus[current] === STATUS.PENDING_APPROVAL && { pendingApproval: true })
+                };
                 return acc;
-                
-            },{});
+
+            }, {});
         }
     }
 
     _reportLog(message) {
-        this.writter.child("logs").push(message);
+        this.writter.child('logs').push(message);
     }
 
     _reportLastUpdate() {

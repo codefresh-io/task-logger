@@ -1,15 +1,15 @@
-const _ = require('lodash');
 const proxyquire = require('proxyquire').noCallThru();
-const Q          = require('q');
 const chai       = require('chai');
+
 const expect     = chai.expect;
 const sinon      = require('sinon');
 const sinonChai  = require('sinon-chai');
+
 chai.use(sinonChai);
 const { TYPES, STATUS, VISIBILITY } = require('../enums');
 
 const createMockedStepClass = () => {
-    const StepClass = sinon.spy(function () {
+    const StepClass = sinon.spy(() => {
         let onErrorHandler;
         let onFinishedHandler;
         return {
@@ -33,16 +33,16 @@ const createMockedStepClass = () => {
             setStatus: sinon.spy(),
             setFinishTimestamp: sinon.spy(),
             setCreationTimestamp: sinon.spy()
-        }
+        };
     });
-    return StepClass
+    return StepClass;
 };
 
 let firebaseStepLoggerMockedClass;
 const rpStub = sinon.stub();
 
 
-const getTaskLoggerInstance = (task = {accountId: 'accountId', jobId: 'jobId'}, opts = {}) => {
+const getTaskLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId' }, opts = {}) => {
     rpStub.reset();
     rpStub.resolves();
     firebaseStepLoggerMockedClass = createMockedStepClass();
@@ -74,15 +74,15 @@ const getTaskLoggerInstance = (task = {accountId: 'accountId', jobId: 'jobId'}, 
     return taskLogger;
 };
 
-describe('Base TaskLogger tests', function () {
+describe('Base TaskLogger tests', () => {
 
     describe('constructor', () => {
 
         describe('positive', () => {
-           it('should succeeded instantiating a new TaskLogger instance', () => {
-               const taskLogger = getTaskLoggerInstance({accountId: 'accountId', jobId: 'jobId'}, {});
-               expect(taskLogger.steps).to.deep.equal({});
-           });
+            it('should succeeded instantiating a new TaskLogger instance', () => {
+                const taskLogger = getTaskLoggerInstance({ accountId: 'accountId', jobId: 'jobId' }, {});
+                expect(taskLogger.steps).to.deep.equal({});
+            });
         });
 
         describe('negative', () => {
@@ -97,7 +97,7 @@ describe('Base TaskLogger tests', function () {
 
             it('should fail in case jobId is missing', () => {
                 try {
-                    getTaskLoggerInstance({accountId: 'accountId'}, {});
+                    getTaskLoggerInstance({ accountId: 'accountId' }, {});
                     throw new Error('should have failed');
                 } catch (err) {
                     expect(err.toString()).to.equal('Error: failed to create taskLogger because jobId must be provided');
@@ -109,8 +109,8 @@ describe('Base TaskLogger tests', function () {
     describe('get configuration', () => {
 
         it('should set data', () => {
-            const task = {accountId: 'account', jobId: 'job'};
-            const opts = {key: 'value'};
+            const task = { accountId: 'account', jobId: 'job' };
+            const opts = { key: 'value' };
             const taskLogger = getTaskLoggerInstance(task, opts);
             expect(taskLogger.getConfiguration()).to.deep.equal({
                 opts,
@@ -130,7 +130,7 @@ describe('Base TaskLogger tests', function () {
         it('should add created step to steps field', () => {
             const taskLogger = getTaskLoggerInstance();
             const stepLogger = taskLogger.create('new-step');
-            expect(taskLogger.steps).to.deep.equal({'new-step': stepLogger});
+            expect(taskLogger.steps).to.deep.equal({ 'new-step': stepLogger });
         });
 
         it('should return an existing step in case it was already created', () => {
@@ -152,7 +152,7 @@ describe('Base TaskLogger tests', function () {
         it('should listen on finished step and delete it from steps', () => {
             const taskLogger = getTaskLoggerInstance();
             const stepLogger = taskLogger.create('new-step');
-            expect(taskLogger.steps).to.deep.equal({'new-step': stepLogger});
+            expect(taskLogger.steps).to.deep.equal({ 'new-step': stepLogger });
             expect(stepLogger.on).to.have.been.calledWith('finished');
             stepLogger.emit('finished');
             expect(taskLogger.steps).to.deep.equal({});
@@ -170,7 +170,7 @@ describe('Base TaskLogger tests', function () {
 
         it('should run creation logic in case asked for', () => {
             const taskLogger = getTaskLoggerInstance();
-            let stepLogger = taskLogger.create('new-step', undefined, undefined, true);
+            const stepLogger = taskLogger.create('new-step', undefined, undefined, true);
             expect(stepLogger.setStatus).to.have.been.calledWith(STATUS.PENDING);
             expect(stepLogger.reportName).to.have.been.calledWith();
             expect(stepLogger.clearLogs).to.have.been.calledWith();
@@ -186,9 +186,9 @@ describe('Base TaskLogger tests', function () {
             taskLogger.create('new-step', eventReporting);
             expect(rpStub).to.have.been.calledWith({
                 uri: eventReporting.url,
-                headers: {Authorization: eventReporting.token},
+                headers: { Authorization: eventReporting.token },
                 method: 'POST',
-                body: { action: 'new-progress-step', name: 'new-step'},
+                body: { action: 'new-progress-step', name: 'new-step' },
                 json: true
             });
         });

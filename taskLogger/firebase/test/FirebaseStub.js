@@ -5,14 +5,14 @@ const createFirebaseStub = function () {
     const __pushSpy = sinon.spy();
     const __setSpy = sinon.spy();
 
-    const Firebase = function(path) {
+    const Firebase = function (path) {
         this.path = path;
 
         this.authWithCustomToken = __authWithCustomTokenStub;
         this.push = __pushSpy;
         this.set = __setSpy;
-        this.child = function (path) {
-            return new Firebase(`${this.path}/${path}`);
+        this.child = function (newPath) {
+            return new Firebase(`${this.path}/${newPath}`);
         };
     };
 

@@ -1,4 +1,4 @@
-'use strict';
+
 
 const _            = require('lodash');
 const CFError      = require('cf-errors');
@@ -15,17 +15,17 @@ const { STATUS, VISIBILITY } = require('./enums');
  * @returns {{create: create, finish: finish}}
  */
 class TaskLogger extends EventEmitter {
-    constructor({accountId, jobId}, opts) {
+    constructor({ accountId, jobId }, opts) {
         super();
         this.opts = opts;
 
         if (!accountId && !opts.skipAccountValidation) { // skipAccountValidation is only here to allow downloading a launched-composition single step
-            throw new CFError("failed to create taskLogger because accountId must be provided");
+            throw new CFError('failed to create taskLogger because accountId must be provided');
         }
         this.accountId = accountId;
 
         if (!jobId) {
-            throw new CFError("failed to create taskLogger because jobId must be provided");
+            throw new CFError('failed to create taskLogger because jobId must be provided');
         }
         this.jobId = jobId;
 
@@ -38,24 +38,24 @@ class TaskLogger extends EventEmitter {
 
         if (this.fatal || this.finished) {
             return {
-                write: function () {
+                write() {
                 },
-                debug: function () {
+                debug() {
                 },
-                warn: function () {
+                warn() {
                 },
-                info: function () {
+                info() {
                 },
-                finish: function () {
+                finish() {
                 }
             };
         }
 
-        var step = this.steps[name];
+        let step = this.steps[name];
         if (!step) {
 
-            const stepClass = require(`./${this.type}/StepLogger`);
-            step = new stepClass({
+            const stepClass = require(`./${this.type}/StepLogger`); // eslint-disable-line
+            step = new stepClass({ // eslint-disable-line
                 accountId: this.accountId,
                 jobId: this.jobId,
                 name
@@ -63,12 +63,12 @@ class TaskLogger extends EventEmitter {
                 ...this.opts
             });
             step.on('error', (err) => {
-               this.emit('error', err);
+                this.emit('error', err);
             });
 
             this.steps[name]      = step;
             step.on('finished', () => {
-               delete this.steps[name];
+                delete this.steps[name];
             });
 
             if (runCreationLogic) {
@@ -79,11 +79,11 @@ class TaskLogger extends EventEmitter {
             }
 
             if (eventReporting) {
-                const event = { action: "new-progress-step", name: name };
+                const event = { action: 'new-progress-step', name };
 
                 rp({
                     uri: eventReporting.url,
-                    headers: {Authorization: eventReporting.token},
+                    headers: { Authorization: eventReporting.token },
                     method: 'POST',
                     body: event,
                     json: true
@@ -104,7 +104,7 @@ class TaskLogger extends EventEmitter {
         }
 
         return step;
-    };
+    }
 
     finish() { // jshint ignore:line
         if (this.fatal) {
@@ -120,7 +120,7 @@ class TaskLogger extends EventEmitter {
 
     fatalError(err) {
         if (!err) {
-            throw new CFError("fatalError was called without an error. not valid.");
+            throw new CFError('fatalError was called without an error. not valid.');
         }
         if (this.fatal) {
             return;
@@ -130,9 +130,8 @@ class TaskLogger extends EventEmitter {
             _.forEach(this.steps, (step) => {
                 step.finish(new Error('Unknown error occurred'));
             });
-        }
-        else {
-            const errorStep = this.create("Something went wrong");
+        }        else {
+            const errorStep = this.create('Something went wrong');
             errorStep.finish(err);
         }
 
@@ -184,7 +183,7 @@ class TaskLogger extends EventEmitter {
             opts: {
                 ...this.opts
             }
-        }
+        };
     }
 }
 

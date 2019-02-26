@@ -1,12 +1,11 @@
-const _ = require('lodash');
 const proxyquire = require('proxyquire').noCallThru();
-const Q          = require('q');
 const chai       = require('chai');
+
 const expect     = chai.expect;
 const sinon      = require('sinon');
 const sinonChai  = require('sinon-chai');
+
 chai.use(sinonChai);
-const { TYPES, STATUS, VISIBILITY } = require('../../enums');
 const createFirebaseStub = require('./FirebaseStub');
 
 let Firebase;
@@ -25,20 +24,20 @@ const getTaskLoggerInstance = async (task = { accountId: 'accountId', jobId: 'jo
     return taskLogger;
 };
 
-describe('Firebase TaskLogger tests', function () {
+describe('Firebase TaskLogger tests', () => {
 
     describe('factory', () => {
 
         describe('positive', () => {
 
             it('should succeed if all data is passed and authentication succeeded', async () => {
-                const Firebase = createFirebaseStub();
+                Firebase = createFirebaseStub();
 
                 const TaskLogger = proxyquire('../TaskLogger', {
                     'firebase': Firebase,
                 });
 
-                const task = {accountId: 'accountId', jobId: 'jobId'};
+                const task = { accountId: 'accountId', jobId: 'jobId' };
                 const opts = {
                     baseFirebaseUrl: 'url',
                     firebaseSecret: 'secret'
@@ -50,13 +49,13 @@ describe('Firebase TaskLogger tests', function () {
             });
 
             it('should perform authentication only once', async () => {
-                const Firebase = createFirebaseStub();
+                Firebase = createFirebaseStub();
 
                 const TaskLogger = proxyquire('../TaskLogger', {
                     'firebase': Firebase,
                 });
 
-                const task = {accountId: 'accountId', jobId: 'jobId'};
+                const task = { accountId: 'accountId', jobId: 'jobId' };
                 const opts = {
                     baseFirebaseUrl: 'url',
                     firebaseSecret: 'secret'
@@ -71,13 +70,13 @@ describe('Firebase TaskLogger tests', function () {
         describe('negative', () => {
 
             it('should throw an error in case authentication failed', async () => {
-                const Firebase = createFirebaseStub();
+                Firebase = createFirebaseStub();
 
                 const TaskLogger = proxyquire('../TaskLogger', {
                     'firebase': Firebase,
                 });
 
-                const task = {accountId: 'accountId', jobId: 'jobId'};
+                const task = { accountId: 'accountId', jobId: 'jobId' };
                 const opts = {
                     baseFirebaseUrl: 'url',
                     firebaseSecret: 'secret'
@@ -87,18 +86,18 @@ describe('Firebase TaskLogger tests', function () {
                     await TaskLogger.factory(task, opts);
                     throw new Error('should have failed');
                 } catch (err) {
-                    expect(err.toString()).to.equal('Error: Failed to create taskLogger because authentication to firebase url url/jobId; caused by Error: my error');
+                    expect(err.toString()).to.equal('Error: Failed to create taskLogger because authentication to firebase url url/jobId; caused by Error: my error'); // eslint-disable-line
                 }
             });
 
             it('should fail in case of a missing baseFirebaseUrl', async () => {
-                const Firebase = createFirebaseStub();
+                Firebase = createFirebaseStub();
 
                 const TaskLogger = proxyquire('../TaskLogger', {
                     'firebase': Firebase,
                 });
 
-                const task = {accountId: 'accountId', jobId: 'jobId'};
+                const task = { accountId: 'accountId', jobId: 'jobId' };
                 const opts = {
                     firebaseSecret: 'secret'
                 };
@@ -112,13 +111,13 @@ describe('Firebase TaskLogger tests', function () {
             });
 
             it('should fail in case of a missing firebaseSecret', async () => {
-                const Firebase = createFirebaseStub();
+                Firebase = createFirebaseStub();
 
                 const TaskLogger = proxyquire('../TaskLogger', {
                     'firebase': Firebase,
                 });
 
-                const task = {accountId: 'accountId', jobId: 'jobId'};
+                const task = { accountId: 'accountId', jobId: 'jobId' };
                 const opts = {
                     baseFirebaseUrl: 'url',
                 };
@@ -140,7 +139,7 @@ describe('Firebase TaskLogger tests', function () {
             const time = new Date();
             const memoryUsage = 'usage';
             taskLogger._reportMemoryUsage(time, memoryUsage);
-            expect(Firebase.__pushSpy).to.have.been.calledWith({time, usage: memoryUsage});
+            expect(Firebase.__pushSpy).to.have.been.calledWith({ time, usage: memoryUsage });
         });
 
         it('should report memory limit', async () => {
@@ -166,7 +165,7 @@ describe('Firebase TaskLogger tests', function () {
 
         it('should report data', async () => {
             const taskLogger = await getTaskLoggerInstance();
-            taskLogger.data = {key: 'value'};
+            taskLogger.data = { key: 'value' };
             taskLogger._reportData();
             expect(Firebase.__setSpy).to.have.been.calledWith(taskLogger.data);
         });

@@ -1,4 +1,7 @@
+const TaskLoggerFactory = require('./taskLogger/taskLoggerFactory');
+const TYPES = require('./taskLogger/enums').TYPES;
+
 module.exports = {
-  TaskLogger: require('./taskLogger/taskLoggerFactory'),
-  TYPES: require('./taskLogger/enums').TYPES,
+    TaskLogger: TaskLoggerFactory,
+    TYPES
 };

@@ -1,4 +1,5 @@
 const _ = require('lodash');
+
 const CONSOLIDATED = 'consolidated';
 const MOVE_FORWARD = -1;
 class RedisFlattenStrategy {
@@ -18,7 +19,7 @@ class RedisFlattenStrategy {
             const objToPush = {
                 slot: key.substr(this.baseKey.length + 1).replace(new RegExp(':', 'g'), '.'),
                 payload: obj
-            }
+            };
             const timeNow = Date.now();
             redisClient.zadd(`${this.baseKey}:${CONSOLIDATED}`, timeNow, JSON.stringify(objToPush));
             return timeNow;
@@ -85,7 +86,7 @@ class ChainRedisStrategy {
     push(obj, key, redisClient, stack) {
         let id;
 
-        this.strategies.some(strategy => {
+        this.strategies.some((strategy) => {
             const result = strategy.push(obj, key, redisClient, stack);
             const strategyExecuted = result > 0;
             if (strategyExecuted) {
@@ -93,7 +94,7 @@ class ChainRedisStrategy {
                 return true;
             }
             return false;
-        })
+        });
         return id;
     }
 }
@@ -102,4 +103,4 @@ module.exports = {
     RedisSetStratry,
     ChainRedisStrategy,
     RedisArrayStrategy
-}
+};

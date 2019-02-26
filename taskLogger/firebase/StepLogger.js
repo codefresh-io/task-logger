@@ -1,5 +1,3 @@
-'use strict';
-
 const Q                  = require('q');
 const Firebase           = require('firebase');
 const CFError            = require('cf-errors');
@@ -10,10 +8,10 @@ class FirebaseStepLogger extends BaseStepLogger {
     constructor(step, opts) {
         super(step, opts);
 
-        const {baseFirebaseUrl} = opts;
+        const { baseFirebaseUrl } = opts;
 
         if (!baseFirebaseUrl) {
-            throw new CFError("failed to create stepLogger because baseFirebaseUrl must be provided");
+            throw new CFError('failed to create stepLogger because baseFirebaseUrl must be provided');
         }
         this.baseFirebaseUrl = baseFirebaseUrl;
 
@@ -46,7 +44,7 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     _reportLog(message) {
-        this.stepRef.child("logs").push(message);
+        this.stepRef.child('logs').push(message);
     }
 
     _reportLastUpdate() {
@@ -94,10 +92,10 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     async getRaw() {
-        var deferred = Promise.defer();
+        const deferred = Q.defer();
 
-        this.stepRef.once("value", function (snapshot) {
-            var data     = snapshot.val();
+        this.stepRef.once('value', (snapshot) => {
+            const data     = snapshot.val();
             deferred.resolve(data);
         }, function (errorObject) {
             deferred.reject(new CFError({

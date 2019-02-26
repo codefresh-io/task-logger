@@ -3,22 +3,22 @@ const EventEmitter = require('events');
 const { STATUS } = require('./enums');
 
 class StepLogger extends EventEmitter {
-    constructor({accountId, jobId, name}, opts) {
+    constructor({ accountId, jobId, name }, opts) {
         super();
         this.opts = opts;
 
         if (!accountId && !opts.skipAccountValidation) {
-            throw new CFError("failed to create stepLogger because accountId must be provided");
+            throw new CFError('failed to create stepLogger because accountId must be provided');
         }
         this.accountId = accountId;
 
         if (!jobId) {
-            throw new CFError("failed to create stepLogger because jobId must be provided");
+            throw new CFError('failed to create stepLogger because jobId must be provided');
         }
         this.jobId = jobId;
 
         if (!name) {
-            throw new CFError("failed to create stepLogger because name must be provided");
+            throw new CFError('failed to create stepLogger because name must be provided');
         }
         this.name = name;
 
@@ -44,10 +44,9 @@ class StepLogger extends EventEmitter {
         if ([STATUS.RUNNING, STATUS.PENDING, STATUS.PENDING_APPROVAL, STATUS.TERMINATING].includes(this.status)) {
             this._reportLog(message);
             this.updateLastUpdate();
-        }
-        else {
-            this.emit("error",
-                new CFError("progress-logs 'write' handler was triggered after the job finished with message: %s", message));
+        }        else {
+            this.emit('error',
+                new CFError(`progress-logs 'write' handler was triggered after the job finished with message: ${message}`));
         }
     }
 
@@ -56,13 +55,11 @@ class StepLogger extends EventEmitter {
             return;
         }
         if ([STATUS.RUNNING, STATUS.PENDING, STATUS.PENDING_APPROVAL, STATUS.TERMINATING].includes(this.status)) {
-            this._reportLog(message + '\r\n');
+            this._reportLog(`${message}\r\n`);
             this.updateLastUpdate();
-        }
-        else {
-            this.emit("error",
-                new CFError("progress-logs 'debug' handler was triggered after the job finished with message: %s",
-                    message));
+        }        else {
+            this.emit('error',
+                new CFError(`progress-logs 'debug' handler was triggered after the job finished with message: ${message}`));
         }
     }
 
@@ -73,11 +70,9 @@ class StepLogger extends EventEmitter {
         if ([STATUS.RUNNING, STATUS.PENDING, STATUS.PENDING_APPROVAL, STATUS.TERMINATING].includes(this.status)) {
             this._reportLog(`\x1B[01;93m${message}\x1B[0m\r\n`);
             this.updateLastUpdate();
-        }
-        else {
-            this.emit("error",
-                new CFError("progress-logs 'warning' handler was triggered after the job finished with message: %s",
-                    message));
+        }        else {
+            this.emit('error',
+                new CFError(`progress-logs 'warning' handler was triggered after the job finished with message: ${message}`));
         }
     }
 
@@ -86,13 +81,11 @@ class StepLogger extends EventEmitter {
             return;
         }
         if ([STATUS.RUNNING, STATUS.PENDING, STATUS.PENDING_APPROVAL, STATUS.TERMINATING].includes(this.status)) {
-            this._reportLog(message + '\r\n');
+            this._reportLog(`${message}\r\n`);
             this.updateLastUpdate();
-        }
-        else {
-            this.emit("error",
-                new CFError("progress-logs 'info' handler was triggered after the job finished with message: %s",
-                    message));
+        }        else {
+            this.emit('error',
+                new CFError(`progress-logs 'info' handler was triggered after the job finished with message: ${message}`));
         }
     }
 
@@ -108,8 +101,7 @@ class StepLogger extends EventEmitter {
             STATUS.PENDING_APPROVAL || this.status === STATUS.TERMINATING) {
             this.finishTimeStamp = +(new Date().getTime() / 1000).toFixed();
             if (err) {
-                this.status = (this.status === STATUS.TERMINATING ? STATUS.TERMINATED :
-                    (this.pendingApproval ? STATUS.DENIED : STATUS.ERROR));
+                this.status = (this.status === STATUS.TERMINATING ? STATUS.TERMINATED : (this.pendingApproval ? STATUS.DENIED : STATUS.ERROR)); // eslint-disable-line
             } else {
                 this.status = this.pendingApproval ? STATUS.APPROVED : STATUS.SUCCESS;
             }
@@ -124,17 +116,13 @@ class StepLogger extends EventEmitter {
             this._reportFinishTimestamp();
             this.updateLastUpdate();
             this.emit('finished');
-        }
-        else {
-            if (err) {
-                this.emit("error",
-                    new CFError("progress-logs 'finish' handler was triggered after the job finished with err: %s",
-                        err.toString()));
-            }
-            else {
-                this.emit("error",
-                    new CFError("progress-logs 'finish' handler was triggered after the job finished"));
-            }
+        } else if (err) {
+            this.emit('error', new CFError({
+                cause: err,
+                message: `progress-logs 'finish' handler was triggered after the job finished`
+            }));
+        } else {
+            this.emit('error', new CFError(`progress-logs 'finish' handler was triggered after the job finished`));
         }
     }
 
@@ -193,9 +181,8 @@ class StepLogger extends EventEmitter {
         if (this.status === STATUS.RUNNING) {
             this.status = STATUS.TERMINATING;
             this._reportStatus();
-        }
-        else {
-            this.emit("error",
+        }        else {
+            this.emit('error',
                 new CFError(`markTerminating is only allowed to step in running state status , current status : ${this.status}`));
         }
     }

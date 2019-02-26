@@ -7,12 +7,12 @@ const factoryMap = {
 };
 
 const factory = async (task, opts) => {
-    const factory = factoryMap[opts.type];
-    if (!factory) {
+    const func = factoryMap[opts.type];
+    if (!func) {
         throw new Error(`Failed to create TaskLogger. Type: ${opts.type} is not supported`);
     }
 
-    return factory(task, opts);
+    return func(task, opts);
 };
 
 module.exports = factory;
