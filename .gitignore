@@ -1,0 +1,9 @@
+node_modules/
+# Coverage directory used by tools like istanbul
+coverage/*.html
+.coverrun
+.coverdata
+.debug
+coverage
+.idea
+.vscode/launch.json

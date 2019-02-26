@@ -1,0 +1,94 @@
+// Codefresh Code Style - eslint ruleset
+// Based on AirBnB.
+//
+// More details: https://codefresh-io.atlassian.net/wiki/display/COD/Code+Style+Guide
+{
+
+  "extends": "airbnb",
+  "parserOptions": {
+    "ecmaVersion": 2017,
+    "sourceType": "script",
+    "ecmaFeatures": {
+      "jsx": true,
+      "impliedStrict": true
+    }
+  },
+
+  "env": {
+    "node": true,
+    "mocha": true
+  },
+
+  "plugins": [
+    "chai-friendly",
+    "import",
+    "mocha",
+    "node",
+    "promise"
+  ],
+
+  "rules": {
+    "indent": [
+      "error",
+      4,
+      {
+        "SwitchCase": 1,
+        "VariableDeclarator": 1
+      }
+    ],
+    "func-names": [
+      "error",
+      "never"
+    ],
+    "quotes": [
+      "error",
+      "single",
+      {
+        "allowTemplateLiterals": true
+      }
+    ],
+    "max-len": [
+      2,
+      {
+        "code": 150,
+        "tabWidth": 4,
+        "ignoreUrls": true
+      }
+    ],
+    "no-use-before-define": "off",
+    "class-methods-use-this": "off",
+    "no-underscore-dangle": "off",
+    "no-multi-spaces": "off",
+    "no-param-reassign": "off",
+    "no-else-return": "off",
+    "arrow-body-style": "off",
+    "strict": [
+      "error",
+      "global"
+    ],
+    "padded-blocks": "off",
+    "import/no-extraneous-dependencies": [
+      2,
+      {
+        "devDependencies": true
+      }
+    ],
+    "guard-for-in": "error",
+    "no-console": "off",
+    "comma-dangle": ["error", "only-multiline"],
+    "quote-props": ["error", "consistent"],
+
+    "promise/catch-or-return": ["error", { "allowThen": true }],
+    "promise/no-native": "error",
+
+    "mocha/no-exclusive-tests": "warn",
+
+    "no-unused-expressions": "off",
+    "chai-friendly/no-unused-expressions": "error",
+
+    "node/no-unsupported-features": "error",
+    "node/process-exit-as-throw": "error",
+    "node/shebang": "warn",
+    "node/no-deprecated-api": "warn"
+  }
+}

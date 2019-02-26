@@ -1,0 +1,18 @@
+version: '1.0'
+steps:
+  RunningUnitTests:
+    title: Running Unit Tests
+    image: node:11.10.0
+    commands:
+    - yarn install
+    - yarn eslint
+    - yarn test
+
+  deploy_to_npm:
+    title: Publishing To Npm
+    image: codefresh/node-tester-image:10.13.0
+    commands:
+      - NPM_TOKEN=${{NPM_TOKEN}} npm run ci-publish
+    when:
+      branch:
+        only: [ master ]
