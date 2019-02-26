@@ -7,7 +7,7 @@ const main = async () => {
     }, {
         type: TYPES.FIREBASE,
         baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs',
-        firebaseSecret: 'rmxPCB0YOyRdA0ohVUlkbGaQsSmXlARBIXbfnXoM'
+        firebaseSecret: process.env["FIREBASE_SECRET"]
     });
 
     console.log(JSON.stringify(taskLogger.getConfiguration()));
@@ -51,7 +51,7 @@ const main = async () => {
     }, {
         type: TYPES.FIREBASE,
         baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs',
-        firebaseSecret: 'rmxPCB0YOyRdA0ohVUlkbGaQsSmXlARBIXbfnXoM'
+        firebaseSecret: process.env["FIREBASE_SECRET"]
     });
     await restoredTaskLogger.restore();
     const restoredStepLogger = restoredTaskLogger.create('stepName', undefined, undefined, true);
