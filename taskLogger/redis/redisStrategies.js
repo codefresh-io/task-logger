@@ -64,9 +64,9 @@ class RedisSetStratry {
             if (Object.keys(obj).length === 0) {
                 return MOVE_FORWARD;
             }
-            const hsetKeysValues = Object.keys(obj).reduce((acc, key) => {
-                acc.push(key);
-                acc.push(obj[key]);
+            const hsetKeysValues = Object.keys(obj).reduce((acc, objKey) => {
+                acc.push(objKey);
+                acc.push(obj[objKey]);
                 return acc;
             }, []);
             redisClient.hmset(key, hsetKeysValues);

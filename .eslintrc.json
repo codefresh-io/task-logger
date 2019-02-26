@@ -5,6 +5,12 @@
 {
 
   "extends": "airbnb",
+  "env": {
+    "node": true,
+    "mocha": true,
+    "es6": true
+  },
+
   "parserOptions": {
     "ecmaVersion": 2017,
     "sourceType": "script",
@@ -14,10 +20,7 @@
     }
   },
 
-  "env": {
-    "node": true,
-    "mocha": true
-  },
+
 
   "plugins": [
     "chai-friendly",
@@ -79,7 +82,7 @@
     "quote-props": ["error", "consistent"],
 
     "promise/catch-or-return": ["error", { "allowThen": true }],
-    "promise/no-native": "error",
+    // "promise/no-native": "error",
 
     "mocha/no-exclusive-tests": "warn",
 

@@ -1,6 +1,5 @@
 
 const BaseStepLogger                   = require('../StepLogger');
-const { STATUS }                       = require('../enums');
 const RedisPubDecorator                = require('./redisPubDecorator');
 const RedisLogger                      = require('./RedisLogger');
 const RedisTaskLogger                  = require('./TaskLogger');

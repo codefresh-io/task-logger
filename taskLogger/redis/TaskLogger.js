@@ -66,6 +66,7 @@ class RedisTaskLogger extends TaskLogger {
         if (redisCacheMap.has(key)) {
             return redisCacheMap.get(key);
         }
+        return undefined;
     }
 
     newStepAdded(step) {
@@ -83,24 +84,23 @@ class RedisTaskLogger extends TaskLogger {
         const keyToStatus = await this.writter.child(STEPS_REFERENCES_KEY).getHash();
         if (keyToStatus) {
             const stepFromRedis = Object.keys(keyToStatus);
-            const StepLogger = require('./StepLogger');
+            const StepLogger = require('./StepLogger'); // eslint-disable-line
             this.steps = stepFromRedis.reduce((acc, current) => {
-                acc[current] = 
+                acc[current] =
                 new StepLogger({
                     name: current,
                     jobId: this.jobId,
                     accountId: this.accountId
                 }, this.opts);
                 acc[current].pendingApproval = keyToStatus[current] === STATUS.PENDING_APPROVAL;
-                acc[current].status = keyToStatus[current]; 
+                acc[current].status = keyToStatus[current];
                 return acc;
-                
-            },{});
+            }, {});
         }
 
     }
     async addErrorMessageToEndOfSteps(message) {
-         Object.keys(this.steps).forEach((step) => {
+        Object.keys(this.steps).forEach((step) => {
             this.steps[step]._reportLog(`\x1B[31m${message}\x1B[0m\r\n`);
         });
     }

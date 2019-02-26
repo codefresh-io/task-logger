@@ -1,7 +1,5 @@
-const redis = require('redis');
 const CFError = require('cf-errors');
 const debug = require('debug')('codefresh:taskLogger:redis:RedisLogger');
-const _ = require('lodash');
 const assert = require('assert').strict;
 const {
     RedisFlattenStrategy,
