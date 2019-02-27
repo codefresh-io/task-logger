@@ -3,7 +3,7 @@
 const _            = require('lodash');
 const CFError      = require('cf-errors');
 const EventEmitter = require('events');
-const rp           = require('request-promise');
+const request           = require('request');
 const { STATUS, VISIBILITY } = require('./enums');
 
 /**
@@ -81,20 +81,24 @@ class TaskLogger extends EventEmitter {
             if (eventReporting) {
                 const event = { action: 'new-progress-step', name };
 
-                rp({
+                request({
                     uri: eventReporting.url,
                     headers: { Authorization: eventReporting.token },
                     method: 'POST',
                     body: event,
                     json: true
-                })
-                    .catch((err) => {
+                }, (err, response) => {
+                    if (err) {
                         const error = new CFError({
                             cause: err,
                             message: 'Failed to send new-proress-step event'
                         });
                         this.emit('error', error);
-                    });
+                    } else if (response && response.statusCode >= 400) {
+                        const error = new CFError(`Failed to send new-proress-step event. received: ${JSON.stringify(_.pick(response.toJSON(), ['statusCode', 'body']))}`); // eslint-disable-line max-len
+                        this.emit('error', error);
+                    }
+                });
             }
 
         } else if (resetStatus) {

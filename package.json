@@ -1,6 +1,6 @@
 {
   "name": "@codefresh-io/task-logger",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Codefresh utilities for working with build logs",
   "main": "index.js",
   "scripts": {
@@ -37,8 +37,7 @@
     "node-redis-pubsub": "^4.0.0",
     "q": "^1.4.1",
     "redis": "^2.8.0",
-    "request": "^2.88.0",
-    "request-promise": "^4.2.4"
+    "request": "^2.88.0"
   },
   "engines": {
     "node": ">=9.10.0"
