@@ -39,15 +39,15 @@ const createMockedStepClass = () => {
 };
 
 let firebaseStepLoggerMockedClass;
-const rpStub = sinon.stub();
+const requestStub = sinon.stub();
 
 
 const getTaskLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId' }, opts = {}) => {
-    rpStub.reset();
-    rpStub.resolves();
+    requestStub.reset();
+    requestStub.yields();
     firebaseStepLoggerMockedClass = createMockedStepClass();
     const TaskLogger = proxyquire('../TaskLogger', {
-        'request-promise': rpStub,
+        'request': requestStub,
         './firebase/StepLogger': firebaseStepLoggerMockedClass
     });
 
@@ -184,7 +184,7 @@ describe('Base TaskLogger tests', () => {
                 url: 'url'
             };
             taskLogger.create('new-step', eventReporting);
-            expect(rpStub).to.have.been.calledWith({
+            expect(requestStub).to.have.been.calledWith({
                 uri: eventReporting.url,
                 headers: { Authorization: eventReporting.token },
                 method: 'POST',
