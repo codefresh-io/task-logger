@@ -54,11 +54,14 @@ class RedisPubDecorator {
             watch: (fn) => {
                 toBeWrappedObject.watch(fn);
             },
-            getHash: () => {
+            getHash: async () => {
                 return toBeWrappedObject.getHash();
             },
             children: () => {
                 return toBeWrappedObject.children();
+            },
+            get: async () => {
+                return toBeWrappedObject.get();
             }
 
         };

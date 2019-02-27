@@ -1,7 +1,7 @@
-const { TaskLogger: Firebase, TYPES } = require('../index');
+const { TaskLogger: REDIS, TYPES } = require('../index');
 
 const main = async () => {
-    const redisTaskLogger = await Firebase({
+    const redisTaskLogger = await REDIS({
         accountId: 'accountId',
         jobId: 'jobId'
     }, {
@@ -48,8 +48,23 @@ const main = async () => {
 
     // await stepLogger.delete();
 
+    const redisTaskLoggerForStepRestore = await REDIS({
+        accountId: 'accountId',
+        jobId: 'jobId'
+    }, {
+        type: TYPES.REDIS,
+        config: {
+            host: 'local.codefresh.io',
+            password: 'redisPassword',
+            db: 1,
+            port: 6379
+        }
+    });
+    const redisStepLoggerForRestore = redisTaskLoggerForStepRestore.create('stepName', undefined, undefined, false);
+    await redisStepLoggerForRestore.restore();
 
-    const redisRestoredTaskLogger = await Firebase({
+
+    const redisRestoredTaskLogger = await REDIS({
         accountId: 'accountId',
         jobId: 'jobId'
     }, {

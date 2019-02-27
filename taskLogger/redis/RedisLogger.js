@@ -84,7 +84,7 @@ class RedisLogger {
                 wrapper._updateKeyFromStack();
                 this.watachedKeys.set(key, fn);
             },
-            getHash: () => {
+            getHash: async () => {
                 wrapper._updateKeyFromStack();
                 return new Promise((resolve, reject) => {
                     this.redisClient.hgetall(key, (err, keys) => {
@@ -92,6 +92,17 @@ class RedisLogger {
                             reject(err);
                         } else {
                             resolve(keys);
+                        }
+                    });
+                });
+            },
+            get: async () => {
+                return new Promise((resolve, reject) => {
+                    this.redisClient.hget(`${key}`, stack[0], (err, value) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(value);
                         }
                     });
                 });

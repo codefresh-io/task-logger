@@ -1,8 +1,8 @@
-
 const BaseStepLogger                   = require('../StepLogger');
 const RedisPubDecorator                = require('./redisPubDecorator');
 const RedisLogger                      = require('./RedisLogger');
 const RedisTaskLogger                  = require('./TaskLogger');
+const { STATUS }                       = require('../enums');
 
 class RedisStepLogger extends BaseStepLogger {
     constructor(step, opts) {
@@ -12,6 +12,11 @@ class RedisStepLogger extends BaseStepLogger {
         const redisConnection = RedisTaskLogger.getRedisConnectionFromCache(extendOpts);
         this.writter = new RedisPubDecorator(extendOpts, new RedisLogger(redisConnection, extendOpts));
         this.writter.setStrategies(`${step.accountId}:${step.jobId}`);
+    }
+
+    async restore() {
+        this.status = await this.writter.child('status').get();
+        this.pendingApproval = this.status === STATUS.PENDING_APPROVAL;
     }
 
     _reportLog(message) {
