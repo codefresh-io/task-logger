@@ -8,7 +8,7 @@ class RedisPubDecorator {
         this.jobId = opts.jobId;
         this.redisLogger = redisLogger;
         this.nrp = new NRP(Object.assign({},
-             opts.config,
+             opts.redis,
              { scope }
 
         ));

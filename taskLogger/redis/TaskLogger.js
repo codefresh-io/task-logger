@@ -4,7 +4,6 @@ const redis                             = require('redis');
 const debug                            = require('debug')('codefresh:taskLogger:redis:taskLogger');
 const CFError                          = require('cf-errors');
 
-const ErrorTypes                       = CFError.errorTypes;
 const RedisPubDecorator                = require('./redisPubDecorator');
 const RedisLogger                      = require('./RedisLogger');
 const { TYPES, STATUS }                        = require('../enums');
@@ -25,8 +24,8 @@ class RedisTaskLogger extends TaskLogger {
     }
 
     static async factory(task, opts) {
-        if (!opts || !opts.config) {
-            throw new CFError(ErrorTypes.Error, 'no config');
+        if (!opts || !opts.redis) {
+            throw new CFError(CFError.Errors.Error, 'no config');
         }
         const redisConnection = await RedisTaskLogger.createRedisConnection(task, opts);
         return new RedisTaskLogger(task, opts, redisConnection);
@@ -36,8 +35,8 @@ class RedisTaskLogger extends TaskLogger {
     static async createRedisConnection(task, opts) {
         return new Promise((resolve, reject) => {
 
-            const { config } = opts;
-            const key = `${config.url}.${config.port}.${config.db}`;
+            const config = opts.redis;
+            const key = `${config.host}.${config.port}.${config.db}`;
             if (!redisCacheMap.has(key)) {
                 const client = redis.createClient(config);
                 client.on('ready', () => {
@@ -61,8 +60,8 @@ class RedisTaskLogger extends TaskLogger {
     }
 
     static getRedisConnectionFromCache(opts) {
-        const { config } = opts;
-        const key = `${config.url}.${config.port}.${config.db}`;
+        const config = opts.redis;
+        const key = `${config.host}.${config.port}.${config.db}`;
         if (redisCacheMap.has(key)) {
             return redisCacheMap.get(key);
         }
