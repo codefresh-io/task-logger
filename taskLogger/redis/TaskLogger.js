@@ -1,4 +1,3 @@
-
 const TaskLogger                        = require('../TaskLogger');
 const redis                             = require('redis');
 const debug                            = require('debug')('codefresh:taskLogger:redis:taskLogger');
@@ -130,7 +129,9 @@ class RedisTaskLogger extends TaskLogger {
         this.writter.child('status').set(this.status);
     }
 
-
+    _reportLogSize() {
+        this.baseRef.child('metrics').child('logs').child('total').set(this.logSize);
+    }
 }
 RedisTaskLogger.TYPE = TYPES.REDIS;
 
