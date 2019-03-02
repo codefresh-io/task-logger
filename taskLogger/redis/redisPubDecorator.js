@@ -2,16 +2,17 @@ const NRP = require('node-redis-pubsub');
 const debug = require('debug')('codefresh:taskLogger:redis:pubDecorator');
 
 const scope = 'codefresh';
+const nrpCacheMap = new Map();
 
 class RedisPubDecorator {
     constructor(opts, redisLogger) {
         this.jobId = opts.jobId;
         this.redisLogger = redisLogger;
-        this.nrp = new NRP(Object.assign({},
-             opts.redis,
-             { scope }
+        this.nrp = RedisPubDecorator.getConnectionFromCache(Object.assign({},
+            opts.redis,
+            { scope }
 
-        ));
+       ));
         this.keyToAction = opts.keyToMapper || {
             'logs': 'e',
             'memory': 'e',
@@ -22,6 +23,14 @@ class RedisPubDecorator {
             debug(`###NRP: ${data}`);
         });
 
+    }
+    static getConnectionFromCache(config) {
+        const key = `${config.host}.${config.port}.${config.db}.${config.scope}`;
+        if (!nrpCacheMap.has(key)) {
+            nrpCacheMap.set(key, new NRP(config));
+        }
+        return nrpCacheMap.get(key);
+        
     }
 
     setStrategies(baseKey) {
