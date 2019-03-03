@@ -31,7 +31,6 @@ class RedisPubDecorator {
             nrpCacheMap.set(key, new NRP(config));
         }
         return nrpCacheMap.get(key);
-        
     }
 
     setStrategies(baseKey) {
