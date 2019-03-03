@@ -5,9 +5,10 @@ const scope = 'codefresh';
 const nrpCacheMap = new Map();
 
 class RedisPubDecorator {
-    constructor(opts, redisLogger) {
+    constructor(opts, redisLogger, keyPrefixToRemove) {
         this.jobId = opts.jobId;
         this.redisLogger = redisLogger;
+        this.keyPrefixToRemove = keyPrefixToRemove;
         this.nrp = RedisPubDecorator.getConnectionFromCache(Object.assign({},
             opts.redis,
             { scope }
@@ -94,6 +95,9 @@ class RedisPubDecorator {
     }
 
     _reFormatKey(key) {
+        if (this.keyPrefixToRemove) {
+            key = key.substr(this.keyPrefixToRemove.length + 1);
+        }
         return key.replace(new RegExp(':', 'g'), '.').replace('.[', '[');
     }
     _getAction(key = '') {

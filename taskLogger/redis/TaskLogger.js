@@ -15,7 +15,7 @@ class RedisTaskLogger extends TaskLogger {
         super(task, opts);
         const extendOpts = Object.assign({}, task, opts);
         extendOpts.key = `${task.accountId}:${task.jobId}`;
-        this.writter = new RedisPubDecorator(extendOpts, new RedisLogger(redisConnection, extendOpts));
+        this.writter = new RedisPubDecorator(extendOpts, new RedisLogger(redisConnection, extendOpts), extendOpts.key);
         this.writter.setStrategies(extendOpts.key);
         this.type = TYPES.REDIS;
 

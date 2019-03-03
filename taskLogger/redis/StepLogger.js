@@ -10,7 +10,7 @@ class RedisStepLogger extends BaseStepLogger {
         const extendOpts = Object.assign({}, step, opts);
         extendOpts.key = `${step.accountId}:${step.jobId}:${step.name}`;
         const redisConnection = RedisTaskLogger.getRedisConnectionFromCache(extendOpts);
-        this.writter = new RedisPubDecorator(extendOpts, new RedisLogger(redisConnection, extendOpts));
+        this.writter = new RedisPubDecorator(extendOpts, new RedisLogger(redisConnection, extendOpts), `${step.accountId}:${step.jobId}`);
         this.writter.setStrategies(`${step.accountId}:${step.jobId}`);
     }
 

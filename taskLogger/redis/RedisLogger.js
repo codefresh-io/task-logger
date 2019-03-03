@@ -62,7 +62,7 @@ class RedisLogger {
                     this.watachedKeys.get(fullKey).call(this, obj);
                 }
                 return {
-                    key: fullKey.substr(thisArg.defaultLogKey.length + 1),
+                    key: fullKey.substr(root.length + 1),
                     id: receveidId
                 };
             },
