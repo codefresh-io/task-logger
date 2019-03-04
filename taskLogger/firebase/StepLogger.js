@@ -3,6 +3,7 @@ const Firebase           = require('firebase');
 const CFError            = require('cf-errors');
 const { STATUS }         = require('../enums');
 const BaseStepLogger     = require('../StepLogger');
+const { wrapWithRetry }  = require('../helpers');
 
 class FirebaseStepLogger extends BaseStepLogger {
     constructor(step, opts) {
@@ -25,22 +26,24 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     async restore() {
-        const nameDeferred = Q.defer();
-        const statusDeferred = Q.defer();
+        return wrapWithRetry(async () => {
+            const nameDeferred = Q.defer();
+            const statusDeferred = Q.defer();
 
-        this.stepRef.child('name').once('value', (snapshot) => {
-            this.name = snapshot.val();
-            nameDeferred.resolve();
-        });
-        this.stepRef.child('status').once('value', (snapshot) => {
-            this.status = snapshot.val();
-            if (this.status === STATUS.PENDING_APPROVAL) {
-                this.pendingApproval = true;
-            }
-            statusDeferred.resolve();
-        });
+            this.stepRef.child('name').once('value', (snapshot) => {
+                this.name = snapshot.val();
+                nameDeferred.resolve();
+            });
+            this.stepRef.child('status').once('value', (snapshot) => {
+                this.status = snapshot.val();
+                if (this.status === STATUS.PENDING_APPROVAL) {
+                    this.pendingApproval = true;
+                }
+                statusDeferred.resolve();
+            });
 
-        return Q.all([nameDeferred.promise, statusDeferred.promise]);
+            return Q.all([nameDeferred.promise, statusDeferred.promise]);
+        });
     }
 
     _reportLog(message) {
