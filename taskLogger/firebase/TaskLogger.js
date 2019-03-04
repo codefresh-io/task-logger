@@ -6,6 +6,7 @@ const CFError                          = require('cf-errors');
 const BaseTaskLogger                   = require('../TaskLogger');
 const StepLogger                       = require('./StepLogger');
 const { TYPES }                        = require('../enums');
+const { wrapWithRetry }                = require('../helpers');
 
 const STEPS_REFERENCES_KEY = 'stepsReferences';
 
@@ -71,47 +72,41 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     async restore() {
-        let settled = false;
-        const deferred = Q.defer();
-        this.baseRef.child(STEPS_REFERENCES_KEY).once('value', (snapshot) => {
-            const stepsReferences = snapshot.val();
-            if (!stepsReferences) {
-                deferred.resolve();
-            }
-
-            Q.all(_.map(stepsReferences, async (name, key) => { // eslint-disable-line
-                const step = new StepLogger({
-                    accountId: this.accountId,
-                    jobId: this.jobId,
-                    name: key
-                }, {
-                    ...this.opts
-                });
-                step.on('error', (err) => {
-                    this.emit('error', err);
-                });
-                step.on('finished', () => {
-                    delete this.steps[name];
-                });
-
-                step.logs = {};
-
-                await step.restore();
-                this.steps[step.name] = step;
-            }))
-                .then(() => {
-                    settled = true;
+        return wrapWithRetry(async () => {
+            const deferred = Q.defer();
+            this.baseRef.child(STEPS_REFERENCES_KEY).once('value', (snapshot) => {
+                const stepsReferences = snapshot.val();
+                if (!stepsReferences) {
                     deferred.resolve();
-                })
-                .done();
-        });
+                }
 
-        setTimeout(() => {
-            if (!settled) {
-                deferred.reject(new Error('Failed to restore steps metadata from Firebase'));
-            }
-        }, 5000);
-        return deferred.promise;
+                Q.all(_.map(stepsReferences, async (name, key) => { // eslint-disable-line
+                    const step = new StepLogger({
+                        accountId: this.accountId,
+                        jobId: this.jobId,
+                        name: key
+                    }, {
+                        ...this.opts
+                    });
+                    step.on('error', (err) => {
+                        this.emit('error', err);
+                    });
+                    step.on('finished', () => {
+                        delete this.steps[name];
+                    });
+
+                    step.logs = {};
+
+                    await step.restore();
+                    this.steps[step.name] = step;
+                }))
+                    .then(() => {
+                        deferred.resolve();
+                    })
+                    .done();
+            });
+            return deferred.promise;
+        });
     }
 
     _updateCurrentStepReferences() {
