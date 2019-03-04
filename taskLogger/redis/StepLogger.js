@@ -60,7 +60,7 @@ class RedisStepLogger extends BaseStepLogger {
     }
 
     clearLogs() {
-        this.writter.child('logs').set({});
+        // TODO: Is is needed ? if so need to implement (get all keys from set and delete the relevant ones)
     }
 
     async delete() {
