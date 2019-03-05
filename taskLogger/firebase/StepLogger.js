@@ -1,4 +1,5 @@
 const Q                  = require('q');
+const debug              = require('debug')('codefresh:firebase:stepLogger');
 const Firebase           = require('firebase');
 const CFError            = require('cf-errors');
 const { STATUS }         = require('../enums');
@@ -26,15 +27,19 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     async restore() {
+        const extraPrintData = { step: this.name };
         return wrapWithRetry(async () => {
             const nameDeferred = Q.defer();
             const statusDeferred = Q.defer();
+            debug(`performing restore for step: ${this.name}`);
 
             this.stepRef.child('name').once('value', (snapshot) => {
+                debug(`received name for step: ${this.name}`);
                 this.name = snapshot.val();
                 nameDeferred.resolve();
             });
             this.stepRef.child('status').once('value', (snapshot) => {
+                debug(`received status for step: ${this.name}`);
                 this.status = snapshot.val();
                 if (this.status === STATUS.PENDING_APPROVAL) {
                     this.pendingApproval = true;
@@ -43,7 +48,7 @@ class FirebaseStepLogger extends BaseStepLogger {
             });
 
             return Q.all([nameDeferred.promise, statusDeferred.promise]);
-        });
+        }, undefined, extraPrintData);
     }
 
     _reportLog(message) {

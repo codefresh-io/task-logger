@@ -1,6 +1,6 @@
 const _                                = require('lodash');
 const Firebase                         = require('firebase');
-const debug                            = require('debug')('codefresh:taskLogger');
+const debug                            = require('debug')('codefresh:firebase:taskLogger');
 const Q                                = require('q');
 const CFError                          = require('cf-errors');
 const BaseTaskLogger                   = require('../TaskLogger');
@@ -72,8 +72,11 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     async restore() {
+        const extraPrintData = { jobId: this.jobId };
         return wrapWithRetry(async () => {
             const deferred = Q.defer();
+            debug(`performing restore for job: ${this.jobId}`);
+
             this.baseRef.child(STEPS_REFERENCES_KEY).once('value', (snapshot) => {
                 const stepsReferences = snapshot.val();
                 if (!stepsReferences) {
@@ -106,7 +109,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                     .done();
             });
             return deferred.promise;
-        }, { errorAfterTimeout: 5000 });
+        }, { errorAfterTimeout: 5000 }, extraPrintData);
     }
 
     _updateCurrentStepReferences() {

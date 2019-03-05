@@ -1,4 +1,5 @@
-const Q = require('q');
+const debug = require('debug')('codefresh:helpers');
+const Q     = require('q');
 const retry = require('retry');
 
 
@@ -10,13 +11,14 @@ const retry = require('retry');
 const defaultRetryOptions = { retries: 60, factor: 1, minTimeout: 1, errorAfterTimeout: 2000 };
 
 const wrapWithRetry = (funcToRetry,
-    opts = defaultRetryOptions) => {
+    opts = defaultRetryOptions, extraPrintData = {}) => {
     const finalRetryOptions = Object.assign({}, defaultRetryOptions, opts);
 
     const deferred = Q.defer();
 
     const operation = retry.operation(finalRetryOptions);
     operation.attempt(() => {
+        debug(`Performing attempt: ${operation.attempts()}. extraData: ${JSON.stringify(extraPrintData)}`);
         let finished = false;
         setTimeout(() => {
             if (finished) {
