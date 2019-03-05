@@ -4,10 +4,10 @@ const retry = require('retry');
 
 /**
  * wrap a function with retry.
- * default will be 10 attempts spread over 5 minutes
+ * default will be 10 attempts spread over 2 (60 * 2) minutes
  */
 
-const defaultRetryOptions = { retries: 10, factor: 1.71023, minTimeout: 1000, errorAfterTimeout: 5000 };
+const defaultRetryOptions = { retries: 60, factor: 1, minTimeout: 1, errorAfterTimeout: 2000 };
 
 const wrapWithRetry = (funcToRetry,
     opts = defaultRetryOptions) => {

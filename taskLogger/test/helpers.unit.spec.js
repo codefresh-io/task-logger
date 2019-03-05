@@ -68,7 +68,7 @@ describe('helpers', () => {
                         throw new Error('should have failed');
                     }, (err) => {
                         expect(err.toString()).to.equal('Error: my error');
-                        expect(stub.callCount).to.equal(11);
+                        expect(stub.callCount).to.equal(61);
                     });
             });
 
