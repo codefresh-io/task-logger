@@ -1,9 +1,12 @@
 const FirebaseTaskLogger = require('./firebase/TaskLogger');
 const RedisTaskLogger = require('./redis/TaskLogger');
+const MongoTaskLogger = require('./mongo/TaskLogger');
+
 
 const factoryMap = {
     [FirebaseTaskLogger.TYPE]: FirebaseTaskLogger.factory,
-    [RedisTaskLogger.TYPE]: RedisTaskLogger.factory
+    [RedisTaskLogger.TYPE]: RedisTaskLogger.factory,
+    [MongoTaskLogger.TYPE]: MongoTaskLogger.factory
 };
 
 const factory = async (task, opts) => {
