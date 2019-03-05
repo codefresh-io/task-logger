@@ -33,11 +33,14 @@ class FirebaseStepLogger extends BaseStepLogger {
             const statusDeferred = Q.defer();
             debug(`performing restore for step: ${this.name}`);
 
+            debug(`firebase name reference: ${this.stepRef.child('name').ref()}`);
             this.stepRef.child('name').once('value', (snapshot) => {
                 debug(`received name for step: ${this.name}`);
                 this.name = snapshot.val();
                 nameDeferred.resolve();
             });
+
+            debug(`firebase status reference: ${this.stepRef.child('status').ref()}`);
             this.stepRef.child('status').once('value', (snapshot) => {
                 debug(`received status for step: ${this.name}`);
                 this.status = snapshot.val();
