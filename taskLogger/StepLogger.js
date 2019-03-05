@@ -38,55 +38,23 @@ class StepLogger extends EventEmitter {
     }
 
     write(message) {
-        if (this.fatal) {
-            return;
-        }
-        if ([STATUS.RUNNING, STATUS.PENDING, STATUS.PENDING_APPROVAL, STATUS.TERMINATING].includes(this.status)) {
-            this._reportLog(message);
-            this.updateLastUpdate();
-        }        else {
-            this.emit('error',
-                new CFError(`progress-logs 'write' handler was triggered after the job finished with message: ${message}`));
-        }
+        this._reportLog(message);
+        this.updateLastUpdate();
     }
 
     debug(message) {
-        if (this.fatal) {
-            return;
-        }
-        if ([STATUS.RUNNING, STATUS.PENDING, STATUS.PENDING_APPROVAL, STATUS.TERMINATING].includes(this.status)) {
-            this._reportLog(`${message}\r\n`);
-            this.updateLastUpdate();
-        }        else {
-            this.emit('error',
-                new CFError(`progress-logs 'debug' handler was triggered after the job finished with message: ${message}`));
-        }
+        this._reportLog(`${message}\r\n`);
+        this.updateLastUpdate();
     }
 
     warn(message) {
-        if (this.fatal) {
-            return;
-        }
-        if ([STATUS.RUNNING, STATUS.PENDING, STATUS.PENDING_APPROVAL, STATUS.TERMINATING].includes(this.status)) {
-            this._reportLog(`\x1B[01;93m${message}\x1B[0m\r\n`);
-            this.updateLastUpdate();
-        }        else {
-            this.emit('error',
-                new CFError(`progress-logs 'warning' handler was triggered after the job finished with message: ${message}`));
-        }
+        this._reportLog(`\x1B[01;93m${message}\x1B[0m\r\n`);
+        this.updateLastUpdate();
     }
 
     info(message) {
-        if (this.fatal) {
-            return;
-        }
-        if ([STATUS.RUNNING, STATUS.PENDING, STATUS.PENDING_APPROVAL, STATUS.TERMINATING].includes(this.status)) {
-            this._reportLog(`${message}\r\n`);
-            this.updateLastUpdate();
-        }        else {
-            this.emit('error',
-                new CFError(`progress-logs 'info' handler was triggered after the job finished with message: ${message}`));
-        }
+        this._reportLog(`${message}\r\n`);
+        this.updateLastUpdate();
     }
 
     finish(err, skip) {

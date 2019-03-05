@@ -106,16 +106,6 @@ describe('Base StepLogger tests', () => {
             });
         });
 
-        describe('negative', () => {
-            it('should emit an error in case the step is not in running/pending/pending-approval/terminating status', () => {
-                const stepLogger = getStepLoggerInstance();
-                stepLogger.setStatus(STATUS.SUCCESS);
-                const message = 'message';
-                stepLogger.write(message);
-                expect(stepLogger.emit).to.have.been.calledWith('error');
-            });
-        });
-
     });
 
     describe('debug', () => {
@@ -127,16 +117,6 @@ describe('Base StepLogger tests', () => {
                 stepLogger.debug(message);
                 expect(stepLogger._reportLog).to.have.been.calledWith(`${message}\r\n`);
                 expect(stepLogger.updateLastUpdate).to.have.been.calledWith();
-            });
-        });
-
-        describe('negative', () => {
-            it('should emit an error in case the step is not in running/pending/pending-approval/terminating status', () => {
-                const stepLogger = getStepLoggerInstance();
-                stepLogger.setStatus(STATUS.SUCCESS);
-                const message = 'message';
-                stepLogger.debug(message);
-                expect(stepLogger.emit).to.have.been.calledWith('error');
             });
         });
 
@@ -154,16 +134,6 @@ describe('Base StepLogger tests', () => {
             });
         });
 
-        describe('negative', () => {
-            it('should emit an error in case the step is not in running/pending/pending-approval/terminating status', () => {
-                const stepLogger = getStepLoggerInstance();
-                stepLogger.setStatus(STATUS.SUCCESS);
-                const message = 'message';
-                stepLogger.warn(message);
-                expect(stepLogger.emit).to.have.been.calledWith('error');
-            });
-        });
-
     });
 
     describe('info', () => {
@@ -175,16 +145,6 @@ describe('Base StepLogger tests', () => {
                 stepLogger.info(message);
                 expect(stepLogger._reportLog).to.have.been.calledWith(`${message}\r\n`);
                 expect(stepLogger.updateLastUpdate).to.have.been.calledWith();
-            });
-        });
-
-        describe('negative', () => {
-            it('should emit an error in case the step is not in running/pending/pending-approval/terminating status', () => {
-                const stepLogger = getStepLoggerInstance();
-                stepLogger.setStatus(STATUS.SUCCESS);
-                const message = 'message';
-                stepLogger.info(message);
-                expect(stepLogger.emit).to.have.been.calledWith('error');
             });
         });
 
