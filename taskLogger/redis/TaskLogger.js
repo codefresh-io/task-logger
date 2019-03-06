@@ -129,7 +129,7 @@ class RedisTaskLogger extends TaskLogger {
         this.writter.child('status').set(this.status);
     }
     _reportLogSize() {
-        this.baseRef.child('metrics').child('logs').child('total').set(this.logSize);
+        this.writter.child('metrics').child('logs').child('total').set(this.logSize);
     }
 }
 RedisTaskLogger.TYPE = TYPES.REDIS;
