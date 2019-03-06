@@ -1,6 +1,8 @@
+const _ = require('lodash');
 const CFError = require('cf-errors');
 const EventEmitter = require('events');
 const { STATUS } = require('./enums');
+const request = require('request');
 
 class StepLogger extends EventEmitter {
     constructor({ accountId, jobId, name }, opts) {
@@ -25,7 +27,7 @@ class StepLogger extends EventEmitter {
         this.fatal = false;
     }
 
-    start() {
+    start(eventReporting) {
         if (this.fatal) {
             return;
         }
@@ -34,6 +36,29 @@ class StepLogger extends EventEmitter {
             this._reportStatus();
             this.setFinishTimestamp('');
             this.setCreationTimestamp(+(new Date().getTime() / 1000).toFixed());
+
+            if (eventReporting) {
+                const event = { action: 'new-progress-step', name: this.name };
+
+                request({
+                    uri: eventReporting.url,
+                    headers: { Authorization: eventReporting.token },
+                    method: 'POST',
+                    body: event,
+                    json: true
+                }, (err, response) => {
+                    if (err) {
+                        const error = new CFError({
+                            cause: err,
+                            message: 'Failed to send new-proress-step event'
+                        });
+                        this.emit('error', error);
+                    } else if (response && response.statusCode >= 400) {
+                        const error = new CFError(`Failed to send new-proress-step event. received: ${JSON.stringify(_.pick(response.toJSON(), ['statusCode', 'body']))}`); // eslint-disable-line max-len
+                        this.emit('error', error);
+                    }
+                });
+            }
         }
     }
 

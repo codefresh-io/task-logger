@@ -39,15 +39,10 @@ const createMockedStepClass = () => {
 };
 
 let firebaseStepLoggerMockedClass;
-const requestStub = sinon.stub();
-
 
 const getTaskLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId' }, opts = {}) => {
-    requestStub.reset();
-    requestStub.yields();
     firebaseStepLoggerMockedClass = createMockedStepClass();
     const TaskLogger = proxyquire('../TaskLogger', {
-        'request': requestStub,
         './firebase/StepLogger': firebaseStepLoggerMockedClass
     });
 
@@ -162,7 +157,7 @@ describe('Base TaskLogger tests', () => {
             const taskLogger = getTaskLoggerInstance();
             let stepLogger = taskLogger.create('new-step');
             expect(stepLogger.setStatus).to.not.have.been.called;
-            stepLogger = taskLogger.create('new-step', undefined, true);
+            stepLogger = taskLogger.create('new-step', true);
             expect(stepLogger.setStatus).to.have.been.calledWith(STATUS.PENDING);
             expect(stepLogger.setFinishTimestamp).to.have.been.calledWith('');
             expect(stepLogger.setCreationTimestamp).to.have.been.calledWith('');
@@ -170,27 +165,11 @@ describe('Base TaskLogger tests', () => {
 
         it('should run creation logic in case asked for', () => {
             const taskLogger = getTaskLoggerInstance();
-            const stepLogger = taskLogger.create('new-step', undefined, undefined, true);
+            const stepLogger = taskLogger.create('new-step', undefined, true);
             expect(stepLogger.setStatus).to.have.been.calledWith(STATUS.PENDING);
             expect(stepLogger.reportName).to.have.been.calledWith();
             expect(stepLogger.clearLogs).to.have.been.calledWith();
             expect(taskLogger.newStepAdded).to.have.been.calledWith(stepLogger);
-        });
-
-        it('should report back about a new step if eventReporting is passed', () => {
-            const taskLogger = getTaskLoggerInstance();
-            const eventReporting = {
-                token: 'token',
-                url: 'url'
-            };
-            taskLogger.create('new-step', eventReporting);
-            expect(requestStub).to.have.been.calledWith({
-                uri: eventReporting.url,
-                headers: { Authorization: eventReporting.token },
-                method: 'POST',
-                body: { action: 'new-progress-step', name: 'new-step' },
-                json: true
-            });
         });
 
     });

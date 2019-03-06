@@ -8,8 +8,15 @@ const sinonChai  = require('sinon-chai');
 chai.use(sinonChai);
 const { STATUS } = require('../enums');
 
+const requestStub = sinon.stub();
+
 const getStepLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId', name: 'name' }, opts = {}) => {
-    const StepLogger = proxyquire('../StepLogger', {});
+    requestStub.reset();
+    requestStub.yields(undefined, { statusCode: 200 });
+
+    const StepLogger = proxyquire('../StepLogger', {
+        'request': requestStub,
+    });
 
     const stepLogger = new StepLogger(task, opts);
     stepLogger.emit = sinon.spy();
@@ -75,21 +82,73 @@ describe('Base StepLogger tests', () => {
 
     describe('start', () => {
 
-        it('should start a step in case the step is in pending', () => {
-            const stepLogger = getStepLoggerInstance();
-            expect(stepLogger.getStatus()).to.equal(STATUS.PENDING);
-            stepLogger.start();
-            expect(stepLogger._reportStatus).to.have.been.calledWith();
-            expect(stepLogger.getStatus()).to.equal(STATUS.RUNNING);
+        describe('positive', () => {
+            it('should start a step in case the step is in pending', () => {
+                const stepLogger = getStepLoggerInstance();
+                expect(stepLogger.getStatus()).to.equal(STATUS.PENDING);
+                stepLogger.start();
+                expect(stepLogger._reportStatus).to.have.been.calledWith();
+                expect(stepLogger.getStatus()).to.equal(STATUS.RUNNING);
+            });
+
+            it('should not do anything in case the step is not in pending', () => {
+                const stepLogger = getStepLoggerInstance();
+                stepLogger.start();
+                expect(stepLogger._reportStatus.callCount).to.equal(1);
+                stepLogger.start();
+                expect(stepLogger._reportStatus.callCount).to.equal(1);
+                expect(stepLogger.getStatus()).to.equal(STATUS.RUNNING);
+            });
+
+            it('should report back about a new step if eventReporting is passed', () => {
+                const stepLogger = getStepLoggerInstance();
+                expect(stepLogger.getStatus()).to.equal(STATUS.PENDING);
+                const eventReporting = {
+                    token: 'token',
+                    url: 'url'
+                };
+                stepLogger.start(eventReporting);
+                expect(requestStub).to.have.been.calledWith({
+                    uri: eventReporting.url,
+                    headers: { Authorization: eventReporting.token },
+                    method: 'POST',
+                    body: { action: 'new-progress-step', name: 'name' },
+                    json: true
+                });
+            });
         });
 
-        it('should not do anything in case the step is not in pending', () => {
-            const stepLogger = getStepLoggerInstance();
-            stepLogger.start();
-            expect(stepLogger._reportStatus.callCount).to.equal(1);
-            stepLogger.start();
-            expect(stepLogger._reportStatus.callCount).to.equal(1);
-            expect(stepLogger.getStatus()).to.equal(STATUS.RUNNING);
+        describe('negative', () => {
+            it('should emit an error in case reporting new step failed', () => {
+                const stepLogger = getStepLoggerInstance();
+
+                const error = new Error('my error');
+                requestStub.reset();
+                requestStub.yields(error);
+
+                expect(stepLogger.getStatus()).to.equal(STATUS.PENDING);
+                const eventReporting = {
+                    token: 'token',
+                    url: 'url'
+                };
+                stepLogger.start(eventReporting);
+                expect(stepLogger.emit).to.have.been.calledWith('error');
+            });
+
+            it('should emit an error in case reporting new step failed', () => {
+                const stepLogger = getStepLoggerInstance();
+
+                requestStub.reset();
+                requestStub.yields(null, { statusCode: 400, toJSON: sinon.spy() });
+
+                expect(stepLogger.getStatus()).to.equal(STATUS.PENDING);
+                const eventReporting = {
+                    token: 'token',
+                    url: 'url'
+                };
+                stepLogger.start(eventReporting);
+                expect(stepLogger.emit).to.have.been.calledWith('error');
+            });
         });
 
     });

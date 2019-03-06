@@ -1,9 +1,8 @@
 
-const debug              = require('debug')('codefresh:taskLogger');
+const debug        = require('debug')('codefresh:taskLogger');
 const _            = require('lodash');
 const CFError      = require('cf-errors');
 const EventEmitter = require('events');
-const request           = require('request');
 const { STATUS, VISIBILITY } = require('./enums');
 
 /**
@@ -34,7 +33,7 @@ class TaskLogger extends EventEmitter {
         this.steps    = {};
     }
 
-    create(name, eventReporting, resetStatus, runCreationLogic) {
+    create(name, resetStatus, runCreationLogic) {
 
         if (this.fatal || this.finished) {
             return {
@@ -76,29 +75,6 @@ class TaskLogger extends EventEmitter {
                 step.clearLogs();
                 step.setStatus(STATUS.PENDING);
                 this.newStepAdded(step);
-            }
-
-            if (eventReporting) {
-                const event = { action: 'new-progress-step', name };
-
-                request({
-                    uri: eventReporting.url,
-                    headers: { Authorization: eventReporting.token },
-                    method: 'POST',
-                    body: event,
-                    json: true
-                }, (err, response) => {
-                    if (err) {
-                        const error = new CFError({
-                            cause: err,
-                            message: 'Failed to send new-proress-step event'
-                        });
-                        this.emit('error', error);
-                    } else if (response && response.statusCode >= 400) {
-                        const error = new CFError(`Failed to send new-proress-step event. received: ${JSON.stringify(_.pick(response.toJSON(), ['statusCode', 'body']))}`); // eslint-disable-line max-len
-                        this.emit('error', error);
-                    }
-                });
             }
 
             debug(`Created new step logger for: ${name}`);
