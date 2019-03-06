@@ -41,7 +41,7 @@ class MongoStepLogger extends BaseStepLogger {
     }
 
     _reportLastUpdate() {
-        const key = 'lastUpdate';
+        const key = `steps.${this.name}.lastUpdate`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
         { $set: { [key]: this.lastUpdate } }, { upsert: true }, (err) => {
             if (err) {
@@ -51,7 +51,7 @@ class MongoStepLogger extends BaseStepLogger {
     }
 
     _reportPrevioulyExecuted() {
-        const key = 'previouslyExecuted';
+        const key = `steps.${this.name}.previouslyExecuted`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
         { $set: { [key]: this.previouslyExecuted } }, { upsert: true }, (err) => {
             if (err) {
@@ -61,7 +61,7 @@ class MongoStepLogger extends BaseStepLogger {
     }
 
     _reportStatus() {
-        const key = 'status';
+        const key = `steps.${this.name}.status`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
         { $set: { [key]: this.status } }, { upsert: true }, (err) => {
             if (err) {
@@ -71,7 +71,7 @@ class MongoStepLogger extends BaseStepLogger {
     }
 
     _reportFinishTimestamp() {
-        const key = 'finishTimeStamp';
+        const key = `steps.${this.name}.finishTimeStamp`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
         { $set: { [key]: this.finishTimeStamp } }, { upsert: true }, (err) => {
             if (err) {
@@ -81,7 +81,7 @@ class MongoStepLogger extends BaseStepLogger {
     }
 
     _reportCreationTimestamp() {
-        const key = 'creationTimeStamp';
+        const key = `steps.${this.name}.creationTimeStamp`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
         { $set: { [key]: this.creationTimeStamp } }, { upsert: true }, (err) => {
             if (err) {
@@ -111,7 +111,7 @@ class MongoStepLogger extends BaseStepLogger {
     }
 
     _reportLogSize(size) {
-        const key = 'metrics.logs.total';
+        const key = `steps.${this.name}.metrics.logs.total`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
         { $set: { [key]: size } }, { upsert: true }, (err) => {
             if (err) {
@@ -121,7 +121,7 @@ class MongoStepLogger extends BaseStepLogger {
     }
 
     reportName() {
-        const key = 'name';
+        const key = `steps.${this.name}.name`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
         { $set: { [key]: this.name } }, { upsert: true }, (err) => {
             if (err) {
@@ -151,8 +151,7 @@ class MongoStepLogger extends BaseStepLogger {
     getFilter() {
         return {
             accountId: this.accountId,
-            jobId: this.jobId,
-            name: this.name
+            jobId: this.jobId
         };
     }
 
