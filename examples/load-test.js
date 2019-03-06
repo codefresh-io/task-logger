@@ -21,14 +21,13 @@ const main = async () => {
         console.log('performed');
     }, 5000);
 
-    for (var i = 0; i < 100000; i++) {
+    for (let i = 0; i < 100000; i++) { // eslint-disable-line
         stepLogger.info('hey');
     }
 
 /*    setInterval(() => {
         stepLogger.info('hey');
-    }, 10);*/
-
+    }, 10); */
 
 
 };
