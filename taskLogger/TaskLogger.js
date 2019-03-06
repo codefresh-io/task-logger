@@ -1,5 +1,5 @@
 
-
+const debug              = require('debug')('codefresh:taskLogger');
 const _            = require('lodash');
 const CFError      = require('cf-errors');
 const EventEmitter = require('events');
@@ -101,10 +101,14 @@ class TaskLogger extends EventEmitter {
                 });
             }
 
+            debug(`Created new step logger for: ${name}`);
         } else if (resetStatus) {
+            debug(`Reusing step logger and resetting for: ${name}`);
             step.setStatus(STATUS.PENDING);
             step.setFinishTimestamp('');
             step.setCreationTimestamp('');
+        } else {
+            debug(`Reusing step logger state for: ${name}`);
         }
 
         return step;
