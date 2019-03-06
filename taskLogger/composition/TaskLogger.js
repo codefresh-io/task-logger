@@ -7,7 +7,6 @@ class CompositionTaskLogger extends TaskLogger {
     constructor(loggers, task, opts) {
         super(task, opts);
         this.loggers = loggers;
-        this.opts = Object.assign(this.opts, { loggers: this.loggers });
         this.type = TYPES.COMPOSE;
 
     }

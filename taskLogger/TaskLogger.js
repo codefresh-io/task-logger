@@ -104,14 +104,14 @@ class TaskLogger extends EventEmitter {
     }
 
     createStepLogger(name, opts) {
-        const stepClass = require(`./${this.type}/StepLogger`); // eslint-disable-line
-        const step = new stepClass({
+        const StepClass = require(`./${this.type}/StepLogger`); // eslint-disable-line
+        const step = new StepClass({
             accountId: this.accountId,
             jobId: this.jobId,
             name
         }, {
             ...opts
-        });
+        }, this);
         return step;
     }
 

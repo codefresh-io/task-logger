@@ -1,10 +1,10 @@
 const BaseStepLogger                   = require('../StepLogger');
 
 class CompositionStepLogger extends BaseStepLogger {
-    constructor(step, opts) {
+    constructor(step, opts, taskLogger) {
         super(step, opts);
         this.loggers = [];
-        opts.loggers.forEach((logger) => {
+        taskLogger.loggers.forEach((logger) => {
             this.loggers.push(logger.createStepLogger(step.name, logger.opts));
         });
     }
