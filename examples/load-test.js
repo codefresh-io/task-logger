@@ -7,7 +7,7 @@ const main = async () => {
     }, {
         type: TYPES.FIREBASE,
         baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs',
-        firebaseSecret: 'rmxPCB0YOyRdA0ohVUlkbGaQsSmXlARBIXbfnXoM'
+        firebaseSecret: ''
     });
 
 
