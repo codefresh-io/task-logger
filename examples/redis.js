@@ -6,7 +6,7 @@ const main = async () => {
         jobId: 'jobId'
     }, {
         type: TYPES.REDIS,
-        config: {
+        redis: {
             host: 'local.codefresh.io',
             password: 'redisPassword',
             db: 1,
@@ -53,7 +53,7 @@ const main = async () => {
         jobId: 'jobId'
     }, {
         type: TYPES.REDIS,
-        config: {
+        redis: {
             host: 'local.codefresh.io',
             password: 'redisPassword',
             db: 1,
@@ -69,7 +69,7 @@ const main = async () => {
         jobId: 'jobId'
     }, {
         type: TYPES.REDIS,
-        config: {
+        redis: {
             host: 'local.codefresh.io',
             password: 'redisPassword',
             db: 1,

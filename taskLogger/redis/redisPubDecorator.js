@@ -2,16 +2,18 @@ const NRP = require('node-redis-pubsub');
 const debug = require('debug')('codefresh:taskLogger:redis:pubDecorator');
 
 const scope = 'codefresh';
+const nrpCacheMap = new Map();
 
 class RedisPubDecorator {
-    constructor(opts, redisLogger) {
+    constructor(opts, redisLogger, keyPrefixToRemove) {
         this.jobId = opts.jobId;
         this.redisLogger = redisLogger;
-        this.nrp = new NRP(Object.assign({},
-             opts.config,
-             { scope }
+        this.keyPrefixToRemove = keyPrefixToRemove;
+        this.nrp = RedisPubDecorator.getConnectionFromCache(Object.assign({},
+            opts.redis,
+            { scope }
 
-        ));
+       ));
         this.keyToAction = opts.keyToMapper || {
             'logs': 'e',
             'memory': 'e',
@@ -22,6 +24,13 @@ class RedisPubDecorator {
             debug(`###NRP: ${data}`);
         });
 
+    }
+    static getConnectionFromCache(config) {
+        const key = `${config.host}.${config.port}.${config.db}.${config.scope}`;
+        if (!nrpCacheMap.has(key)) {
+            nrpCacheMap.set(key, new NRP(config));
+        }
+        return nrpCacheMap.get(key);
     }
 
     setStrategies(baseKey) {
@@ -85,6 +94,9 @@ class RedisPubDecorator {
     }
 
     _reFormatKey(key) {
+        if (this.keyPrefixToRemove) {
+            key = key.substr(this.keyPrefixToRemove.length + 1);
+        }
         return key.replace(new RegExp(':', 'g'), '.').replace('.[', '[');
     }
     _getAction(key = '') {

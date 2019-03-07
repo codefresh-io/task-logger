@@ -53,14 +53,7 @@ class TaskLogger extends EventEmitter {
         let step = this.steps[name];
         if (!step) {
 
-            const stepClass = require(`./${this.type}/StepLogger`); // eslint-disable-line
-            step = new stepClass({ // eslint-disable-line
-                accountId: this.accountId,
-                jobId: this.jobId,
-                name
-            }, {
-                ...this.opts
-            });
+            step = this.createStepLogger(name, this.opts);
             step.on('error', (err) => {
                 this.emit('error', err);
             });
@@ -87,6 +80,18 @@ class TaskLogger extends EventEmitter {
             debug(`Reusing step logger state for: ${name}`);
         }
 
+        return step;
+    }
+
+    createStepLogger(name, opts) {
+        const StepClass = require(`./${this.type}/StepLogger`); // eslint-disable-line
+        const step = new StepClass({
+            accountId: this.accountId,
+            jobId: this.jobId,
+            name
+        }, {
+            ...opts
+        }, this);
         return step;
     }
 
