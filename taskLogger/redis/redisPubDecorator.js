@@ -13,22 +13,21 @@ class RedisPubDecorator {
             opts.redis,
             { scope }
 
-       ));
+       ), redisLogger.redisClientIns);
         this.keyToAction = opts.keyToMapper || {
             'logs': 'e',
             'memory': 'e',
             'cpu': 'e'
         };
 
-        this.nrp.on(this.jobId, (data) => {
-            debug(`###NRP: ${data}`);
-        });
 
     }
-    static getConnectionFromCache(config) {
+    static getConnectionFromCache(config, redisClient) {
         const key = `${config.host}.${config.port}.${config.db}.${config.scope}`;
         if (!nrpCacheMap.has(key)) {
-            nrpCacheMap.set(key, new NRP(config));
+            nrpCacheMap.set(key, new NRP(Object.assign({}, config, {
+                emitter: redisClient
+            })));
         }
         return nrpCacheMap.get(key);
     }
