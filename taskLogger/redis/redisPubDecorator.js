@@ -1,5 +1,4 @@
 const NRP = require('node-redis-pubsub');
-const debug = require('debug')('codefresh:taskLogger:redis:pubDecorator');
 
 const scope = 'codefresh';
 const nrpCacheMap = new Map();
@@ -25,9 +24,10 @@ class RedisPubDecorator {
     static getConnectionFromCache(config, redisClient) {
         const key = `${config.host}.${config.port}.${config.db}.${config.scope}`;
         if (!nrpCacheMap.has(key)) {
-            nrpCacheMap.set(key, new NRP(Object.assign({}, config, {
-                emitter: redisClient
-            })));
+            nrpCacheMap.set(key, new NRP({
+                emitter: redisClient,
+                receiver: redisClient
+            }));
         }
         return nrpCacheMap.get(key);
     }
