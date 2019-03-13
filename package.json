@@ -38,6 +38,7 @@
     "node-redis-pubsub": "^4.0.0",
     "q": "^1.4.1",
     "redis": "^2.8.0",
+    "redis-mock": "^0.43.0",
     "request": "^2.88.0",
     "retry": "^0.12.0"
   },
