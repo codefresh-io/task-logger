@@ -69,8 +69,8 @@ class CompositionStepLogger extends BaseStepLogger {
 
     }
 
-    _reportLogSize(size) {
-        this.loggers.forEach(logger => logger._reportLogSize(size));
+    _reportLogSize() {
+        this.loggers.forEach(logger => logger._reportLogSize(this.logSize));
 
     }
 

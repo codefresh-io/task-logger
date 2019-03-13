@@ -110,10 +110,10 @@ class MongoStepLogger extends BaseStepLogger {
             });
     }
 
-    _reportLogSize(size) {
+    _reportLogSize() {
         const key = `steps.${this.name}.metrics.logs.total`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
-        { $set: { [key]: size } }, { upsert: true }, (err) => {
+        { $set: { [key]: this.logSize } }, { upsert: true }, (err) => {
             if (err) {
                 this.emitter.emit('ERROR', err);
             }
