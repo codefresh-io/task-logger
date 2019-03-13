@@ -27,10 +27,7 @@ class RedisPubDecorator {
     static getConnectionFromCache(config, redisClient) {
         const key = `${config.host}.${config.port}.${config.db}.${config.scope}`;
         if (!nrpCacheMap.has(key)) {
-            nrpCacheMap.set(key, new NRP({
-                emitter: redis.createClient(config),
-                receiver: RedisMock.createClient()
-            }));
+            nrpCacheMap.set(key, new NRP(config));
         }
         return nrpCacheMap.get(key);
     }
