@@ -1,5 +1,6 @@
 const NRP = require('node-redis-pubsub');
 const RedisMock = require('redis-mock');
+const redis                             = require('redis');
 
 const scope = 'codefresh';
 const nrpCacheMap = new Map();
@@ -27,7 +28,7 @@ class RedisPubDecorator {
         const key = `${config.host}.${config.port}.${config.db}.${config.scope}`;
         if (!nrpCacheMap.has(key)) {
             nrpCacheMap.set(key, new NRP({
-                emitter: redisClient,
+                emitter: redis.createClient(config),
                 receiver: RedisMock.createClient()
             }));
         }
