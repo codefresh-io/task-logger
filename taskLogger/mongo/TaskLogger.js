@@ -105,7 +105,6 @@ class MongoTaskLogger extends TaskLogger {
                         }
                     });
         });
-       
     }
 
     _reportLastUpdate(value) {
