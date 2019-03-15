@@ -58,7 +58,7 @@ const main = async () => {
     }, {
         type: TYPES.REDIS,
         redis: {
-            host: '192.168.99.100',
+            host: 'local.codefresh.io',
             password: 'redisPassword',
             db: 1,
             port: 6379
@@ -74,7 +74,7 @@ const main = async () => {
     }, {
         type: TYPES.REDIS,
         redis: {
-            host: '192.168.99.100',
+            host: 'local.codefresh.io',
             password: 'redisPassword',
             db: 1,
             port: 6379
