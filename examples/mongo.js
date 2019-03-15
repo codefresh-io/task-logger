@@ -1,5 +1,7 @@
 const { TaskLogger: MONGO, TYPES } = require('../index');
 
+const mongoURI = `mongodb://local.codefresh.io/logs`;
+
 const main = async () => {
     const mongoTaskLogger = await MONGO({
         accountId: 'accountId',
@@ -7,7 +9,7 @@ const main = async () => {
     }, {
         type: TYPES.MONGO,
         mongo: {
-            mongoURI: `mongodb://local.codefresh.io/logs`,
+            mongoURI,
             mongoDBName: 'logs'
         }
     });
@@ -21,23 +23,25 @@ const main = async () => {
     mongoTaskLogger.setData({ key: 'value' });
 
 
-    const stepLoggerRedis = mongoTaskLogger.create('stepName', undefined, undefined, true);
-    stepLoggerRedis.start();
-    stepLoggerRedis.write('hey');
-    stepLoggerRedis.reportName();
-    stepLoggerRedis.clearLogs();
-    stepLoggerRedis.setStatus('pending');
-    stepLoggerRedis.start();
-    stepLoggerRedis.write('write');
-    stepLoggerRedis.debug('debug');
-    stepLoggerRedis.warn('warn');
-    stepLoggerRedis.info('info');
+    const stepLoggerMongo = mongoTaskLogger.create('stepName', undefined, undefined, true);
+    stepLoggerMongo.start();
+    stepLoggerMongo.write('hey');
+    stepLoggerMongo.reportName();
+    stepLoggerMongo.clearLogs();
+    stepLoggerMongo.setStatus('pending');
+    stepLoggerMongo.start();
+    stepLoggerMongo.write('write');
+    stepLoggerMongo.debug('debug');
+    stepLoggerMongo.warn('warn');
+    stepLoggerMongo.info('info');
+    const lastUpdate = await mongoTaskLogger.getLastUpdate();
+    console.log(`last update : ${lastUpdate}`);
 
-    stepLoggerRedis.markPreviouslyExecuted();
-    stepLoggerRedis.markPendingApproval();
+    stepLoggerMongo.markPreviouslyExecuted();
+    stepLoggerMongo.markPendingApproval();
 
-    stepLoggerRedis.updateMemoryUsage(new Date().getTime(), 'mem');
-    stepLoggerRedis.updateCpuUsage(new Date().getTime(), 'cpu');
+    stepLoggerMongo.updateMemoryUsage(new Date().getTime(), 'mem');
+    stepLoggerMongo.updateCpuUsage(new Date().getTime(), 'cpu');
 
     // stepLogger.markTerminating();
 
@@ -52,7 +56,7 @@ const main = async () => {
     }, {
         type: TYPES.MONGO,
         mongo: {
-            mongoURI: `mongodb://local.codefresh.io/logs`,
+            mongoURI,
             mongoDBName: 'logs'
         }
     });
@@ -66,7 +70,7 @@ const main = async () => {
     }, {
         type: TYPES.MONGO,
         mongo: {
-            mongoURI: `mongodb://local.codefresh.io/logs`,
+            mongoURI,
             mongoDBName: 'logs'
         }
     });

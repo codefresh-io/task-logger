@@ -36,6 +36,8 @@ const main = async () => {
     stepLoggerRedis.warn('warn');
     stepLoggerRedis.info('info');
     stepLoggerRedis.setLogSize(20);
+    const lastUpdate = await redisTaskLogger.getLastUpdate();
+    console.log(`last update : ${lastUpdate}`);
 
     stepLoggerRedis.markPreviouslyExecuted();
     stepLoggerRedis.markPendingApproval();
@@ -56,7 +58,7 @@ const main = async () => {
     }, {
         type: TYPES.REDIS,
         redis: {
-            host: 'local.codefresh.io',
+            host: '192.168.99.100',
             password: 'redisPassword',
             db: 1,
             port: 6379
@@ -72,7 +74,7 @@ const main = async () => {
     }, {
         type: TYPES.REDIS,
         redis: {
-            host: 'local.codefresh.io',
+            host: '192.168.99.100',
             password: 'redisPassword',
             db: 1,
             port: 6379
