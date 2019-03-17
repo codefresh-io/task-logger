@@ -62,7 +62,9 @@ class TaskLogger extends EventEmitter {
             step.on('finished', () => {
                 delete this.steps[name];
             });
-
+            step.onLastUpdateChanged((value) => {
+                this._reportLastUpdate(value);
+            });
             if (runCreationLogic) {
                 step.reportName();
                 step.clearLogs();

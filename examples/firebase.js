@@ -31,6 +31,8 @@ const main = async () => {
     stepLogger.debug('debug');
     stepLogger.warn('warn');
     stepLogger.info('info');
+    const lastUpdate = await taskLogger.getLastUpdate();
+    console.log(`last update : ${lastUpdate}`);
 
     stepLogger.markPreviouslyExecuted();
     stepLogger.markPendingApproval();

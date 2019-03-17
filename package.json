@@ -1,6 +1,6 @@
 {
   "name": "@codefresh-io/task-logger",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Codefresh utilities for working with build logs",
   "main": "index.js",
   "scripts": {

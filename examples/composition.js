@@ -53,6 +53,8 @@ const main = async () => {
     stepLoggerCompose.debug('debug');
     stepLoggerCompose.warn('warn');
     stepLoggerCompose.info('info');
+    const lastUpdate = await composeTaskLogger.getLastUpdate();
+    console.log(`last update : ${lastUpdate}`);
 
     stepLoggerCompose.markPreviouslyExecuted();
     stepLoggerCompose.markPendingApproval();

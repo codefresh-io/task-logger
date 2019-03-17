@@ -294,7 +294,7 @@ describe('Base StepLogger tests', () => {
         it('should update last date of a change', () => {
             const stepLogger = getStepLoggerInstance();
             stepLogger.updateLastUpdate();
-            expect(stepLogger._reportLastUpdate).to.have.been.calledWith();
+            expect(stepLogger.emit).to.have.been.calledWith('lastUpdateChanged');
         });
 
     });

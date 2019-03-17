@@ -29,6 +29,14 @@ class CompositionTaskLogger extends TaskLogger {
         return Promise.all(promises);
     }
 
+    async getLastUpdate() {
+        return this.loggers[0].getLastUpdate();
+    }
+
+    _reportLastUpdate(value) {
+        this.loggers.forEach(logger => logger._reportLastUpdate(value));
+    }
+
     reportId() {
         this.loggers.forEach(logger => logger.reportId());
     }

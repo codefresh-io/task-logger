@@ -91,6 +91,33 @@ class MongoTaskLogger extends TaskLogger {
         });
     }
 
+    async getLastUpdate() {
+
+        const key = 'lastUpdate';
+        return new Promise((resolve, reject) => {
+            this.db.collection(this.getCollection(key)).find(
+                 this.getFilter())
+                    .toArray((err, docs) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(docs && docs[0] && docs[0].lastUpdate);
+                        }
+                    });
+        });
+    }
+
+    _reportLastUpdate(value) {
+        const key = 'lastUpdate';
+        const filter = this.getFilter();
+        this.db.collection(this.getCollection(key)).updateOne(filter,
+        { $set: Object.assign({ [key]: value }, filter) }, { upsert: true }, (err) => {
+            if (err) {
+                this.emitter.emit('ERROR', err);
+            }
+        });
+    }
+
     reportId() {
         const key = 'id';
         const filter = this.getFilter();

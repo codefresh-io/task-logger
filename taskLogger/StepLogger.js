@@ -121,7 +121,12 @@ class StepLogger extends EventEmitter {
 
     updateLastUpdate() {
         this.lastUpdate = new Date().getTime();
-        this._reportLastUpdate();
+        this.emit('lastUpdateChanged', this.lastUpdate);
+    }
+    onLastUpdateChanged(handler) {
+        this.addListener('lastUpdateChanged', () => {
+            handler(this.lastUpdate);
+        });
     }
 
     setFinishTimestamp(date) {

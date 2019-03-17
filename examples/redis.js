@@ -21,6 +21,7 @@ const main = async () => {
     redisTaskLogger.setMemoryLimit('2');
     redisTaskLogger.updateMemoryUsage(new Date(), 'sd');
     redisTaskLogger.setData({ key: 'value' });
+    redisTaskLogger.setLogSize(100);
 
 
     const stepLoggerRedis = redisTaskLogger.create('stepName', undefined, undefined, true);
@@ -34,6 +35,9 @@ const main = async () => {
     stepLoggerRedis.debug('debug');
     stepLoggerRedis.warn('warn');
     stepLoggerRedis.info('info');
+    stepLoggerRedis.setLogSize(20);
+    const lastUpdate = await redisTaskLogger.getLastUpdate();
+    console.log(`last update : ${lastUpdate}`);
 
     stepLoggerRedis.markPreviouslyExecuted();
     stepLoggerRedis.markPendingApproval();

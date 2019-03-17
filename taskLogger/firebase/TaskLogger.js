@@ -170,6 +170,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         this.baseRef.child('id').set(this.jobId);
     }
 
+    _reportLastUpdate(value) {
+        this.lastUpdateRef.set(value);
+    }
+
     async getLastUpdate() {
         const deferred = Q.defer();
 

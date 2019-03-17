@@ -51,8 +51,8 @@ class RedisStepLogger extends BaseStepLogger {
         this.writter.child('metrics').child('cpu').push({ time, usage: cpuUsage });
     }
 
-    _reportLogSize(size) {
-        this.writter.child('metrics').child('logs').child('total').set(size);
+    _reportLogSize() {
+        this.writter.child('metrics:logs:total').set(this.logSize);
     }
 
     reportName() {

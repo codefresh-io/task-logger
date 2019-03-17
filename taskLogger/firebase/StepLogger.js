@@ -19,9 +19,6 @@ class FirebaseStepLogger extends BaseStepLogger {
 
         this.baseUrl = `${this.baseFirebaseUrl}/${this.jobId}`;
 
-        this.lastUpdateUrl = `${this.baseUrl}/lastUpdate`;
-        this.lastUpdateRef = new Firebase(this.lastUpdateUrl);
-
         this.stepUrl = `${this.baseUrl}/steps/${this.name}`;
         this.stepRef = new Firebase(this.stepUrl);
     }
@@ -58,9 +55,6 @@ class FirebaseStepLogger extends BaseStepLogger {
         this.stepRef.child('logs').push(message);
     }
 
-    _reportLastUpdate() {
-        this.lastUpdateRef.set(this.lastUpdate);
-    }
 
     _reportPrevioulyExecuted() {
         this.stepRef.child('previouslyExecuted').set(this.previouslyExecuted);

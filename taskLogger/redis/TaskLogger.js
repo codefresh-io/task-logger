@@ -97,10 +97,20 @@ class RedisTaskLogger extends TaskLogger {
         }
 
     }
+
+    async getLastUpdate() {
+
+        return  this.writter.child('lastUpdate').get();
+    }
+
     async addErrorMessageToEndOfSteps(message) {
         Object.keys(this.steps).forEach((step) => {
             this.steps[step]._reportLog(`\x1B[31m${message}\x1B[0m\r\n`);
         });
+    }
+
+    _reportLastUpdate(value) {
+        this.writter.child('lastUpdate').set(value);
     }
 
     reportId() {
@@ -114,7 +124,7 @@ class RedisTaskLogger extends TaskLogger {
     }
 
     _reportMemoryLimit() {
-        this.writter.child('metrics').child('limits').child('memory').push(this.memoryLimit);
+        this.writter.child('metrics:limits').child('memory').push(this.memoryLimit);
     }
 
     _reportVisibility() {
@@ -129,7 +139,7 @@ class RedisTaskLogger extends TaskLogger {
         this.writter.child('status').set(this.status);
     }
     _reportLogSize() {
-        this.writter.child('metrics').child('logs').child('total').set(this.logSize);
+        this.writter.child('metrics:logs:total').set(this.logSize);
     }
 }
 RedisTaskLogger.TYPE = TYPES.REDIS;
