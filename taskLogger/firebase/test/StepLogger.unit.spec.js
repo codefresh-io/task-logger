@@ -78,8 +78,10 @@ describe('Firebase StepLogger tests', () => {
         it('should report last update', async () => {
             const stepLogger = await getStepLoggerInstance();
             stepLogger.lastUpdate = new Date();
-            stepLogger._reportLastUpdate();
-            expect(Firebase.__setSpy).to.have.been.calledWith(stepLogger.lastUpdate);
+            stepLogger.onLastUpdateChanged((lastUpdate) => {
+                expect(lastUpdate).to.equal(stepLogger.lastUpdate);
+            });
+            stepLogger.emit('lastUpdateChanged');
         });
 
         it('should report previously executed', async () => {

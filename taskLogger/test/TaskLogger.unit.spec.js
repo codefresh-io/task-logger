@@ -32,7 +32,8 @@ const createMockedStepClass = () => {
             clearLogs: sinon.spy(),
             setStatus: sinon.spy(),
             setFinishTimestamp: sinon.spy(),
-            setCreationTimestamp: sinon.spy()
+            setCreationTimestamp: sinon.spy(),
+            onLastUpdateChanged: sinon.spy(),
         };
     });
     return StepClass;
