@@ -120,11 +120,11 @@ class RedisTaskLogger extends TaskLogger {
         this.writter.child('accountId').set(this.accountId);
     }
     _reportMemoryUsage(time, memoryUsage) {
-        this.writter.child('metrics').child('memory').push({ time, usage: memoryUsage });
+        this.writter.child('metrics.memory').push({ time, usage: memoryUsage });
     }
 
     _reportMemoryLimit() {
-        this.writter.child('metrics:limits').child('memory').push(this.memoryLimit);
+        this.writter.child('metrics.limits.memory').push(this.memoryLimit);
     }
 
     _reportVisibility() {
