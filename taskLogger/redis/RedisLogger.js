@@ -54,7 +54,6 @@ class RedisLogger {
                 while (stackClone.length !== 0) {
                     fullKey = `${fullKey}:${stackClone.shift()}`;
                 }
-                console.log(`going to push  ${JSON.stringify(obj)} to ${fullKey}`);
                 const receveidId = this.strategies.push(obj, key, thisArg.redisClient, stack);
 
                 // Watch support:
