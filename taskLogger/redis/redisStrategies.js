@@ -10,7 +10,6 @@ class RedisFlattenStrategy {
 
     }
     push(obj, key, redisClient, stack, syncId) {
-        
         const lastKeyPart = _.last(key.split(':'));
         const keyInKeysSet =  [stack[0], lastKeyPart].some(this.keys.has.bind(this.keys));
         if (keyInKeysSet) {

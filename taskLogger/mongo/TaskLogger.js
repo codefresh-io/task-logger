@@ -149,10 +149,10 @@ class MongoTaskLogger extends TaskLogger {
         });
     }
 
-    _reportMemoryLimit() {
+    _reportMemoryLimit(memoryLimit) {
         const key = 'metrics';
         this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
-        { $set: { 'metrics.limits.memory': this.memoryLimit } }, { upsert: true }, (err) => {
+        { $set: { 'metrics.limits.memory': memoryLimit } }, { upsert: true }, (err) => {
             if (err) {
                 this.emitter.emit('ERROR', err);
             }
