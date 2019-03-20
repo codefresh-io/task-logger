@@ -47,14 +47,14 @@ class RedisLogger {
     // the stack is kept as part of the clouse call and an isolated object is created for each call (wrapper object)
     _wrapper(key, thisArg, stack) {
         const wrapper = {
-            push: (obj) => {
+            push: (obj, syncId) => {
                 // TODO:HIGH:stack is internal data strcture of the logger , don't pass it
                 const stackClone = stack.slice(0);
                 let fullKey = key;
                 while (stackClone.length !== 0) {
                     fullKey = `${fullKey}:${stackClone.shift()}`;
                 }
-                const receveidId = this.strategies.push(obj, key, thisArg.redisClient, stack);
+                const receveidId = this.strategies.push(obj, key, thisArg.redisClient, stack, syncId);
 
                 // Watch support:
                 if (this.watachedKeys.has(fullKey)) {
