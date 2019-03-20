@@ -50,7 +50,10 @@ class CompositionTaskLogger extends TaskLogger {
     }
 
     _reportMemoryLimit() {
-        this.loggers.forEach(logger => logger._reportMemoryLimit(this.memoryLimit));
+        this.loggers.forEach((logger) =>  {
+            logger.memoryLimit = this.memoryLimit;
+            logger._reportMemoryLimit();
+        });
 
 
     }
