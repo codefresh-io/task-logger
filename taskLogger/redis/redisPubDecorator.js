@@ -40,8 +40,8 @@ class RedisPubDecorator {
 
     _wrapper(toBeWrappedObject, thisArg) {
         const wrappingObj = {
-            push: (obj) => {
-                const key = toBeWrappedObject.push(obj);
+            push: (obj, syncId) => {
+                const key = toBeWrappedObject.push(obj, syncId);
                 this._emit(key, obj);
             },
             child: (path) => {

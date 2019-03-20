@@ -30,10 +30,10 @@ class MongoStepLogger extends BaseStepLogger {
         }
     }
 
-    _reportLog(message) {
+    _reportLog(message, syncId) {
         const key = 'logs';
         this.db.collection(MongoHelper.getCollection(key)).insertOne(
-            this.getObjectToPush(key, message), (err) => {
+            this.getObjectToPush(key, message, syncId), (err) => {
                 if (err) {
                     this.emitter.emit('ERROR', err);
                 }
@@ -90,20 +90,20 @@ class MongoStepLogger extends BaseStepLogger {
         });
     }
 
-    _reportMemoryUsage(time, memoryUsage) {
+    _reportMemoryUsage(time, memoryUsage, syncId) {
         const key = 'metrics.memory';
         this.db.collection(MongoHelper.getCollection(key)).insertOne(
-            this.getObjectToPush(key, { time, usage: memoryUsage }), (err) => {
+            this.getObjectToPush(key, { time, usage: memoryUsage }, syncId), (err) => {
                 if (err) {
                     this.emitter.emit('ERROR', err);
                 }
             });
     }
 
-    _reportCpuUsage(time, cpuUsage) {
+    _reportCpuUsage(time, cpuUsage, syncId) {
         const key = 'metrics.cpu';
         this.db.collection(MongoHelper.getCollection(key)).insertOne(
-            this.getObjectToPush(key, { time, usage: cpuUsage }), (err) => {
+            this.getObjectToPush(key, { time, usage: cpuUsage }, syncId), (err) => {
                 if (err) {
                     this.emitter.emit('ERROR', err);
                 }
@@ -138,13 +138,13 @@ class MongoStepLogger extends BaseStepLogger {
         // return this.writter.remove();
     }
 
-    getObjectToPush(key, payload) {
+    getObjectToPush(key, payload, syncId) {
         return {
             accountId: this.accountId,
             jobId: this.jobId,
             slot: `steps.${this.name}.${key}`,
             payload,
-            time: Date.now()
+            time: syncId
         };
     }
 

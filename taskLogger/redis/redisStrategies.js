@@ -9,21 +9,24 @@ class RedisFlattenStrategy {
 
 
     }
-    push(obj, key, redisClient, stack) {
+    push(obj, key, redisClient, stack, syncId) {
+        
         const lastKeyPart = _.last(key.split(':'));
         const keyInKeysSet =  [stack[0], lastKeyPart].some(this.keys.has.bind(this.keys));
         if (keyInKeysSet) {
             while (stack.length !== 0) {
                 key = `${key}:${stack.shift()}`;
             }
-            const timeNow = Date.now();
+            if (!syncId) {
+                throw new Error(`syncId for key: ${key} is required for RedisFlattenStrategy`);
+            }
             const objToPush = {
                 slot: key.substr(this.baseKey.length + 1).replace(new RegExp(':', 'g'), '.'),
                 payload: obj,
-                time: timeNow
+                time: syncId
             };
-            redisClient.zadd(`${this.baseKey}:${CONSOLIDATED}`, timeNow, JSON.stringify(objToPush));
-            return timeNow;
+            redisClient.zadd(`${this.baseKey}:${CONSOLIDATED}`, syncId, JSON.stringify(objToPush));
+            return syncId;
         }
         return MOVE_FORWARD;
     }
@@ -84,11 +87,11 @@ class ChainRedisStrategy {
     constructor(strategies) {
         this.strategies = strategies;
     }
-    push(obj, key, redisClient, stack) {
+    push(obj, key, redisClient, stack, syncId) {
         let id;
 
         this.strategies.some((strategy) => {
-            const result = strategy.push(obj, key, redisClient, stack);
+            const result = strategy.push(obj, key, redisClient, stack, syncId);
             const strategyExecuted = result > 0;
             if (strategyExecuted) {
                 id = result;

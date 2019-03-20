@@ -15,7 +15,8 @@ class CompositionStepLogger extends BaseStepLogger {
     }
 
     _reportLog(message) {
-        this.loggers.forEach(logger => logger._reportLog(message));
+        const syncId = Date.now();
+        this.loggers.forEach(logger => logger._reportLog(message, syncId));
 
     }
 
@@ -60,12 +61,14 @@ class CompositionStepLogger extends BaseStepLogger {
     }
 
     _reportMemoryUsage(time, memoryUsage) {
-        this.loggers.forEach(logger => logger._reportMemoryUsage(time, memoryUsage));
+        const syncId = Date.now();
+        this.loggers.forEach(logger => logger._reportMemoryUsage(time, memoryUsage, syncId));
 
     }
 
     _reportCpuUsage(time, cpuUsage) {
-        this.loggers.forEach(logger => logger._reportCpuUsage(time, cpuUsage));
+        const syncId = Date.now();
+        this.loggers.forEach(logger => logger._reportCpuUsage(time, cpuUsage, syncId));
 
     }
 
