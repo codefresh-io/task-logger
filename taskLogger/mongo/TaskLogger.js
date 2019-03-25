@@ -142,7 +142,7 @@ class MongoTaskLogger extends TaskLogger {
         const key = 'metrics.memory';
         const filter = this.getFilter();
         this.db.collection(this.getCollection(key)).insertOne(
-        Object.assign({ 'slot': 'metrics.memory', 'payload' : { time, usage: memoryUsage } }, filter), { upsert: true }, (err) => {
+        Object.assign({ 'slot': 'metrics.memory', 'payload': { time, usage: memoryUsage } }, filter), { upsert: true }, (err) => {
             if (err) {
                 this.emitter.emit('ERROR', err);
             }
