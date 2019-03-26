@@ -45,7 +45,8 @@ class CompositionTaskLogger extends TaskLogger {
 
     }
     _reportMemoryUsage(time, memoryUsage) {
-        this.loggers.forEach(logger => logger._reportMemoryUsage(time, memoryUsage));
+        const syncId = Date.now();
+        this.loggers.forEach(logger => logger._reportMemoryUsage(time, memoryUsage, syncId));
 
     }
 

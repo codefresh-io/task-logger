@@ -139,10 +139,10 @@ class MongoTaskLogger extends TaskLogger {
         });
     }
     _reportMemoryUsage(time, memoryUsage) {
-        const key = 'metrics';
+        const key = 'metrics.memory';
         const filter = this.getFilter();
-        this.db.collection(this.getCollection(key)).updateOne(filter,
-        { $set: Object.assign({ 'metrics.memory': { time, usage: memoryUsage } }, filter) }, { upsert: true }, (err) => {
+        this.db.collection(this.getCollection(key)).insertOne(
+        Object.assign({ 'slot': 'metrics.memory', 'payload': { time, usage: memoryUsage } }, filter), { upsert: true }, (err) => {
             if (err) {
                 this.emitter.emit('ERROR', err);
             }
@@ -150,7 +150,7 @@ class MongoTaskLogger extends TaskLogger {
     }
 
     _reportMemoryLimit() {
-        const key = 'metrics';
+        const key = 'metrics.limits.memory';
         this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
         { $set: { 'metrics.limits.memory': this.memoryLimit } }, { upsert: true }, (err) => {
             if (err) {
@@ -206,8 +206,8 @@ class MongoTaskLogger extends TaskLogger {
         };
     }
 
-    getCollection() {
-        return 'metadata';
+    getCollection(key) {
+        return key === 'metrics.memory' ? 'logs' : 'metadata';
     }
 }
 MongoTaskLogger.TYPE = TYPES.MONGO;
