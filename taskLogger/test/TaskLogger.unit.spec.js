@@ -306,4 +306,23 @@ describe('Base TaskLogger tests', () => {
 
     });
 
+    describe('setStepsStatus', () => {
+
+        it('should set status for steps', () => {
+            const lastStepsMetadata = {
+                step1: {
+                    status: 'status1'
+                },
+                step2: {
+                    status: 'status2'
+                }
+            };
+            const taskLogger = getTaskLoggerInstance();
+            taskLogger.setStepsStatus(lastStepsMetadata);
+            expect(taskLogger.steps.step1.setStatus).to.have.been.calledWith('status1');
+            expect(taskLogger.steps.step2.setStatus).to.have.been.calledWith('status2');
+        });
+
+    });
+
 });
