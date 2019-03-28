@@ -180,8 +180,10 @@ class TaskLogger extends EventEmitter {
     async setStepsStatus(lastStepsMetadata) {
         _.forEach(lastStepsMetadata, (step, stepName) => {
             const stepLogger = this.create(stepName, false, true);
-            const status = _.get(step, 'status');
-            stepLogger.setStatus(status);
+            if (stepLogger) {
+                const status = _.get(step, 'status');
+                stepLogger.setStatus(status);
+            }
         });
     }
 }
