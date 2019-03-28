@@ -176,6 +176,14 @@ class TaskLogger extends EventEmitter {
             }
         };
     }
+
+    async setStepsStatus(lastStepsMetadata) {
+        _.forEach(this.steps, (step, stepName) => {
+            const stepLogger = this.create(stepName, false, true);
+            const status = _.get(lastStepsMetadata[stepName], 'status');
+            stepLogger.setStatus(status);
+        });
+    }
 }
 
 module.exports = TaskLogger;
