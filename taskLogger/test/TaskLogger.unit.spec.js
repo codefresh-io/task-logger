@@ -321,6 +321,7 @@ describe('Base TaskLogger tests', () => {
             taskLogger.syncStepsByWorkflowContextRevision(contextRevision);
             expect(taskLogger.steps.step1.setStatus).to.have.been.calledWith('status1');
             expect(taskLogger.steps.step2.setStatus).to.have.been.calledWith('status2');
+            expect(taskLogger.create.callCount).to.equal(2);
             expect(taskLogger.create.getCall(0)).to.have.been.calledWith('step1', false, false);
             expect(taskLogger.create.getCall(1)).to.have.been.calledWith('step2', false, false);
         });
