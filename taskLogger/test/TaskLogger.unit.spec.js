@@ -306,10 +306,10 @@ describe('Base TaskLogger tests', () => {
 
     });
 
-    describe('setStepsStatus', () => {
+    describe('syncStepsByWorkflowContextRevision', () => {
 
-        it('should set status for steps', () => {
-            const lastStepsMetadata = {
+        it('should sync steps status according to the context revision', () => {
+            const contextRevision = {
                 step1: {
                     status: 'status1'
                 },
@@ -318,9 +318,11 @@ describe('Base TaskLogger tests', () => {
                 }
             };
             const taskLogger = getTaskLoggerInstance();
-            taskLogger.setStepsStatus(lastStepsMetadata);
+            taskLogger.syncStepsByWorkflowContextRevision(contextRevision);
             expect(taskLogger.steps.step1.setStatus).to.have.been.calledWith('status1');
             expect(taskLogger.steps.step2.setStatus).to.have.been.calledWith('status2');
+            expect(taskLogger.create.getCall(0)).to.have.been.calledWith('step1', false, false);
+            expect(taskLogger.create.getCall(1)).to.have.been.calledWith('step2', false, false);
         });
 
     });

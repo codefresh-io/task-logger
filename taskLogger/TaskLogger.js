@@ -177,9 +177,9 @@ class TaskLogger extends EventEmitter {
         };
     }
 
-    async setStepsStatus(lastStepsMetadata) {
-        _.forEach(lastStepsMetadata, (step, stepName) => {
-            const stepLogger = this.create(stepName, false, true);
+    syncStepsByWorkflowContextRevision(contextRevision) {
+        _.forEach(contextRevision, (step, stepName) => {
+            const stepLogger = this.create(stepName, false, false);
             if (stepLogger) {
                 const status = _.get(step, 'status');
                 stepLogger.setStatus(status);
