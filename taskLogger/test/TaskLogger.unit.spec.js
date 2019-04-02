@@ -309,18 +309,46 @@ describe('Base TaskLogger tests', () => {
     describe('syncStepsByWorkflowContextRevision', () => {
 
         it('should sync steps status according to the context revision', () => {
+            const date = new Date();
             const contextRevision = {
                 step1: {
-                    status: 'status1'
+                    status: 'success',
+                    finishTimestamp: date,
                 },
                 step2: {
-                    status: 'status2'
+                    status: 'success',
+                    finishTimestamp: date,
                 }
             };
             const taskLogger = getTaskLoggerInstance();
             taskLogger.syncStepsByWorkflowContextRevision(contextRevision);
-            expect(taskLogger.steps.step1.setStatus).to.have.been.calledWith('status1');
-            expect(taskLogger.steps.step2.setStatus).to.have.been.calledWith('status2');
+            expect(taskLogger.steps.step1.setStatus).to.have.been.calledWith('success');
+            expect(taskLogger.steps.step2.setStatus).to.have.been.calledWith('success');
+            expect(taskLogger.steps.step1.setFinishTimestamp).to.have.been.calledWith(parseInt((date.getTime() / 1000).toFixed(), 10));
+            expect(taskLogger.steps.step1.setFinishTimestamp).to.have.been.calledWith(parseInt((date.getTime() / 1000).toFixed(), 10));
+            expect(taskLogger.create.callCount).to.equal(2);
+            expect(taskLogger.create.getCall(0)).to.have.been.calledWith('step1', false, false);
+            expect(taskLogger.create.getCall(1)).to.have.been.calledWith('step2', false, false);
+        });
+
+        it('should sync steps status according to the context revision - and convert failure to error', () => {
+            const date = new Date();
+            const contextRevision = {
+                step1: {
+                    status: 'failure',
+                    finishTimestamp: date,
+                },
+                step2: {
+                    status: 'success',
+                    finishTimestamp: date,
+                }
+            };
+            const taskLogger = getTaskLoggerInstance();
+            taskLogger.syncStepsByWorkflowContextRevision(contextRevision);
+            expect(taskLogger.steps.step1.setStatus).to.have.been.calledWith('error');
+            expect(taskLogger.steps.step2.setStatus).to.have.been.calledWith('success');
+            expect(taskLogger.steps.step1.setFinishTimestamp).to.have.been.calledWith(parseInt((date.getTime() / 1000).toFixed(), 10));
+            expect(taskLogger.steps.step1.setFinishTimestamp).to.have.been.calledWith(parseInt((date.getTime() / 1000).toFixed(), 10));
             expect(taskLogger.create.callCount).to.equal(2);
             expect(taskLogger.create.getCall(0)).to.have.been.calledWith('step1', false, false);
             expect(taskLogger.create.getCall(1)).to.have.been.calledWith('step2', false, false);

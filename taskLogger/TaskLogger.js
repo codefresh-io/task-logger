@@ -35,21 +35,6 @@ class TaskLogger extends EventEmitter {
 
     create(name, resetStatus, runCreationLogic) {
 
-        if (this.fatal || this.finished) {
-            return {
-                write() {
-                },
-                debug() {
-                },
-                warn() {
-                },
-                info() {
-                },
-                finish() {
-                }
-            };
-        }
-
         let step = this.steps[name];
         if (!step) {
 
@@ -181,8 +166,11 @@ class TaskLogger extends EventEmitter {
         _.forEach(contextRevision, (step, stepName) => {
             const stepLogger = this.create(stepName, false, false);
             if (stepLogger) {
-                const status = _.get(step, 'status');
+                const status = _.get(step, 'status') === 'failure' ? 'error' : _.get(step, 'status');
+                const finishTimestamp = parseInt((_.get(step, 'finishTimestamp')
+                    .getTime() / 1000).toFixed(), 10);
                 stepLogger.setStatus(status);
+                stepLogger.setFinishTimestamp(finishTimestamp);
             }
         });
     }
