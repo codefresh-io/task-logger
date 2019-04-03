@@ -167,8 +167,8 @@ class TaskLogger extends EventEmitter {
             const stepLogger = this.create(stepName, false, false);
             if (stepLogger) {
                 const status = _.get(step, 'status') === 'failure' ? 'error' : _.get(step, 'status');
-                const finishTimestamp = parseInt((_.get(step, 'finishTimestamp')
-                    .getTime() / 1000).toFixed(), 10);
+                const finishTime = _.get(step, 'finishTimestamp');
+                const finishTimestamp = parseInt(((finishTime instanceof Date ? finishTime : new Date(finishTime)).getTime() / 1000).toFixed(), 10);
                 stepLogger.setStatus(status);
                 stepLogger.setFinishTimestamp(finishTimestamp);
             }

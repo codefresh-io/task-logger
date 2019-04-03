@@ -92,7 +92,7 @@ class StepLogger extends EventEmitter {
         }
         if (this.status === STATUS.RUNNING || this.status === STATUS.PENDING || this.status ===
             STATUS.PENDING_APPROVAL || this.status === STATUS.TERMINATING) {
-            this.finishTimeStamp = finishTime ? +(finishTime.getTime() / 1000).toFixed() : +(new Date().getTime() / 1000).toFixed();
+            this.finishTimeStamp = +((finishTime || new Date()).getTime() / 1000).toFixed();
             if (err) {
                 this.status = (this.status === STATUS.TERMINATING ? STATUS.TERMINATED : (this.pendingApproval ? STATUS.DENIED : STATUS.ERROR)); // eslint-disable-line
             } else {
