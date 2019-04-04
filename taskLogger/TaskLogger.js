@@ -168,9 +168,14 @@ class TaskLogger extends EventEmitter {
             if (stepLogger) {
                 const status = _.get(step, 'status') === 'failure' ? 'error' : _.get(step, 'status');
                 const finishTime = _.get(step, 'finishTimestamp');
-                const finishTimestamp = parseInt(((finishTime instanceof Date ? finishTime : new Date(finishTime)).getTime() / 1000).toFixed(), 10);
-                stepLogger.setStatus(status);
-                stepLogger.setFinishTimestamp(finishTimestamp);
+                if (status) {
+                    stepLogger.setStatus(status);
+                }
+                if (finishTime) {
+                    const finishTimestamp = parseInt(((finishTime instanceof Date ? finishTime : new Date(finishTime)).getTime()
+                        / 1000).toFixed(), 10);
+                    stepLogger.setFinishTimestamp(finishTimestamp);
+                }
             }
         });
     }

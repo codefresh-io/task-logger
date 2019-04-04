@@ -348,7 +348,23 @@ describe('Base TaskLogger tests', () => {
             expect(taskLogger.steps.step1.setStatus).to.have.been.calledWith('error');
             expect(taskLogger.steps.step2.setStatus).to.have.been.calledWith('success');
             expect(taskLogger.steps.step1.setFinishTimestamp).to.have.been.calledWith(parseInt((date.getTime() / 1000).toFixed(), 10));
-            expect(taskLogger.steps.step1.setFinishTimestamp).to.have.been.calledWith(parseInt((date.getTime() / 1000).toFixed(), 10));
+            expect(taskLogger.steps.step2.setFinishTimestamp).to.have.been.calledWith(parseInt((date.getTime() / 1000).toFixed(), 10));
+            expect(taskLogger.create.callCount).to.equal(2);
+            expect(taskLogger.create.getCall(0)).to.have.been.calledWith('step1', false, false);
+            expect(taskLogger.create.getCall(1)).to.have.been.calledWith('step2', false, false);
+        });
+
+        it('should not update status and finishTimeStamp in case it not exists in the context revision', () => {
+            const contextRevision = {
+                step1: {},
+                step2: {}
+            };
+            const taskLogger = getTaskLoggerInstance();
+            taskLogger.syncStepsByWorkflowContextRevision(contextRevision);
+            expect(taskLogger.steps.step1.setStatus.callCount).to.equal(0);
+            expect(taskLogger.steps.step2.setStatus.callCount).to.equal(0);
+            expect(taskLogger.steps.step1.setFinishTimestamp.callCount).to.equal(0);
+            expect(taskLogger.steps.step2.setFinishTimestamp.callCount).to.equal(0);
             expect(taskLogger.create.callCount).to.equal(2);
             expect(taskLogger.create.getCall(0)).to.have.been.calledWith('step1', false, false);
             expect(taskLogger.create.getCall(1)).to.have.been.calledWith('step2', false, false);
