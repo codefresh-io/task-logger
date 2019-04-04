@@ -45,6 +45,7 @@ class RedisTaskLogger extends TaskLogger {
                 });
                 client.on('error', (err) => {
                     debug(`redis client error ; ${err.message}`);
+                    console.log(`error: ${err} `);
                     reject(new CFError({
                         cause: err,
                         message: `Failed to create redis taskLogger`
@@ -119,8 +120,8 @@ class RedisTaskLogger extends TaskLogger {
     reportAccountId() {
         this.writter.child('accountId').set(this.accountId);
     }
-    _reportMemoryUsage(time, memoryUsage) {
-        this.writter.child('metrics.memory').push({ time, usage: memoryUsage });
+    _reportMemoryUsage(time, memoryUsage, syncId) {
+        this.writter.child('metrics').child('memory').push({ time, usage: memoryUsage }, syncId);
     }
 
     _reportMemoryLimit() {
