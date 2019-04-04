@@ -184,7 +184,7 @@ class TaskLogger extends EventEmitter {
 
     _validateStepDataFromContextRevision(stepDataFromContextRevision) {
         const { status, finishTime } = stepDataFromContextRevision;
-        if (_.includes(['running', 'elected'], status)) {
+        if (_.includes(['running', 'elected', 'terminating'], status)) {
             return {
                 status: 'terminated',
                 finishTime: new Date(),

@@ -329,6 +329,16 @@ describe('Base TaskLogger tests', () => {
                 expect(finishTime).to.be.an('Date');
             });
 
+            it('should return terminated when passing terminating status from context revision ', () => {
+                const stepDataFromContextRevision = {
+                    status: 'terminating',
+                };
+                const taskLogger = getTaskLoggerInstance();
+                const { status, finishTime } = taskLogger._validateStepDataFromContextRevision(stepDataFromContextRevision);
+                expect(status).to.equal('terminated');
+                expect(finishTime).to.be.an('Date');
+            });
+
             it('should return error when passing failure status from context revision ', () => {
                 const stepDataFromContextRevision = {
                     status: 'failure',
