@@ -186,7 +186,7 @@ class TaskLogger extends EventEmitter {
         const { status, finishTime } = stepDataFromContextRevision;
         if (_.includes(['running', 'elected'], status)) {
             return {
-                status: 'error',
+                status: 'terminated',
                 finishTime: new Date(),
             };
         } else if (status === 'failure') {
