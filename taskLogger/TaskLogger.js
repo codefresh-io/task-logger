@@ -166,8 +166,10 @@ class TaskLogger extends EventEmitter {
         _.forEach(contextRevision, (step, stepName) => {
             const stepLogger = this.create(stepName, false, false);
             if (stepLogger) {
-                const status = _.get(step, 'status') === 'failure' ? 'error' : _.get(step, 'status');
-                const finishTime = _.get(step, 'finishTimestamp');
+                const { status, finishTime } = this._validateStepDataFromContextRevision({
+                    status: _.get(step, 'status'),
+                    finishTime: _.get(step, 'finishTimestamp'),
+                });
                 if (status) {
                     stepLogger.setStatus(status);
                 }
@@ -178,6 +180,22 @@ class TaskLogger extends EventEmitter {
                 }
             }
         });
+    }
+
+    _validateStepDataFromContextRevision(stepDataFromContextRevision) {
+        const { status, finishTime } = stepDataFromContextRevision;
+        if (_.includes(['running', 'elected'], status)) {
+            return {
+                status: 'error',
+                finishTime: new Date(),
+            };
+        } else if (status === 'failure') {
+            return {
+                status: 'error',
+                finishTime,
+            };
+        }
+        return stepDataFromContextRevision;
     }
 }
 
