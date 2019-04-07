@@ -8,7 +8,9 @@ const STATUS = {
     APPROVED: 'approved',
     DENIED: 'denied',
     TERMINATING: 'terminating',
-    TERMINATED: 'terminated'
+    TERMINATED: 'terminated',
+    ELECTED: 'elected',
+    FAILURE: 'failure',
 };
 
 const TYPES = {

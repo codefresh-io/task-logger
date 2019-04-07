@@ -164,7 +164,7 @@ class TaskLogger extends EventEmitter {
 
     syncStepsByWorkflowContextRevision(contextRevision) {
         _.forEach(contextRevision, (step, stepName) => {
-            if (_.get(step, 'status') !== 'pending') {
+            if (_.get(step, 'status') !== STATUS.PENDING) {
                 const stepLogger = this.create(stepName, false, false);
                 if (stepLogger) {
                     const { status, finishTime } = this._validateStepDataFromContextRevision({
@@ -186,14 +186,14 @@ class TaskLogger extends EventEmitter {
 
     _validateStepDataFromContextRevision(stepDataFromContextRevision) {
         const { status, finishTime } = stepDataFromContextRevision;
-        if (_.includes(['running', 'elected', 'terminating'], status)) {
+        if (_.includes([STATUS.RUNNING, STATUS.ELECTED, STATUS.TERMINATING], status)) {
             return {
-                status: 'terminated',
+                status: STATUS.TERMINATED,
                 finishTime: new Date(),
             };
-        } else if (status === 'failure') {
+        } else if (status === STATUS.FAILURE) {
             return {
-                status: 'error',
+                status: STATUS.ERROR,
                 finishTime,
             };
         }
