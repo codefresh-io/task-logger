@@ -164,19 +164,21 @@ class TaskLogger extends EventEmitter {
 
     syncStepsByWorkflowContextRevision(contextRevision) {
         _.forEach(contextRevision, (step, stepName) => {
-            const stepLogger = this.create(stepName, false, false);
-            if (stepLogger) {
-                const { status, finishTime } = this._validateStepDataFromContextRevision({
-                    status: _.get(step, 'status'),
-                    finishTime: _.get(step, 'finishTimestamp'),
-                });
-                if (status) {
-                    stepLogger.setStatus(status);
-                }
-                if (finishTime) {
-                    const finishTimestamp = parseInt(((finishTime instanceof Date ? finishTime : new Date(finishTime)).getTime()
-                        / 1000).toFixed(), 10);
-                    stepLogger.setFinishTimestamp(finishTimestamp);
+            if (_.get(step, 'status') !== 'pending') {
+                const stepLogger = this.create(stepName, false, false);
+                if (stepLogger) {
+                    const { status, finishTime } = this._validateStepDataFromContextRevision({
+                        status: _.get(step, 'status'),
+                        finishTime: _.get(step, 'finishTimestamp'),
+                    });
+                    if (status) {
+                        stepLogger.setStatus(status);
+                    }
+                    if (finishTime) {
+                        const finishTimestamp = parseInt(((finishTime instanceof Date ? finishTime : new Date(finishTime)).getTime()
+                            / 1000).toFixed(), 10);
+                        stepLogger.setFinishTimestamp(finishTimestamp);
+                    }
                 }
             }
         });

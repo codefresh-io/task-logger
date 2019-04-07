@@ -446,6 +446,20 @@ describe('Base TaskLogger tests', () => {
             expect(taskLogger.create.getCall(1)).to.have.been.calledWith('step2', false, false);
         });
 
+        it('should not update call to logger if the status is pending ', () => {
+            const contextRevision = {
+                step1: {
+                    status: 'pending',
+                },
+                step2: {
+                    status: 'pending',
+                }
+            };
+            const taskLogger = getTaskLoggerInstance();
+            taskLogger.syncStepsByWorkflowContextRevision(contextRevision);
+            expect(taskLogger.create.callCount).to.equal(0);
+        });
+
     });
 
 });
