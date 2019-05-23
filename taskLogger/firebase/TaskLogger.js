@@ -31,7 +31,8 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         }
         taskLogger.firebaseSecret = firebaseSecret;
 
-        taskLogger.baseUrl = `${taskLogger.baseFirebaseUrl}/${taskLogger.jobId}`;
+        // taskLogger.baseUrl = `${taskLogger.baseFirebaseUrl}/${taskLogger.jobId}`;
+        taskLogger.baseUrl = `${taskLogger.baseFirebaseUrl}/${taskLogger.accountId}/${taskLogger.jobId}`;
         taskLogger.baseRef = new Firebase(taskLogger.baseUrl);
 
         taskLogger.lastUpdateUrl = `${taskLogger.baseUrl}/lastUpdate`;
