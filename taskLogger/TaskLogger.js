@@ -50,12 +50,13 @@ class TaskLogger extends EventEmitter {
             step.onLastUpdateChanged((value) => {
                 this._reportLastUpdate(value);
             });
-            // if (runCreationLogic) {
-            //     step.reportName();
-            //     step.clearLogs();
-            //     step.setStatus(STATUS.PENDING);
-            //     this.newStepAdded(step);
-            // }
+            if (runCreationLogic) {
+                console.log('************runCreationLogic************');
+                // step.reportName();
+                // step.clearLogs();
+                // step.setStatus(STATUS.PENDING);
+                this.newStepAdded(step);
+            }
 
             debug(`Created new step logger for: ${name}`);
         } else if (resetStatus) {
