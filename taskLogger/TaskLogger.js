@@ -52,7 +52,7 @@ class TaskLogger extends EventEmitter {
             });
             if (runCreationLogic) {
                 console.log('************runCreationLogic************');
-                // step.reportName();
+                step.reportName();
                 // step.clearLogs();
                 // step.setStatus(STATUS.PENDING);
                 this.newStepAdded(step);
