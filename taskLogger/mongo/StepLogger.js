@@ -40,6 +40,16 @@ class MongoStepLogger extends BaseStepLogger {
             });
     }
 
+    _reportOutputUrl() {
+        const key = `steps.${this.name}.data.outputUrl`;
+        this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
+            { $set: { [key]: this.outputUrl } }, { upsert: true }, (err) => {
+                if (err) {
+                    this.emitter.emit('ERROR', err);
+                }
+            });
+    }
+
     _reportLastUpdate() {
         const key = `steps.${this.name}.lastUpdate`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),

@@ -162,6 +162,11 @@ class StepLogger extends EventEmitter {
         this.emit('finished');
     }
 
+    updateOutputUrl(url) {
+        this.outputUrl = url;
+        this._reportOutputUrl();
+    }
+
     updateMemoryUsage(time, memoryUsage) {
         this._reportMemoryUsage(time, memoryUsage);
     }
