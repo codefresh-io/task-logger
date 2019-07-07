@@ -23,6 +23,10 @@ class RedisStepLogger extends BaseStepLogger {
         this.writter.child('logs').push(message, syncId);
     }
 
+    _reportOutputUrl() {
+        this.writter.child('data').child('outputUrl').set(this.outputUrl);
+    }
+
     _reportLastUpdate() {
         this.writter.child('lastUpdate').set(this.lastUpdate);
     }

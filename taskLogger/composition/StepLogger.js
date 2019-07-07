@@ -14,6 +14,14 @@ class CompositionStepLogger extends BaseStepLogger {
         return Promise.all(restorePromises);
     }
 
+    _reportOutputUrl() {
+        this.loggers.forEach((logger) =>  {
+            logger.outputUrl = this.outputUrl;
+            logger._reportOutputUrl(this.outputUrl);
+        });
+
+    }
+
     _reportLog(message) {
         const syncId = Date.now();
         this.loggers.forEach(logger => logger._reportLog(message, syncId));
