@@ -140,5 +140,12 @@ describe('Firebase StepLogger tests', () => {
             stepLogger.reportName();
             expect(Firebase.__setSpy).to.have.been.calledWith(stepLogger.name);
         });
+
+        it('should update outputUrl', async () => {
+            const stepLogger = await getStepLoggerInstance();
+            const url = 'url';
+            stepLogger.updateOutputUrl(url);
+            expect(Firebase.__setSpy).to.have.been.calledWith(url);
+        });
     });
 });
