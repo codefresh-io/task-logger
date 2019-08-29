@@ -70,14 +70,12 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                 this._updateCurrentStepReferences();
             }
         });
-        this.debugRef.update({ currentStep: step.name });
     }
 
     initDebugger(debugDef) {
         return this.baseRef.update({
             debug: {
                 steps: debugDef,
-                currentStep: '',
             }
         })
             .then(() => {

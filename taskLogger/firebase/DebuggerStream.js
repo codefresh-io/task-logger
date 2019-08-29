@@ -1,6 +1,5 @@
 // jshint ignore:start
 const { Duplex } = require('stream');
-const Q = require('q');
 const CFError = require('cf-errors');
 
 class DebuggerStream extends Duplex {
@@ -36,10 +35,10 @@ class DebuggerStream extends Duplex {
         callback();
     }
 
-    endDebugger() {
+    _final(callback) {
         this.stepsStreamsRef.child('debuggerCommands').off('child_added');
         this.stepRef.update({ inDebugger: false });
-        this.stepRef = null;
+        callback();
     }
 }
 
