@@ -72,10 +72,11 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         });
     }
 
-    initDebugger(debugDef) {
+    initDebugger(debugDef, useDebugger) {
         return this.baseRef.update({
             debug: {
                 steps: debugDef,
+                useDebugger
             }
         })
             .then(() => {
