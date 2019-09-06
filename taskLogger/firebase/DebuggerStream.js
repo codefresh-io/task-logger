@@ -19,8 +19,9 @@ class DebuggerStream extends Duplex {
         this.stepRef = this.jobIdRef.child(`debug/steps/${step}`);
         this.stepRef.update({ inDebugger: phase });
         this.stepsStreamsRef = this.stepRef.child(`streams/${phase}`);
-        this.stepsStreamsRef.update({ debuggerCommands: {} });
-        this.stepsStreamsRef.update({ debuggerOutput: {} });
+
+        this.stepRef.child('phases')
+            .on('value', (snapshot) => { this.phases = snapshot.val(); }, errorCallback, this);
 
         this.stepsStreamsRef.child('debuggerCommands')
             .on('child_added', snapshot => this.push(`${snapshot.val()}\n`), errorCallback, this);
