@@ -77,7 +77,6 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         this.debugObj = {};
         this.debugRef = this.baseRef.child('debug');
         this.debugRef.on('value', (snapshot) => { that.debugObj = snapshot.val(); });
-        // this.debugRef.child('useDebugger').on('value', (snapshot) => { that.debugObj.useDebugger = snapshot.val(); });
         this.freeDebugger = () => this.debugRef.off('value');
     }
 
@@ -85,6 +84,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         this.stream = new DebuggerStream({ jobIdRef: this.baseRef });
         await this.stream.createStream(step, phase);
         return this.stream;
+    }
+
+    async attachDebuggerStream(dockerStream) {
+        return this.stream.attachDebuggerStream(dockerStream);
     }
 
     async restore() {
