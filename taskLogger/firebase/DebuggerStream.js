@@ -39,7 +39,7 @@ class DebuggerStream extends Duplex {
             let src = command.toString();
             src = src.endsWith('\n') ? src.slice(0, -1) : src;
             const parts = src.split('\n');
-            for (let i = 0; i < parts.length; i++) {
+            for (let i = 0; i < parts.length; i++) { // eslint-disable-line no-plusplus
                 dockerStream.write(`echo "${'-'.repeat(30)}"\n`);
                 dockerStream.write(`echo 'executing command: ${parts[i]}'\n`);
                 dockerStream.write(`echo "${'-'.repeat(30)}"\n`);
@@ -57,7 +57,7 @@ class DebuggerStream extends Duplex {
         });
 
         const OutputStream = Transform;
-        OutputStream.prototype._transform = function(data, encoding, callback) {
+        OutputStream.prototype._transform = function (data, encoding, callback) {
             if (!data || data.length < 8) return;
             const outType = _.get(data, '[0]');
             const textBuf = data.slice(8);
