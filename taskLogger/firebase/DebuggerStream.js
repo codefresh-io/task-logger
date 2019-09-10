@@ -30,12 +30,8 @@ class DebuggerStream extends Duplex {
         return this.stepRef;
     }
 
-    async attachDebuggerStream(dockerStream) {
-        const ping = setInterval(() => {
-            dockerStream.write(' ');
-        }, 20000);
-
-        this.on('data', (command) => {
+    _onData(dockerStream) {
+        return (command) => {
             let src = command.toString();
             src = src.endsWith('\n') ? src.slice(0, -1) : src;
             const parts = src.split('\n');
@@ -45,7 +41,24 @@ class DebuggerStream extends Duplex {
                 dockerStream.write(`echo "${'-'.repeat(30)}"\n`);
                 dockerStream.write(`${parts[i]}\n`);
             }
-        });
+        };
+    }
+
+    _transform(data, encoding, callback) {
+        if (!data || data.length < 8) return;
+        const outType = _.get(data, '[0]');
+        const textBuf = data.slice(8);
+        outType === 1 ? console.log(textBuf.toString()) : console.error(textBuf.toString());
+        this.push(textBuf);
+        callback();
+    }
+
+    async attachDebuggerStream(dockerStream) {
+        const ping = setInterval(() => {
+            dockerStream.write(' ');
+        }, 20000);
+
+        this.on('data', this._onData(dockerStream));
 
         dockerStream.on('error', (error) => {
             console.error('error:', error);
@@ -57,14 +70,7 @@ class DebuggerStream extends Duplex {
         });
 
         const OutputStream = Transform;
-        OutputStream.prototype._transform = function (data, encoding, callback) {
-            if (!data || data.length < 8) return;
-            const outType = _.get(data, '[0]');
-            const textBuf = data.slice(8);
-            outType === 1 ? console.log(textBuf.toString()) : console.error(textBuf.toString());
-            this.push(textBuf);
-            callback();
-        };
+        OutputStream.prototype._transform = this._transform;
         const outputStream = new OutputStream();
 
         dockerStream.pipe(outputStream);
