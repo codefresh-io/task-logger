@@ -36,8 +36,15 @@ class DebuggerStream extends Duplex {
             src = src.endsWith('\n') ? src.slice(0, -1) : src;
             const parts = src.split('\n');
             for (let i = 0; i < parts.length; i++) { // eslint-disable-line no-plusplus
-                dockerStream.write(`echo 'executing command> ${parts[i]}'\n`);
-                dockerStream.write(`${parts[i]}\n`);
+                const matching = parts[i].match(/^\\u(\d{1,4})$/i);
+                if (matching) {
+                    const decodedCommand = String.fromCharCode(parseInt(matching[1], 16));
+                    // dockerStream.write(`echo 'sending code> ${parts[i]}'\n`);
+                    dockerStream.write(decodedCommand);
+                } else {
+                    // dockerStream.write(`echo 'executing command> ${parts[i]}'\n`);
+                    dockerStream.write(`${parts[i]}\n`);
+                }
             }
         };
     }
