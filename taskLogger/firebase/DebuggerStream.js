@@ -17,6 +17,7 @@ class DebuggerStream extends Duplex {
             });
         };
 
+        this.phase = phase;
         this.stepRef = this.jobIdRef.child(`debug/breakpoints/${step}`);
         this.stepRef.update({ inDebugger: phase });
         this.stepsStreamsRef = this.jobIdRef.child(`debug/streams/${step}/${phase}`);
@@ -39,11 +40,17 @@ class DebuggerStream extends Duplex {
                 const matching = parts[i].match(/^\\u(\d{1,4})$/i);
                 if (matching) {
                     const decodedCommand = String.fromCharCode(parseInt(matching[1], 16));
-                    // dockerStream.write(`echo 'sending code> ${parts[i]}'\n`);
+                    if (this.phase === 'override') {
+                        dockerStream.write(`echo '\nsending code> ${parts[i]}'\n`);
+                    }
                     dockerStream.write(decodedCommand);
                 } else {
-                    // dockerStream.write(`echo 'executing command> ${parts[i]}'\n`);
-                    dockerStream.write(`${parts[i]}\n`);
+                    if (this.phase === 'override') {
+                        dockerStream.write(`echo '\nexecuting command> ${parts[i]}'\n`);
+                        dockerStream.write(`${parts[i]}\n`);
+                    } else {
+                        dockerStream.write(`${parts[i]}\n`);
+                    }
                 }
             }
         };
@@ -54,7 +61,7 @@ class DebuggerStream extends Duplex {
         const outType = _.get(data, '[0]');
         const textBuf = data.slice(8);
         outType === 1 ? console.log(textBuf.toString()) : console.error(textBuf.toString());
-        this.push(textBuf);
+        this.push(textBuf.toString().replace(/([^\r]?)\n/g, '$1\r\n'));
         callback();
     }
 
@@ -86,6 +93,10 @@ class DebuggerStream extends Duplex {
     _read() { }
 
     _write(chunk, encoding, callback) {
+        if (chunk.toString() === ' ') {
+            callback();
+            return;
+        }
         this.stepsStreamsRef.child('debuggerOutput').push(chunk.toString());
         callback();
     }
