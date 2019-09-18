@@ -40,17 +40,9 @@ class DebuggerStream extends Duplex {
                 const matching = parts[i].match(/^\\u(\d{1,4})$/i);
                 if (matching) {
                     const decodedCommand = String.fromCharCode(parseInt(matching[1], 16));
-                    if (this.phase === 'override') {
-                        dockerStream.write(`echo '\nsending code> ${parts[i]}'\n`);
-                    }
                     dockerStream.write(decodedCommand);
                 } else {
-                    if (this.phase === 'override') {
-                        dockerStream.write(`echo '\nexecuting command> ${parts[i]}'\n`);
-                        dockerStream.write(`${parts[i]}\n`);
-                    } else {
-                        dockerStream.write(`${parts[i]}\n`);
-                    }
+                    dockerStream.write(`${parts[i]}\n`);
                 }
             }
         };
