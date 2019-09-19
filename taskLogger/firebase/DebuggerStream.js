@@ -7,6 +7,7 @@ class DebuggerStream extends Duplex {
     constructor(options) {
         super();
         this.jobIdRef = options.jobIdRef;
+        this._onData = targetStream => command => targetStream.write(command);
     }
 
     async createStream(step, phase) {
@@ -31,21 +32,8 @@ class DebuggerStream extends Duplex {
         return this.stepRef;
     }
 
-    _onData(dockerStream) {
-        return (command) => {
-            let src = command.toString();
-            src = src.endsWith('\n') ? src.slice(0, -1) : src;
-            const parts = src.split('\n');
-            for (let i = 0; i < parts.length; i++) { // eslint-disable-line no-plusplus
-                const matching = parts[i].match(/^\\u(\d{1,4})$/i);
-                if (matching) {
-                    const decodedCommand = String.fromCharCode(parseInt(matching[1], 16));
-                    dockerStream.write(decodedCommand);
-                } else {
-                    dockerStream.write(`${parts[i]}\n`);
-                }
-            }
-        };
+    _onData(targetStream) {
+        return command => targetStream.write(command);
     }
 
     _transform(data, encoding, callback) {
@@ -57,18 +45,18 @@ class DebuggerStream extends Duplex {
         callback();
     }
 
-    async attachDebuggerStream(dockerStream) {
+    async attachDebuggerStream(targetStream) {
         const ping = setInterval(() => {
-            dockerStream.write(' ');
+            targetStream.write(' ');
         }, 20000);
 
-        this.on('data', this._onData(dockerStream));
+        this.on('data', this._onData(targetStream));
 
-        dockerStream.on('error', (error) => {
+        targetStream.on('error', (error) => {
             console.error('error:', error);
         });
 
-        dockerStream.on('close', () => {
+        targetStream.on('close', () => {
             clearInterval(ping);
             console.error('clear interval');
         });
@@ -77,7 +65,7 @@ class DebuggerStream extends Duplex {
         OutputStream.prototype._transform = this._transform;
         const outputStream = new OutputStream();
 
-        dockerStream.pipe(outputStream);
+        targetStream.pipe(outputStream);
 
         return outputStream;
     }
