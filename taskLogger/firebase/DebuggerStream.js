@@ -7,7 +7,6 @@ class DebuggerStream extends Duplex {
     constructor(options) {
         super();
         this.jobIdRef = options.jobIdRef;
-        this._onData = targetStream => command => targetStream.write(command);
     }
 
     async createStream(step, phase) {
@@ -27,7 +26,7 @@ class DebuggerStream extends Duplex {
             .on('value', (snapshot) => { this.phases = snapshot.val(); }, errorCallback, this);
 
         this.stepsStreamsRef.child('debuggerCommands')
-            .on('child_added', snapshot => this.push(`${snapshot.val()}\n`), errorCallback, this);
+            .on('child_added', snapshot => this.push(snapshot.val()), errorCallback, this);
 
         return this.stepRef;
     }
@@ -39,15 +38,15 @@ class DebuggerStream extends Duplex {
     _transform(data, encoding, callback) {
         if (!data || data.length < 8) return;
         const outType = _.get(data, '[0]');
-        const textBuf = data.slice(8);
-        outType === 1 ? console.log(textBuf.toString()) : console.error(textBuf.toString());
-        this.push(textBuf.toString().replace(/([^\r]?)\n/g, '$1\r\n'));
+        const text = data.slice(8).toString();
+        outType === 1 ? console.log(text) : console.error(text);
+        this.push(text);
         callback();
     }
 
     async attachDebuggerStream(targetStream) {
         const ping = setInterval(() => {
-            targetStream.write(' ');
+            targetStream.write('\u0007');
         }, 20000);
 
         this.on('data', this._onData(targetStream));
@@ -73,11 +72,9 @@ class DebuggerStream extends Duplex {
     _read() { }
 
     _write(chunk, encoding, callback) {
-        if (chunk.toString() === ' ') {
-            callback();
-            return;
+        if (chunk.toString() !== '\u0007') {
+            this.stepsStreamsRef.child('debuggerOutput').push(chunk.toString());
         }
-        this.stepsStreamsRef.child('debuggerOutput').push(chunk.toString());
         callback();
     }
 
