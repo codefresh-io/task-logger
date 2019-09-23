@@ -90,8 +90,8 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         return this.stream;
     }
 
-    async attachDebuggerStream(dockerStream) {
-        return this.stream.attachDebuggerStream(dockerStream);
+    async attachDebuggerStream(targetStream) {
+        return this.stream.attachDebuggerStream(targetStream);
     }
 
     async restore() {
