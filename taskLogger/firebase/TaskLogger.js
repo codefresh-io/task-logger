@@ -5,7 +5,7 @@ const Q                                = require('q');
 const CFError                          = require('cf-errors');
 const BaseTaskLogger                   = require('../TaskLogger');
 const StepLogger                       = require('./StepLogger');
-const DebuggerStream                   = require('./DebuggerStream');
+const DebuggerStreams                  = require('./DebuggerStream');
 const { TYPES }                        = require('../enums');
 const { wrapWithRetry }                = require('../helpers');
 
@@ -84,14 +84,9 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         };
     }
 
-    async createDebuggerStream(step, phase) {
-        this.stream = new DebuggerStream({ jobIdRef: this.baseRef });
-        await this.stream.createStream(step, phase);
-        return this.stream;
-    }
-
-    async attachDebuggerStream(dockerStream) {
-        return this.stream.attachDebuggerStream(dockerStream);
+    createDebuggerStreams(step, phase) {
+        const debuggerStreams = new DebuggerStreams({ jobIdRef: this.baseRef });
+        return debuggerStreams.createStreams(step, phase);
     }
 
     async restore() {

@@ -1,75 +1,79 @@
 // jshint ignore:start
 const _ = require('lodash');
-const { Duplex, Transform } = require('stream');
+const { Transform, Readable, Writable } = require('stream');
 const CFError = require('cf-errors');
 
-class DebuggerStream extends Duplex {
+function errorCallback(err) {
+    throw new CFError({
+        cause: err,
+        message: `Failed to get commands from firebase for step: ${step} and phase: ${phase}`,
+    });
+}
+
+class DebuggerStreams {
     constructor(options) {
-        super();
         this.jobIdRef = options.jobIdRef;
     }
 
-    async createStream(step, phase) {
-        const errorCallback = (err) => {
-            throw new CFError({
-                cause: err,
-                message: `Failed to get commands from firebase for step: ${step} and phase: ${phase}`,
-            });
-        };
-
+    async createStreams(step, phase) {
         this.phase = phase;
         this.stepRef = this.jobIdRef.child(`debug/breakpoints/${step}`);
         this.stepRef.update({ inDebugger: phase });
-        this.stepsStreamsRef = this.jobIdRef.child(`debug/streams/${step}/${phase}`);
-
         this.stepRef.child('phases')
             .on('value', (snapshot) => { this.phases = snapshot.val(); }, errorCallback, this);
+        this.stepsStreamsRef = this.jobIdRef.child(`debug/streams/${step}/${phase}`);
 
-        this.stepsStreamsRef.child('debuggerCommands')
-            .on('child_added', snapshot => this.push(snapshot.val()), errorCallback, this);
+        this.commandsStream = new CommandsStream(this.stepsStreamsRef.child('debuggerCommands'));
+        this.transformOutputStream = new TransformOutputStream();
+        this.outputStream = new OutputStream(this.stepsStreamsRef, this.stepRef, this._destroyStreams.bind(this));
 
-        return this.stepRef;
+        return {
+            commandsStream: this.commandsStream,
+            transformOutputStream: this.transformOutputStream,
+            outputStream: this.outputStream,
+        };
     }
 
-    _onData(targetStream) {
-        return command => targetStream.write(command);
+    _destroyStreams() {
+        this.commandsStream.destroy();
+        this.transformOutputStream.destroy();
+        this.outputStream.destroy();
     }
+}
 
-    _transform(data, encoding, callback) {
-        if (!data || data.length < 8) return;
-        const outType = _.get(data, '[0]');
-        const text = data.slice(8).toString();
-        outType === 1 ? console.log(text) : console.error(text);
-        this.push(text);
-        callback();
-    }
+class CommandsStream extends Readable {
+    constructor(commandsRef) {
+        super();
+        commandsRef.on('child_added', snapshot => this.push(snapshot.val()), errorCallback, this);
 
-    async attachDebuggerStream(targetStream) {
-        const ping = setInterval(() => {
-            targetStream.write('\u0007');
+        this.ping = setInterval(() => {
+            this.push('\u0007');
         }, 20000);
-
-        this.on('data', this._onData(targetStream));
-
-        targetStream.on('error', (error) => {
-            console.error('error:', error);
-        });
-
-        targetStream.on('close', () => {
-            clearInterval(ping);
-            console.error('clear interval');
-        });
-
-        const OutputStream = Transform;
-        OutputStream.prototype._transform = this._transform;
-        const outputStream = new OutputStream();
-
-        targetStream.pipe(outputStream);
-
-        return outputStream;
     }
 
     _read() { }
+
+    _destroy() {
+        clearInterval(this.ping);
+    }
+}
+
+class TransformOutputStream extends Transform {
+    _transform(data, encoding, callback) {
+        if (!data || data.length < 8) return;
+        const text = data.slice(8).toString();
+        this.push(text);
+        callback();
+    }
+}
+
+class OutputStream extends Writable {
+    constructor(stepsStreamsRef, stepRef, destroyStreams) {
+        super();
+        this.stepsStreamsRef = stepsStreamsRef;
+        this.stepRef = stepRef;
+        this.destroyStreams = destroyStreams;
+    }
 
     _write(chunk, encoding, callback) {
         if (chunk.toString() !== '\u0007') {
@@ -81,8 +85,9 @@ class DebuggerStream extends Duplex {
     _final(callback) {
         this.stepsStreamsRef.child('debuggerCommands').off('child_added');
         this.stepRef.update({ inDebugger: false });
+        this.destroyStreams();
         callback();
     }
 }
 
-module.exports = DebuggerStream;
+module.exports = DebuggerStreams;
