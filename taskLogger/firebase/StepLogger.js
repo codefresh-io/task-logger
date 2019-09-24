@@ -10,7 +10,7 @@ class FirebaseStepLogger extends BaseStepLogger {
     constructor(step, opts) {
         super(step, opts);
 
-        const { baseFirebaseUrl } = opts;
+        const { baseFirebaseUrl, blackList } = opts;
 
         if (!baseFirebaseUrl) {
             throw new CFError('failed to create stepLogger because baseFirebaseUrl must be provided');
@@ -21,6 +21,7 @@ class FirebaseStepLogger extends BaseStepLogger {
 
         this.stepUrl = `${this.baseUrl}/steps/${this.name}`;
         this.stepRef = new Firebase(this.stepUrl);
+        this.blackList = blackList;
     }
 
     async restore() {
@@ -52,7 +53,7 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     _reportLog(message) {
-        this.stepRef.child('logs').push(message);
+        this.stepRef.child('logs').push(this._filterMessage({ message, filters: this.blackList }));
     }
 
     _reportOutputUrl() {
@@ -113,6 +114,17 @@ class FirebaseStepLogger extends BaseStepLogger {
         });
 
         return deferred.promise;
+    }
+
+    _filterMessage({ message, filters }) {
+        let result = typeof message === 'string' ? message : String(message);
+        if (Array.isArray(filters)) {
+            filters.forEach((filter) => {
+                result = result.replace(new RegExp(filter, 'g'), '****');
+            });
+        }
+
+        return result;
     }
 }
 

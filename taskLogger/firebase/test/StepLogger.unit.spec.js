@@ -42,6 +42,12 @@ describe('Firebase StepLogger tests', () => {
 
                 new StepLogger(task, opts); // eslint-disable-line
             });
+
+            it('_filterMessage should return filtered message', async () => {
+                const stepLogger = await getStepLoggerInstance();
+                const filtered = stepLogger._filterMessage({ message: 'word, secretWord, word', filters: ['secretWord'] });
+                expect(filtered).to.equal('word, ****, word');
+            });
         });
 
         describe('negative', () => {
