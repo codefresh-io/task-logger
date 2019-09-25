@@ -6,7 +6,7 @@ const sinon      = require('sinon');
 const sinonChai  = require('sinon-chai');
 
 chai.use(sinonChai);
-const createFirebaseStub = require('./FirebaseStub');
+const { createFirebaseStub } = require('./FirebaseStub');
 
 let Firebase;
 

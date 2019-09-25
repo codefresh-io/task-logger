@@ -74,7 +74,6 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 
     initDebugger() {
         const that = this;
-        this.debugObj = {};
         this.debugRef = this.baseRef.child('debug');
         this.debugRef.child('useDebugger').on('value', (snapshot) => { that.useDebugger = snapshot.val(); });
         this.debugRef.child('breakpoints').on('value', (snapshot) => { that.breakpoints = snapshot.val(); });
