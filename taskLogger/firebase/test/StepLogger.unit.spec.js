@@ -78,7 +78,7 @@ describe('Firebase StepLogger tests', () => {
             const stepLogger = await getStepLoggerInstance();
             const message = 'message';
             stepLogger._reportLog(message);
-            expect(Firebase.pushSpy).to.have.been.calledWith(message);
+            expect(Firebase.prototype.push).to.have.been.calledWith(message);
         });
 
         it('should report last update', async () => {
