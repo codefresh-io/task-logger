@@ -70,9 +70,8 @@ class OutputStream extends Writable {
     }
 
     _write(chunk, encoding, callback) {
-        if (chunk.toString() !== '\u0007') {
-            this.stepsStreamsRef.child('debuggerOutput').push(chunk.toString());
-        }
+        const value = chunk.toString().replace(/\u0007/g, '').replace(/\^G/g, '');
+        value && this.stepsStreamsRef.child('debuggerOutput').push(value);
         callback();
     }
 
