@@ -78,7 +78,7 @@ describe('Firebase StepLogger tests', () => {
             const stepLogger = await getStepLoggerInstance();
             const message = 'message';
             stepLogger._reportLog(message);
-            expect(Firebase.__pushSpy).to.have.been.calledWith(message);
+            expect(Firebase.pushSpy).to.have.been.calledWith(message);
         });
 
         it('should report last update', async () => {
@@ -94,28 +94,28 @@ describe('Firebase StepLogger tests', () => {
             const stepLogger = await getStepLoggerInstance();
             stepLogger.previouslyExecuted = true;
             stepLogger._reportPrevioulyExecuted();
-            expect(Firebase.__setSpy).to.have.been.calledWith(stepLogger.previouslyExecuted);
+            expect(Firebase.prototype.set).to.have.been.calledWith(stepLogger.previouslyExecuted);
         });
 
         it('should report status', async () => {
             const stepLogger = await getStepLoggerInstance();
             stepLogger.status = 'running';
             stepLogger._reportStatus();
-            expect(Firebase.__setSpy).to.have.been.calledWith(stepLogger.status);
+            expect(Firebase.prototype.set).to.have.been.calledWith(stepLogger.status);
         });
 
         it('should report finish timestamp', async () => {
             const stepLogger = await getStepLoggerInstance();
             stepLogger.finishTimeStamp = new Date();
             stepLogger._reportFinishTimestamp();
-            expect(Firebase.__setSpy).to.have.been.calledWith(stepLogger.finishTimeStamp);
+            expect(Firebase.prototype.set).to.have.been.calledWith(stepLogger.finishTimeStamp);
         });
 
         it('should report creation time', async () => {
             const stepLogger = await getStepLoggerInstance();
             stepLogger.creationTimeStamp = new Date();
             stepLogger._reportCreationTimestamp();
-            expect(Firebase.__setSpy).to.have.been.calledWith(stepLogger.creationTimeStamp);
+            expect(Firebase.prototype.set).to.have.been.calledWith(stepLogger.creationTimeStamp);
         });
 
         it('should report memory usage', async () => {
@@ -123,7 +123,7 @@ describe('Firebase StepLogger tests', () => {
             const time = new Date();
             const usage = 'usage';
             stepLogger._reportMemoryUsage(time, usage);
-            expect(Firebase.__pushSpy).to.have.been.calledWith({ time, usage });
+            expect(Firebase.prototype.push).to.have.been.calledWith({ time, usage });
         });
 
         it('should report cpu usage', async () => {
@@ -131,27 +131,27 @@ describe('Firebase StepLogger tests', () => {
             const time = new Date();
             const usage = 'usage';
             stepLogger._reportCpuUsage(time, usage);
-            expect(Firebase.__pushSpy).to.have.been.calledWith({ time, usage });
+            expect(Firebase.prototype.push).to.have.been.calledWith({ time, usage });
         });
 
         it('should report log size', async () => {
             const stepLogger = await getStepLoggerInstance();
             stepLogger.logSize = 'size';
             stepLogger._reportLogSize();
-            expect(Firebase.__setSpy).to.have.been.calledWith(stepLogger.logSize);
+            expect(Firebase.prototype.set).to.have.been.calledWith(stepLogger.logSize);
         });
 
         it('should report name', async () => {
             const stepLogger = await getStepLoggerInstance();
             stepLogger.reportName();
-            expect(Firebase.__setSpy).to.have.been.calledWith(stepLogger.name);
+            expect(Firebase.prototype.set).to.have.been.calledWith(stepLogger.name);
         });
 
         it('should update outputUrl', async () => {
             const stepLogger = await getStepLoggerInstance();
             const url = 'url';
             stepLogger.updateOutputUrl(url);
-            expect(Firebase.__setSpy).to.have.been.calledWith(url);
+            expect(Firebase.prototype.set).to.have.been.calledWith(url);
         });
     });
 });

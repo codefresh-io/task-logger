@@ -1,14 +1,6 @@
 // jshint ignore:start
-const _ = require('lodash');
 const { Transform, Readable, Writable } = require('stream');
 const CFError = require('cf-errors');
-
-function errorCallback(err) {
-    throw new CFError({
-        cause: err,
-        message: `Failed to get commands from firebase for step: ${step} and phase: ${phase}`,
-    });
-}
 
 class DebuggerStreams {
     constructor(options) {
@@ -16,22 +8,24 @@ class DebuggerStreams {
     }
 
     async createStreams(step, phase) {
+        this.errorHandler = (err) => {
+            throw new CFError({
+                cause: err,
+                message: `Failed to get commands from firebase for step: ${step} and phase: ${phase}`,
+            });
+        };
         this.phase = phase;
         this.stepRef = this.jobIdRef.child(`debug/breakpoints/${step}`);
         this.stepRef.update({ inDebugger: phase });
         this.stepRef.child('phases')
-            .on('value', (snapshot) => { this.phases = snapshot.val(); }, errorCallback, this);
+            .on('value', (snapshot) => { this.phases = snapshot.val(); }, this.errorHandler, this);
         this.stepsStreamsRef = this.jobIdRef.child(`debug/streams/${step}/${phase}`);
 
-        this.commandsStream = new CommandsStream(this.stepsStreamsRef.child('debuggerCommands'));
+        this.commandsStream = new CommandsStream(this.stepsStreamsRef.child('debuggerCommands'), this.errorHandler);
         this.transformOutputStream = new TransformOutputStream();
         this.outputStream = new OutputStream(this.stepsStreamsRef, this.stepRef, this._destroyStreams.bind(this));
 
-        return {
-            commandsStream: this.commandsStream,
-            transformOutputStream: this.transformOutputStream,
-            outputStream: this.outputStream,
-        };
+        return this;
     }
 
     _destroyStreams() {
@@ -42,9 +36,9 @@ class DebuggerStreams {
 }
 
 class CommandsStream extends Readable {
-    constructor(commandsRef) {
+    constructor(commandsRef, errorHandler) {
         super();
-        commandsRef.on('child_added', snapshot => this.push(snapshot.val()), errorCallback, this);
+        commandsRef.on('child_added', snapshot => this.push(snapshot.val()), errorHandler, this);
 
         this.ping = setInterval(() => {
             this.push('\u0007');
