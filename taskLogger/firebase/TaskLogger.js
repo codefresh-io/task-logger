@@ -77,9 +77,26 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         this.debugRef = this.baseRef.child('debug');
         this.debugRef.child('useDebugger').on('value', (snapshot) => { that.useDebugger = snapshot.val(); });
         this.debugRef.child('breakpoints').on('value', (snapshot) => { that.breakpoints = snapshot.val(); });
+
+        // For debugger mode use awaiting
+        this.debugRef.child('useDebugger').once('value', (useDebuggerSnapshot) => {
+            if (useDebuggerSnapshot.val() === true) {
+                that.debugRef.child('debuggerAwaiting').set('pending');
+                const debuggerAwaitingDeferred = Q.defer();
+                that.debuggerAwaiting = debuggerAwaitingDeferred.promise;
+                that.debugRef.child('debuggerAwaiting')
+                    .on('value', (debuggerAwaitingSnapshot) => {
+                        debuggerAwaitingSnapshot.val() === 'ready' && debuggerAwaitingDeferred.resolve();
+                    });
+            } else {
+                that.debuggerAwaiting = Q.resolve();
+            }
+        });
+
         this.freeDebugger = () => {
             this.debugRef.child('useDebugger').off('value');
             this.debugRef.child('breakpoints').off('value');
+            this.debugRef.child('debuggerAwaiting').off('value');
         };
     }
 
