@@ -102,11 +102,11 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     initDebuggerState(state) {
-        this.baseRef.update(state);
+        return this.baseRef.update(state);
     }
 
     useDebugger() {
-        this.baseRef.child('debug/useDebugger').set(true);
+        return this.baseRef.child('debug/useDebugger').set(true);
     }
 
     async restore() {
