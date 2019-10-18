@@ -109,6 +109,21 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         return this.baseRef.child('debug/useDebugger').set(true);
     }
 
+    getUseDebugger() {
+        const value = Q.defer();
+        this.baseRef.child('debug/useDebugger').once('value', (snapshot) => {
+            if (value.promise.isPending()) {
+                value.resolve(snapshot.val());
+            }
+        });
+        setTimeout(() => {
+            if (value.promise.isPending()) {
+                value.reject(new Error('get useDebugger timeout'));
+            }
+        }, 5000);
+        return value.promise;
+    }
+
     async restore() {
         const extraPrintData = { jobId: this.jobId };
         return wrapWithRetry(async () => {
