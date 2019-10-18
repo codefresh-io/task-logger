@@ -116,12 +116,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                 value.resolve(snapshot.val());
             }
         });
-        setTimeout(() => {
-            if (value.promise.isPending()) {
-                value.reject(new Error('get useDebugger timeout'));
-            }
-        }, 5000);
-        return value.promise;
+        return Q.timeout(value.promise, 5000);
     }
 
     async restore() {
