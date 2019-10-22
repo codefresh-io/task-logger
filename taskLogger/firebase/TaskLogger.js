@@ -122,7 +122,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     saveExportedVariables(vars = []) {
         function splitEnvVarPair(envVarPair) {
             const arr = envVarPair.split('=');
-            const key = arr.splice(0, 1)[0];
+            const key = _.head(arr.splice(0, 1));
             return { [key]: arr.join('=') };
         }
 
@@ -139,7 +139,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                 value.resolve(snapshot.val());
             }
         });
-        return Q.timeout(value.promise, 5000);
+        return Q.timeout(value.promise, 5000); // Wait for value 5 sec. Reject if no value got
     }
 
     async restore() {
