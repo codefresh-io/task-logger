@@ -26,10 +26,10 @@ class DebuggerStreams {
 
         this.transformOutputStream = new TransformOutputStream();
         this.commandsStream = new CommandsStream(this.stepsStreamsRef.child('debuggerCommands'), this.errorHandler);
-        if (this.isLimited) {
-            this.commandsStream = this.commandsStream.pipe(new FilterLimitedStream(this.transformOutputStream));
-        }
         this.outputStream = new OutputStream(this.stepsStreamsRef, this.stepRef, this._destroyStreams.bind(this));
+        if (this.isLimited) {
+            this.commandsStream = this.commandsStream.pipe(new FilterLimitedStream(this.outputStream));
+        }
 
         return this;
     }
@@ -105,7 +105,7 @@ class FilterLimitedStream extends Transform {
         } else {
             this.push('');
             if (validationResult.message) {
-                this.skipStream.write(`10000000${validationResult.message}`);
+                this.skipStream.write(validationResult.message);
             }
         }
         callback();
