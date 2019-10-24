@@ -96,8 +96,8 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         };
     }
 
-    createDebuggerStreams(step, phase) {
-        const debuggerStreams = new DebuggerStreams({ jobIdRef: this.baseRef });
+    createDebuggerStreams(step, phase, options = {}) {
+        const debuggerStreams = new DebuggerStreams({ jobIdRef: this.baseRef, isLimited: options.isLimited });
         return debuggerStreams.createStreams(step, phase);
     }
 

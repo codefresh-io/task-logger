@@ -2,9 +2,12 @@
 const { Transform, Readable, Writable } = require('stream');
 const CFError = require('cf-errors');
 
+const allowedCommands = ['ls', 'printenv', 'cat', 'top'];
+
 class DebuggerStreams {
     constructor(options) {
         this.jobIdRef = options.jobIdRef;
+        this.isLimited = options.isLimited;
     }
 
     async createStreams(step, phase) {
@@ -21,8 +24,11 @@ class DebuggerStreams {
             .on('value', (snapshot) => { this.phases = snapshot.val(); }, this.errorHandler, this);
         this.stepsStreamsRef = this.jobIdRef.child(`debug/streams/${step}/${phase}`);
 
-        this.commandsStream = new CommandsStream(this.stepsStreamsRef.child('debuggerCommands'), this.errorHandler);
         this.transformOutputStream = new TransformOutputStream();
+        this.commandsStream = new CommandsStream(this.stepsStreamsRef.child('debuggerCommands'), this.errorHandler);
+        if (this.isLimited) {
+            this.commandsStream = this.commandsStream.pipe(new FilterLimitedStream(this.transformOutputStream));
+        }
         this.outputStream = new OutputStream(this.stepsStreamsRef, this.stepRef, this._destroyStreams.bind(this));
 
         return this;
@@ -49,6 +55,60 @@ class CommandsStream extends Readable {
 
     _destroy() {
         clearInterval(this.ping);
+    }
+}
+
+class FilterLimitedStream extends Transform {
+    constructor(skipStream) {
+        super();
+        this.skipStream = skipStream;
+    }
+
+    _validateCommand(data) {
+        const str = data.toString();
+        // check for sequence of commands
+        if (str.match(/\&{2}|\|{2}/)) {
+            return {
+                isValid: false,
+                message: 'Combining commands is restricted\n',
+            };
+        }
+
+        // check for control codes (^C, Bell for ping)
+        let cmdMatch = str.match(/^\x03|\x07|\\x03|\\x07$/);
+        if (cmdMatch) {
+            return {
+                isValid: true,
+                command: str.length === 1 ? str : String.fromCharCode(+str.replace('\\', '0')),
+            };
+        }
+
+        // check for command (the first word of passed string)
+        cmdMatch = str.match(/^(\S.+).*$/);
+        if (cmdMatch) {
+            if (allowedCommands.indexOf(cmdMatch[1]) !== -1) {
+                return {
+                    isValid: true,
+                    command: `${str}\r`,
+                };
+            }
+        }
+        return {
+            isValid: false,
+            message: 'Using of command is restricted\n',
+        };
+    }
+    _transform(data, encoding, callback) {
+        const validationResult = this._validateCommand(data);
+        if (validationResult.isValid) {
+            this.push(validationResult.command);
+        } else {
+            this.push('');
+            if (validationResult.message) {
+                this.skipStream.write(`10000000${validationResult.message}`);
+            }
+        }
+        callback();
     }
 }
 
