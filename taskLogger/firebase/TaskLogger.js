@@ -75,7 +75,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     initDebugger() {
         const that = this;
         this.debugRef = this.baseRef.child('debug');
-        this.debugRef.child('useDebugger').on('value', (snapshot) => { that.useDebugger = snapshot.val(); });
+        // this.debugRef.child('useDebugger').on('value', (snapshot) => { that.useDebugger = snapshot.val(); });
         this.debugRef.child('breakpoints').on('value', (snapshot) => { that.breakpoints = snapshot.val(); });
 
         // Awaiting for debug approval
@@ -91,7 +91,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         });
 
         this.freeDebugger = () => {
-            this.debugRef.child('useDebugger').off('value');
+            // this.debugRef.child('useDebugger').off('value');
             this.debugRef.child('breakpoints').off('value');
         };
     }
@@ -103,24 +103,6 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 
     initDebuggerState(state) {
         return this.baseRef.update(state);
-    }
-
-    setUseDebugger() {
-        return this.baseRef.child('debug/useDebugger').set(true);
-    }
-
-    getUseDebugger() {
-        const value = Q.defer();
-        this.baseRef.child('debug/useDebugger').on('value', (snapshot) => {
-            const val = snapshot.val();
-            if (value.promise.isPending() && val !== null) {
-                value.resolve(val);
-            }
-        });
-        return value.promise
-            .fin(() => {
-                this.baseRef.child('debug/useDebugger').off('value');
-            });
     }
 
     saveExportedVariables(vars = []) {
