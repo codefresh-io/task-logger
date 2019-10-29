@@ -2,7 +2,7 @@
 const { Transform, Readable, Writable } = require('stream');
 const CFError = require('cf-errors');
 
-const allowedCommands = ['ls', 'printenv', 'cat', 'top'];
+const allowedCommands = ['ls', 'printenv', 'cat', 'top', 'exit'];
 
 class DebuggerStreams {
     constructor(options) {
