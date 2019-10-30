@@ -1,13 +1,14 @@
 // jshint ignore:start
+const _ = require('lodash');
 const { Transform, Readable, Writable } = require('stream');
 const CFError = require('cf-errors');
 
 const allowedCommands = ['ls', 'printenv', 'cat', 'top', 'exit', 'cf_export', 'cd', 'export'];
 
 class DebuggerStreams {
-    constructor(options) {
+    constructor(options = {}) {
         this.jobIdRef = options.jobIdRef;
-        this.isLimited = options.isLimited;
+        this.isLimited = _.get(options, 'isLimited', true);
     }
 
     async createStreams(step, phase) {
