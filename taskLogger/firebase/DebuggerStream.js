@@ -68,7 +68,7 @@ class FilterLimitedStream extends Transform {
     _validateCommand(data) {
         const str = data.toString();
         // check for sequence of commands
-        if (str.match(/\&{2}|\|{2}/)) {
+        if (str.match(/&{2}|\|{2}/)) {
             return {
                 isValid: false,
                 message: 'Combining commands is restricted\n',
@@ -76,7 +76,7 @@ class FilterLimitedStream extends Transform {
         }
 
         // check for control codes (^C, Bell for ping)
-        let cmdMatch = str.match(/^\x03|\x07|\\x03|\\x07$/);
+        let cmdMatch = str.match(/^\x03|\x07|\\x03|\\x07$/); // eslint-disable-line no-control-regex
         if (cmdMatch) {
             return {
                 isValid: true,
