@@ -86,7 +86,7 @@ describe('Firebase TaskLogger tests', () => {
 
             it('should pass data through debug streams', async () => {
                 const taskLogger = await getTaskLoggerInstanceWithDebugger();
-                const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                const streams = await taskLogger.createDebuggerStreams('step', 'before', { isLimited: false });
                 streams.commandsStream.pipe(streams.transformOutputStream).pipe(streams.outputStream);
                 taskLogger.baseRef.child_added('8header_ls\n');
                 const result = await taskLogger.outputPromise;
