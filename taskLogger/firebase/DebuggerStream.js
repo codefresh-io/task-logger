@@ -8,7 +8,6 @@ const allowedCommands = ['ls', 'printenv', 'cat', 'top', 'exit', 'cf_export', 'c
 class DebuggerStreams {
     constructor(options = {}) {
         this.jobIdRef = options.jobIdRef;
-        this.isLimited = _.get(options, 'isLimited', true);
     }
 
     async createStreams(step, phase) {
