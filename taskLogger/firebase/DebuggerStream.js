@@ -81,8 +81,17 @@ class FilterLimitedStream extends Transform {
             };
         }
 
+        // check for escape sequences
+        cmdMatch = str.match(/^\x1b\[8;\d+;\d+t$/);
+        if (cmdMatch) {
+            return {
+                isValid: true,
+                command: str,
+            };
+        }
+
         // check for command (the first word of passed string)
-        cmdMatch = str.match(/^(\S.+).*$/);
+        cmdMatch = str.match(/^(\S+)/);
         if (cmdMatch) {
             if (allowedCommands.indexOf(cmdMatch[1]) !== -1) {
                 return {
