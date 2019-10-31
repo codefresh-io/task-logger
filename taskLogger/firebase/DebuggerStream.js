@@ -28,15 +28,14 @@ class DebuggerStreams {
         this.transformOutputStream = new TransformOutputStream();
         this.commandsStream = new CommandsStream(this.stepsStreamsRef.child('debuggerCommands'), this.errorHandler);
         this.outputStream = new OutputStream(this.stepsStreamsRef, this.stepRef, this._destroyStreams.bind(this));
-        if (this.isLimited) {
-            this.commandsStream = this.commandsStream.pipe(new FilterLimitedStream(this.outputStream));
-        }
+        this.limitStream = new FilterLimitedStream(this.outputStream);
 
         return this;
     }
 
     _destroyStreams() {
         this.commandsStream.destroy();
+        this.limitStream.destroy();
         this.transformOutputStream.destroy();
         this.outputStream.destroy();
     }
