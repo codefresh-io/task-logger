@@ -1,5 +1,4 @@
 // jshint ignore:start
-const _ = require('lodash');
 const { Transform, Readable, Writable } = require('stream');
 const CFError = require('cf-errors');
 
