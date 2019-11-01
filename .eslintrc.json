@@ -87,7 +87,7 @@
     "mocha/no-exclusive-tests": "warn",
 
     "no-unused-expressions": "off",
-    "chai-friendly/no-unused-expressions": "off",
+    "chai-friendly/no-unused-expressions": "error",
 
     "node/no-unsupported-features": "error",
     "node/process-exit-as-throw": "error",
