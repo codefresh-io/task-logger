@@ -101,6 +101,24 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         return debuggerStreams.createStreams(step, phase);
     }
 
+    setUseDebugger() {
+        return this.baseRef.child('debug/useDebugger').set(true);
+    }
+
+    getUseDebugger() {
+        const value = Q.defer();
+        this.baseRef.child('debug/useDebugger').on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (value.promise.isPending() && val !== null) {
+                value.resolve(val);
+            }
+        });
+        return value.promise.timeout(5000)
+            .finally(() => {
+                this.baseRef.child('debug/useDebugger').off('value');
+            });
+    }
+
     async restore() {
         const extraPrintData = { jobId: this.jobId };
         return wrapWithRetry(async () => {
