@@ -1,3 +1,4 @@
+const Q = require('q');
 const proxyquire = require('proxyquire').noCallThru();
 const chai       = require('chai');
 
@@ -6,7 +7,7 @@ const sinon      = require('sinon');
 const sinonChai  = require('sinon-chai');
 
 chai.use(sinonChai);
-const createFirebaseStub = require('./FirebaseStub');
+const { createFirebaseStub, createFirebaseStubWithDebugger } = require('./FirebaseStub');
 
 let Firebase;
 
@@ -20,6 +21,23 @@ const getTaskLoggerInstance = async (task = { accountId: 'accountId', jobId: 'jo
 
     const taskLogger = await TaskLogger.factory(task, opts);
     taskLogger.emit  = sinon.spy(taskLogger.emit);
+
+    return taskLogger;
+};
+
+const getTaskLoggerInstanceWithDebugger = async (task = { accountId: 'accountId', jobId: 'jobId' },
+    opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }) => {
+    const deferred = Q.defer();
+    Firebase = createFirebaseStubWithDebugger(deferred);
+
+    const TaskLogger = proxyquire('../TaskLogger', {
+        'firebase': Firebase,
+    });
+
+    const taskLogger = await TaskLogger.factory(task, opts);
+    taskLogger.emit  = sinon.spy(taskLogger.emit);
+
+    taskLogger.outputPromise = deferred.promise;
 
     return taskLogger;
 };
@@ -44,7 +62,7 @@ describe('Firebase TaskLogger tests', () => {
                 };
                 expect(TaskLogger.authenticated).to.equal(false);
                 await TaskLogger.factory(task, opts);
-                expect(Firebase.__authWithCustomTokenStub).to.have.been.calledWith('secret');
+                expect(Firebase.prototype.authWithCustomToken).to.have.been.calledWith('secret');
                 expect(TaskLogger.authenticated).to.equal(true);
             });
 
@@ -63,8 +81,77 @@ describe('Firebase TaskLogger tests', () => {
                 expect(TaskLogger.authenticated).to.equal(false);
                 await TaskLogger.factory(task, opts);
                 await TaskLogger.factory(task, opts);
-                expect(Firebase.__authWithCustomTokenStub.callCount).to.equal(1);
+                expect(Firebase.prototype.authWithCustomToken.callCount).to.equal(1);
             });
+
+            it('should pass data through debug streams', async () => {
+                const taskLogger = await getTaskLoggerInstanceWithDebugger();
+                const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                streams.commandsStream.pipe(streams.transformOutputStream).pipe(streams.outputStream);
+                taskLogger.baseRef.child_added('8header_ls\n');
+                const result = await taskLogger.outputPromise;
+                expect(result).to.be.equal('ls\n');
+                streams._destroyStreams();
+            });
+
+            it('should save variables', async () => {
+                const taskLogger = await getTaskLoggerInstanceWithDebugger();
+                const updateSpy = sinon.spy();
+                taskLogger.baseRef = {
+                    child: () => ({
+                        update: updateSpy,
+                    })
+                };
+                await taskLogger.saveExportedVariables([
+                    'qwerty=qwerty',
+                    'qwerty2=qwer=t=y2',
+                ]);
+                expect(updateSpy).to.have.been.calledWith({
+                    'cf-export': {
+                        qwerty: 'qwerty',
+                        qwerty2: 'qwer=t=y2',
+                    }
+                });
+            });
+
+            it('should load variables', async () => {
+                const taskLogger = await getTaskLoggerInstanceWithDebugger();
+                taskLogger.baseRef = {
+                    child: () => ({
+                        once: (event, handler) => {
+                            setTimeout(handler.bind(null, {
+                                val: () => ({
+                                    var1: 'value',
+                                }),
+                            }), 1000);
+                        },
+                    })
+                };
+                const vars = await taskLogger.loadExportedVariables();
+                expect(vars).to.be.eql({
+                    var1: 'value',
+                });
+            });
+
+            it('should fail by timeout when load variables', async () => {
+                const taskLogger = await getTaskLoggerInstanceWithDebugger();
+                taskLogger.baseRef = {
+                    child: () => ({
+                        once: (event, handler) => {
+                            setTimeout(handler.bind(null, {
+                                val: () => ({
+                                    var1: 'value',
+                                }),
+                            }), 10000);
+                        },
+                    })
+                };
+                try {
+                    await taskLogger.loadExportedVariables();
+                } catch (err) {
+                    expect(err.message).to.be.equal('Timed out after 5000 ms');
+                }
+            }).timeout(11000);
         });
 
         describe('negative', () => {
@@ -81,7 +168,7 @@ describe('Firebase TaskLogger tests', () => {
                     baseFirebaseUrl: 'url',
                     firebaseSecret: 'secret'
                 };
-                Firebase.__authWithCustomTokenStub.yields(new Error('my error'));
+                Firebase.prototype.authWithCustomToken.yields(new Error('my error'));
                 try {
                     await TaskLogger.factory(task, opts);
                     throw new Error('should have failed');
@@ -139,54 +226,54 @@ describe('Firebase TaskLogger tests', () => {
             const time = new Date();
             const memoryUsage = 'usage';
             taskLogger._reportMemoryUsage(time, memoryUsage);
-            expect(Firebase.__pushSpy).to.have.been.calledWith({ time, usage: memoryUsage });
+            expect(Firebase.prototype.push).to.have.been.calledWith({ time, usage: memoryUsage });
         });
 
         it('should report memory limit', async () => {
             const taskLogger = await getTaskLoggerInstance();
             taskLogger.memoryLimit = 'limit';
             taskLogger._reportMemoryLimit();
-            expect(Firebase.__pushSpy).to.have.been.calledWith(taskLogger.memoryLimit);
+            expect(Firebase.prototype.push).to.have.been.calledWith(taskLogger.memoryLimit);
         });
 
         it('should report log size', async () => {
             const taskLogger = await getTaskLoggerInstance();
             taskLogger.logSize = 'size';
             taskLogger._reportLogSize();
-            expect(Firebase.__setSpy).to.have.been.calledWith(taskLogger.logSize);
+            expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.logSize);
         });
 
         it('should report visibility', async () => {
             const taskLogger = await getTaskLoggerInstance();
             taskLogger.visibility = 'public';
             taskLogger._reportVisibility();
-            expect(Firebase.__setSpy).to.have.been.calledWith(taskLogger.visibility);
+            expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.visibility);
         });
 
         it('should report data', async () => {
             const taskLogger = await getTaskLoggerInstance();
             taskLogger.data = { key: 'value' };
             taskLogger._reportData();
-            expect(Firebase.__setSpy).to.have.been.calledWith(taskLogger.data);
+            expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.data);
         });
 
         it('should report status', async () => {
             const taskLogger = await getTaskLoggerInstance();
             taskLogger.status = 'running';
             taskLogger._reportStatus();
-            expect(Firebase.__setSpy).to.have.been.calledWith(taskLogger.status);
+            expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.status);
         });
 
         it('should report accountId', async () => {
             const taskLogger = await getTaskLoggerInstance();
             taskLogger.reportAccountId();
-            expect(Firebase.__setSpy).to.have.been.calledWith(taskLogger.accountId);
+            expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.accountId);
         });
 
         it('should report job id', async () => {
             const taskLogger = await getTaskLoggerInstance();
             taskLogger.reportId();
-            expect(Firebase.__setSpy).to.have.been.calledWith(taskLogger.jobId);
+            expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.jobId);
         });
     });
 });
