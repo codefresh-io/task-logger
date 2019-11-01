@@ -5,6 +5,7 @@ const Q                                = require('q');
 const CFError                          = require('cf-errors');
 const BaseTaskLogger                   = require('../TaskLogger');
 const StepLogger                       = require('./StepLogger');
+const DebuggerStream                   = require('./DebuggerStream');
 const { TYPES }                        = require('../enums');
 const { wrapWithRetry }                = require('../helpers');
 
@@ -69,6 +70,28 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                 this._updateCurrentStepReferences();
             }
         });
+    }
+
+    initDebugger() {
+        const that = this;
+        this.debugObj = {};
+        this.debugRef = this.baseRef.child('debug');
+        this.debugRef.child('useDebugger').on('value', (snapshot) => { that.useDebugger = snapshot.val(); });
+        this.debugRef.child('breakpoints').on('value', (snapshot) => { that.breakpoints = snapshot.val(); });
+        this.freeDebugger = () => {
+            this.debugRef.child('useDebugger').off('value');
+            this.debugRef.child('breakpoints').off('value');
+        };
+    }
+
+    async createDebuggerStream(step, phase) {
+        this.stream = new DebuggerStream({ jobIdRef: this.baseRef });
+        await this.stream.createStream(step, phase);
+        return this.stream;
+    }
+
+    async attachDebuggerStream(targetStream) {
+        return this.stream.attachDebuggerStream(targetStream);
     }
 
     async restore() {
