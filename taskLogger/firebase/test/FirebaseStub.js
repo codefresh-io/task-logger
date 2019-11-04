@@ -1,26 +1,42 @@
-const sinon      = require('sinon');
+const sinon = require('sinon');
 
 const createFirebaseStub = function () {
-    const __authWithCustomTokenStub = sinon.stub().yields();
-    const __pushSpy = sinon.spy();
-    const __setSpy = sinon.spy();
-
     const Firebase = function (path) {
         this.path = path;
-
-        this.authWithCustomToken = __authWithCustomTokenStub;
-        this.push = __pushSpy;
-        this.set = __setSpy;
-        this.child = function (newPath) {
-            return new Firebase(`${this.path}/${newPath}`);
-        };
     };
 
-    Firebase.__authWithCustomTokenStub = __authWithCustomTokenStub;
-    Firebase.__pushSpy = __pushSpy;
-    Firebase.__setSpy = __setSpy;
+    Firebase.prototype.authWithCustomToken = sinon.stub().yields();
+    Firebase.prototype.push = sinon.spy();
+    Firebase.prototype.set = sinon.spy();
+    Firebase.prototype.update = sinon.spy();
+    Firebase.prototype.child = function (newPath) {
+        return new Firebase(`${this.path}/${newPath}`);
+    };
 
     return Firebase;
 };
 
-module.exports = createFirebaseStub;
+const createFirebaseStubWithDebugger = function (deferredSteamFlow) {
+    const Firebase = createFirebaseStub();
+
+    Firebase.prototype.handlers = {};
+    Firebase.prototype.on = (event, handler) => {
+        Firebase.prototype.handlers[event] = handler;
+    };
+    Firebase.prototype.off = (event) => {
+        delete Firebase.prototype.handlers[event];
+    };
+    Firebase.prototype.child_added = (value) => {
+        Firebase.prototype.handlers.child_added({ val: () => value });
+    };
+    Firebase.prototype.push = (val) => {
+        deferredSteamFlow.resolve(val);
+    };
+
+    return Firebase;
+};
+
+module.exports = {
+    createFirebaseStub,
+    createFirebaseStubWithDebugger,
+};
