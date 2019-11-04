@@ -28,7 +28,7 @@ class FilterLimitedStream extends Transform {
         }
 
         // check for escape sequences
-        cmdMatch = str.match(/^\x1b\[8;\d+;\d+t$/);
+        cmdMatch = str.match(/^\x1b\[8;\d+;\d+t$/); // eslint-disable-line no-control-regex
         if (cmdMatch) {
             return {
                 isValid: true,
