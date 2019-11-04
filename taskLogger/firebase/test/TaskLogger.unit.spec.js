@@ -93,65 +93,6 @@ describe('Firebase TaskLogger tests', () => {
                 expect(result).to.be.equal('ls\n');
                 streams._destroyStreams();
             });
-
-            it('should save variables', async () => {
-                const taskLogger = await getTaskLoggerInstanceWithDebugger();
-                const updateSpy = sinon.spy();
-                taskLogger.baseRef = {
-                    child: () => ({
-                        update: updateSpy,
-                    })
-                };
-                await taskLogger.saveExportedVariables([
-                    'qwerty=qwerty',
-                    'qwerty2=qwer=t=y2',
-                ]);
-                expect(updateSpy).to.have.been.calledWith({
-                    'cf-export': {
-                        qwerty: 'qwerty',
-                        qwerty2: 'qwer=t=y2',
-                    }
-                });
-            });
-
-            it('should load variables', async () => {
-                const taskLogger = await getTaskLoggerInstanceWithDebugger();
-                taskLogger.baseRef = {
-                    child: () => ({
-                        once: (event, handler) => {
-                            setTimeout(handler.bind(null, {
-                                val: () => ({
-                                    var1: 'value',
-                                }),
-                            }), 1000);
-                        },
-                    })
-                };
-                const vars = await taskLogger.loadExportedVariables();
-                expect(vars).to.be.eql({
-                    var1: 'value',
-                });
-            });
-
-            it('should fail by timeout when load variables', async () => {
-                const taskLogger = await getTaskLoggerInstanceWithDebugger();
-                taskLogger.baseRef = {
-                    child: () => ({
-                        once: (event, handler) => {
-                            setTimeout(handler.bind(null, {
-                                val: () => ({
-                                    var1: 'value',
-                                }),
-                            }), 10000);
-                        },
-                    })
-                };
-                try {
-                    await taskLogger.loadExportedVariables();
-                } catch (err) {
-                    expect(err.message).to.be.equal('Timed out after 5000 ms');
-                }
-            }).timeout(11000);
         });
 
         describe('negative', () => {

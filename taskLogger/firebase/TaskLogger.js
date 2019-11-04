@@ -105,29 +105,6 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         return this.baseRef.update(state);
     }
 
-    saveExportedVariables(vars = []) {
-        function splitEnvVarPair(envVarPair) {
-            const arr = envVarPair.split('=');
-            const key = _.head(arr.splice(0, 1));
-            return { [key]: arr.join('=') };
-        }
-
-        const varObj = _(vars).map(splitEnvVarPair).reduce((a, b) => ({ ...a, ...b }), {});
-        return Q.resolve(this.baseRef.child('debug').update({
-            'cf-export': { ...varObj }
-        }));
-    }
-
-    loadExportedVariables() {
-        const value = Q.defer();
-        this.baseRef.child('debug/cf-export').once('value', (snapshot) => {
-            if (value.promise.isPending()) {
-                value.resolve(snapshot.val());
-            }
-        });
-        return Q.timeout(value.promise, 5000); // Wait for value 5 sec. Reject if no value got
-    }
-
     async restore() {
         const extraPrintData = { jobId: this.jobId };
         return wrapWithRetry(async () => {
