@@ -101,6 +101,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         return debuggerStreams.createStreams(step, phase);
     }
 
+    initDebuggerState(state) {
+        return this.baseRef.update(state);
+    }
+
     setUseDebugger() {
         return this.baseRef.child('debug/useDebugger').set(true);
     }
