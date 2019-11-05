@@ -9,7 +9,9 @@ class OutputStream extends Writable {
     }
 
     _write(chunk, encoding, callback) {
+        // Cut off `Bell` command used for ping container
         const value = chunk.toString().replace(/\u0007/g, '').replace(/\^G/g, '');
+        // Push output in Firebase
         value && this.stepsStreamsRef.child('debuggerOutput').push(value);
         callback();
     }

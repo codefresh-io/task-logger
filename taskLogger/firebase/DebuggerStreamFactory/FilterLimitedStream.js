@@ -87,6 +87,8 @@ class FilterLimitedStream extends Transform {
         };
     }
 
+    // Pass command if it present in the list of allowed commands
+    // Or pass error message directly to output (skip container)
     _transform(data, encoding, callback) {
         const validationResult = this._validateCommand(data);
         if (validationResult.isValid) {
