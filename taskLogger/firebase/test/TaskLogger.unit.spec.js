@@ -94,6 +94,26 @@ describe('Firebase TaskLogger tests', () => {
                 streams._destroyStreams();
             });
 
+            it('should pass allowed command in filter stream', async () => {
+                const taskLogger = await getTaskLoggerInstanceWithDebugger();
+                const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                streams.commandsStream.pipe(streams.limitStream).pipe(streams.outputStream);
+                taskLogger.baseRef.child_added('ls');
+                const result = await taskLogger.outputPromise;
+                streams._destroyStreams();
+                expect(result).to.be.equal('ls\r');
+            });
+
+            it('should pass ^C in filter stream', async () => {
+                const taskLogger = await getTaskLoggerInstanceWithDebugger();
+                const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                streams.commandsStream.pipe(streams.limitStream).pipe(streams.outputStream);
+                taskLogger.baseRef.child_added('\x03');
+                const result = await taskLogger.outputPromise;
+                expect(result).to.be.equal('\x03');
+                streams._destroyStreams();
+            });
+
             it('should save variables', async () => {
                 const taskLogger = await getTaskLoggerInstanceWithDebugger();
                 const updateSpy = sinon.spy();
@@ -155,6 +175,26 @@ describe('Firebase TaskLogger tests', () => {
         });
 
         describe('negative', () => {
+
+            it('should block data in filter stream (blocked command)', async () => {
+                const taskLogger = await getTaskLoggerInstanceWithDebugger();
+                const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                streams.commandsStream.pipe(streams.limitStream).pipe(streams.transformOutputStream).pipe(streams.outputStream);
+                taskLogger.baseRef.child_added('rm\n');
+                const result = await taskLogger.outputPromise;
+                expect(result).to.be.equal('Using of command is restricted\n');
+                streams._destroyStreams();
+            });
+
+            it('should block data in filter stream (more than one command)', async () => {
+                const taskLogger = await getTaskLoggerInstanceWithDebugger();
+                const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                streams.commandsStream.pipe(streams.limitStream).pipe(streams.transformOutputStream).pipe(streams.outputStream);
+                taskLogger.baseRef.child_added('rm && cat\n');
+                const result = await taskLogger.outputPromise;
+                expect(result).to.be.equal('Combining commands is restricted\n');
+                streams._destroyStreams();
+            });
 
             it('should throw an error in case authentication failed', async () => {
                 Firebase = createFirebaseStub();
