@@ -84,6 +84,7 @@ class FilterLimitedStream extends Transform {
         return {
             isValid: false,
             message: 'Using of command is restricted\n',
+            command: '\x03',
         };
     }
 
@@ -91,13 +92,13 @@ class FilterLimitedStream extends Transform {
     // Or pass error message directly to output (skip container)
     _transform(data, encoding, callback) {
         const validationResult = this._validateCommand(data);
-        if (validationResult.isValid) {
+        if (!validationResult.isValid && validationResult.message) {
+            this.skipStream.write(validationResult.message);
+        }
+        if (validationResult.command) {
             this.push(validationResult.command);
         } else {
             this.push('');
-            if (validationResult.message) {
-                this.skipStream.write(validationResult.message);
-            }
         }
         callback();
     }
