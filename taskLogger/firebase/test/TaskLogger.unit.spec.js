@@ -104,6 +104,16 @@ describe('Firebase TaskLogger tests', () => {
                 expect(result).to.be.equal('ls\r');
             });
 
+            it('should block restricted command in filter stream', async () => {
+                const taskLogger = await getTaskLoggerInstanceWithDebugger();
+                const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                streams.commandsStream.pipe(streams.limitStream).pipe(streams.outputStream);
+                taskLogger.baseRef.child_added('cmd');
+                const result = await taskLogger.outputPromise;
+                streams._destroyStreams();
+                expect(result).to.be.equal('Using of command is restricted\n');
+            });
+
             it('should pass ^C in filter stream', async () => {
                 const taskLogger = await getTaskLoggerInstanceWithDebugger();
                 const streams = await taskLogger.createDebuggerStreams('step', 'before');
