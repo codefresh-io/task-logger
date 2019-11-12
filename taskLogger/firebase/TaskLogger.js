@@ -109,7 +109,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                     .done();
             });
             return deferred.promise;
-        }, { errorAfterTimeout: 5000 }, extraPrintData);
+        }, { errorAfterTimeout: 120000, retries: 3 }, extraPrintData);
     }
 
     _updateCurrentStepReferences() {
