@@ -123,6 +123,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             });
     }
 
+    setBreakpoint(path, value) {
+        return this.baseRef.child(`debug/breakpoints/${path}`).set(value);
+    }
+
     async restore() {
         const extraPrintData = { jobId: this.jobId };
         return wrapWithRetry(async () => {
