@@ -164,6 +164,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         }, {  errorAfterTimeout: 120000, retries: 3  }, extraPrintData);
     }
 
+    async _hasFinishedProcessing() {
+        await this.baseRef.child('finishedProcessing').set(true);
+    }
+
     _updateCurrentStepReferences() {
         const stepsReferences = {};
         _.forEach(this.steps, (step) => {

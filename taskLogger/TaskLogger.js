@@ -70,6 +70,10 @@ class TaskLogger extends EventEmitter {
         return step;
     }
 
+    async hasFinishedProcessing() {
+        return this._hasFinishedProcessing();
+    }
+
     createStepLogger(name, opts) {
         const StepClass = require(`./${this.type}/StepLogger`); // eslint-disable-line
         const step = new StepClass({
