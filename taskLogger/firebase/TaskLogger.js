@@ -123,6 +123,30 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             });
     }
 
+    pauseDebugger(step) {
+        if (!this.useDebugger) {
+            return Q.resolve();
+        }
+        this.debugRef.child('pauseDebugger').set({
+            pause: true,
+            step: step.name,
+            reason: `Step ${step.name} failed. Set breakpoint and debug failed step.`
+        });
+        const pauseAwaitingDeferred = Q.defer();
+        this.pauseDebuggerAwaiting = pauseAwaitingDeferred.promise.timeout(10 * 60 * 1000).finally(() => {
+            this.debugRef.child('pauseDebugger').set({
+                pause: false,
+            });
+            this.debugRef.child('pauseDebugger').off('value');
+        });
+        this.debugRef.child('pauseDebugger').on('value', (pauseDebuggerSnapshot) => {
+            if (pauseDebuggerSnapshot.val().pause === false) {
+                pauseAwaitingDeferred.resolve();
+            }
+        });
+        return this.pauseDebuggerAwaiting;
+    }
+
     async restore() {
         const extraPrintData = { jobId: this.jobId };
         return wrapWithRetry(async () => {
