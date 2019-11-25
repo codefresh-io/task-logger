@@ -8,7 +8,7 @@ const main = async () => {
         type: TYPES.FIREBASE,
         baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs',
         firebaseSecret: process.env.FIREBASE_SECRET,
-        restInterface: true
+        //restInterface: true
     });
 
     taskLogger.on('error', (err) => {
