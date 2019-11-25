@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const Q = require('q');
 const proxyquire = require('proxyquire').noCallThru();
 const chai       = require('chai');
@@ -8,6 +9,7 @@ const sinonChai  = require('sinon-chai');
 
 chai.use(sinonChai);
 const { createFirebaseStub, createFirebaseStubWithDebugger } = require('./FirebaseStub');
+const { RestClientStub } = require('./RestClientStub');
 
 let Firebase;
 
@@ -17,6 +19,7 @@ const getTaskLoggerInstance = async (task = { accountId: 'accountId', jobId: 'jo
 
     const TaskLogger = proxyquire('../TaskLogger', {
         'firebase': Firebase,
+        './rest/client': RestClientStub
     });
 
     const taskLogger = await TaskLogger.factory(task, opts);
@@ -42,229 +45,307 @@ const getTaskLoggerInstanceWithDebugger = async (task = { accountId: 'accountId'
     return taskLogger;
 };
 
-describe('Firebase TaskLogger tests', () => {
+const interfaces = [
+    { name: 'base class', opts: {} },
+    { name: 'REST class', opts: { restInterface: true } }
+];
 
-    describe('factory', () => {
+_.forEach(interfaces, (int) => {
 
-        describe('positive', () => {
+    describe(`Firebase TaskLogger '${int.name}' tests`, () => {
 
-            it('should succeed if all data is passed and authentication succeeded', async () => {
-                Firebase = createFirebaseStub();
+        describe('factory', () => {
 
-                const TaskLogger = proxyquire('../TaskLogger', {
-                    'firebase': Firebase,
+            describe('positive', () => {
+
+                it('should succeed if all data is passed and authentication succeeded', async () => {
+                    Firebase = createFirebaseStub();
+
+                    const TaskLogger = proxyquire('../TaskLogger', {
+                        'firebase': Firebase,
+                    });
+
+                    const task = { accountId: 'accountId', jobId: 'jobId' };
+                    const opts = _.merge({}, {
+                        baseFirebaseUrl: 'url',
+                        firebaseSecret: 'secret'
+                    }, int.opts);
+                    expect(TaskLogger.authenticated).to.equal(false);
+                    const taskLogger = await TaskLogger.factory(task, opts);
+
+                    if (int.opts.restInterface) {
+                        expect(taskLogger.restClient).to.exist;
+                        expect(TaskLogger.authenticated).to.equal(false);
+                    } else {
+                        expect(Firebase.prototype.authWithCustomToken).to.have.been.calledWith('secret');
+                        expect(TaskLogger.authenticated).to.equal(true);
+                    }
                 });
 
-                const task = { accountId: 'accountId', jobId: 'jobId' };
-                const opts = {
-                    baseFirebaseUrl: 'url',
-                    firebaseSecret: 'secret'
-                };
-                expect(TaskLogger.authenticated).to.equal(false);
-                await TaskLogger.factory(task, opts);
-                expect(Firebase.prototype.authWithCustomToken).to.have.been.calledWith('secret');
-                expect(TaskLogger.authenticated).to.equal(true);
-            });
+                it('should perform authentication only once', async () => {
+                    Firebase = createFirebaseStub();
 
-            it('should perform authentication only once', async () => {
-                Firebase = createFirebaseStub();
+                    const TaskLogger = proxyquire('../TaskLogger', {
+                        'firebase': Firebase,
+                    });
 
-                const TaskLogger = proxyquire('../TaskLogger', {
-                    'firebase': Firebase,
+                    const task = { accountId: 'accountId', jobId: 'jobId' };
+                    const opts = _.merge({}, {
+                        baseFirebaseUrl: 'url',
+                        firebaseSecret: 'secret'
+                    }, int.opts);
+                    expect(TaskLogger.authenticated).to.equal(false);
+                    await TaskLogger.factory(task, opts);
+                    await TaskLogger.factory(task, opts);
+                    if (int.opts.restInterface) {
+                        expect(Firebase.prototype.authWithCustomToken.callCount).to.equal(0);
+                    } else {
+                        expect(Firebase.prototype.authWithCustomToken.callCount).to.equal(1);
+                    }
+
                 });
 
-                const task = { accountId: 'accountId', jobId: 'jobId' };
-                const opts = {
-                    baseFirebaseUrl: 'url',
-                    firebaseSecret: 'secret'
-                };
-                expect(TaskLogger.authenticated).to.equal(false);
-                await TaskLogger.factory(task, opts);
-                await TaskLogger.factory(task, opts);
-                expect(Firebase.prototype.authWithCustomToken.callCount).to.equal(1);
             });
 
-            it('should pass data through debug streams', async () => {
-                const taskLogger = await getTaskLoggerInstanceWithDebugger();
-                const streams = await taskLogger.createDebuggerStreams('step', 'before');
-                streams.commandsStream.pipe(streams.transformOutputStream).pipe(streams.outputStream);
-                taskLogger.baseRef.child_added('8header_ls\n');
-                const result = await taskLogger.outputPromise;
-                expect(result).to.be.equal('ls\n');
-                streams._destroyStreams();
-            });
+            describe('negative', () => {
 
-            it('should pass allowed command in filter stream', async () => {
-                const taskLogger = await getTaskLoggerInstanceWithDebugger();
-                const streams = await taskLogger.createDebuggerStreams('step', 'before');
-                streams.commandsStream.pipe(streams.limitStream).pipe(streams.outputStream);
-                taskLogger.baseRef.child_added('ls');
-                const result = await taskLogger.outputPromise;
-                streams._destroyStreams();
-                expect(result).to.be.equal('ls\r');
-            });
+                if (!int.opts.restInterface) {
+                    it('should throw an error in case authentication failed', async () => {
+                        Firebase = createFirebaseStub();
 
-            it('should block restricted command in filter stream', async () => {
-                const taskLogger = await getTaskLoggerInstanceWithDebugger();
-                const streams = await taskLogger.createDebuggerStreams('step', 'before');
-                streams.commandsStream.pipe(streams.limitStream).pipe(streams.outputStream);
-                taskLogger.baseRef.child_added('cmd');
-                const result = await taskLogger.outputPromise;
-                streams._destroyStreams();
-                expect(result).to.be.equal('Using of command is restricted\n');
-            });
+                        const TaskLogger = proxyquire('../TaskLogger', {
+                            'firebase': Firebase,
+                        });
 
-            it('should pass ^C in filter stream', async () => {
-                const taskLogger = await getTaskLoggerInstanceWithDebugger();
-                const streams = await taskLogger.createDebuggerStreams('step', 'before');
-                streams.commandsStream.pipe(streams.limitStream).pipe(streams.outputStream);
-                taskLogger.baseRef.child_added('\x03');
-                const result = await taskLogger.outputPromise;
-                expect(result).to.be.equal('\x03');
-                streams._destroyStreams();
+                        const task = { accountId: 'accountId', jobId: 'jobId' };
+                        const opts = _.merge({}, {
+                            baseFirebaseUrl: 'url',
+                            firebaseSecret: 'secret'
+                        }, int.opts);
+                        Firebase.prototype.authWithCustomToken.yields(new Error('my error'));
+                        try {
+                            await TaskLogger.factory(task, opts);
+                            throw new Error('should have failed');
+                        } catch (err) {
+                            expect(err.toString()).to.equal('Error: Failed to create taskLogger because authentication to firebase url url/jobId; caused by Error: my error'); // eslint-disable-line
+                        }
+                    });
+                }
+
+                it('should fail in case of a missing baseFirebaseUrl', async () => {
+                    Firebase = createFirebaseStub();
+
+                    const TaskLogger = proxyquire('../TaskLogger', {
+                        'firebase': Firebase,
+                    });
+
+                    const task = { accountId: 'accountId', jobId: 'jobId' };
+                    const opts = _.merge({}, {
+                        firebaseSecret: 'secret'
+                    }, int.opts);
+
+                    try {
+                        await TaskLogger.factory(task, opts);
+                        throw new Error('should have failed');
+                    } catch (err) {
+                        expect(err.toString()).to.equal('Error: failed to create taskLogger because baseFirebaseUrl must be provided');
+                    }
+                });
+
+                it('should fail in case of a missing firebaseSecret', async () => {
+                    Firebase = createFirebaseStub();
+
+                    const TaskLogger = proxyquire('../TaskLogger', {
+                        'firebase': Firebase,
+                    });
+
+                    const task = { accountId: 'accountId', jobId: 'jobId' };
+                    const opts = _.merge({}, {
+                        baseFirebaseUrl: 'url',
+                    }, int.opts);
+
+                    try {
+                        await TaskLogger.factory(task, opts);
+                        throw new Error('should have failed');
+                    } catch (err) {
+                        expect(err.toString()).to.equal('Error: failed to create taskLogger because Firebase secret reference must be provided');
+                    }
+                });
+
             });
         });
 
-        describe('negative', () => {
-
-            it('should block data in filter stream (blocked command)', async () => {
-                const taskLogger = await getTaskLoggerInstanceWithDebugger();
-                const streams = await taskLogger.createDebuggerStreams('step', 'before');
-                streams.commandsStream.pipe(streams.limitStream).pipe(streams.transformOutputStream).pipe(streams.outputStream);
-                taskLogger.baseRef.child_added('rm\n');
-                const result = await taskLogger.outputPromise;
-                expect(result).to.be.equal('Using of command is restricted\n');
-                streams._destroyStreams();
-            });
-
-            it('should block data in filter stream (more than one command)', async () => {
-                const taskLogger = await getTaskLoggerInstanceWithDebugger();
-                const streams = await taskLogger.createDebuggerStreams('step', 'before');
-                streams.commandsStream.pipe(streams.limitStream).pipe(streams.transformOutputStream).pipe(streams.outputStream);
-                taskLogger.baseRef.child_added('rm && cat\n');
-                const result = await taskLogger.outputPromise;
-                expect(result).to.be.equal('Combining commands is restricted\n');
-                streams._destroyStreams();
-            });
-
-            it('should throw an error in case authentication failed', async () => {
-                Firebase = createFirebaseStub();
-
-                const TaskLogger = proxyquire('../TaskLogger', {
-                    'firebase': Firebase,
-                });
-
-                const task = { accountId: 'accountId', jobId: 'jobId' };
-                const opts = {
-                    baseFirebaseUrl: 'url',
-                    firebaseSecret: 'secret'
-                };
-                Firebase.prototype.authWithCustomToken.yields(new Error('my error'));
-                try {
-                    await TaskLogger.factory(task, opts);
-                    throw new Error('should have failed');
-                } catch (err) {
-                    expect(err.toString()).to.equal('Error: Failed to create taskLogger because authentication to firebase url url/jobId; caused by Error: my error'); // eslint-disable-line
+        describe('reporting', () => {
+            it('should report memory usage', async () => {
+                const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                const taskLogger = await getTaskLoggerInstance(undefined, opts);
+                const time = new Date();
+                const memoryUsage = 'usage';
+                taskLogger._reportMemoryUsage(time, memoryUsage);
+                if (opts.restInterface) {
+                    expect(taskLogger.restClient.push).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/metrics/memory`, { time, usage: memoryUsage });
+                } else {
+                    expect(Firebase.prototype.push).to.have.been.calledWith({ time, usage: memoryUsage });
                 }
             });
 
-            it('should fail in case of a missing baseFirebaseUrl', async () => {
-                Firebase = createFirebaseStub();
-
-                const TaskLogger = proxyquire('../TaskLogger', {
-                    'firebase': Firebase,
-                });
-
-                const task = { accountId: 'accountId', jobId: 'jobId' };
-                const opts = {
-                    firebaseSecret: 'secret'
-                };
-
-                try {
-                    await TaskLogger.factory(task, opts);
-                    throw new Error('should have failed');
-                } catch (err) {
-                    expect(err.toString()).to.equal('Error: failed to create taskLogger because baseFirebaseUrl must be provided');
+            it('should report memory limit', async () => {
+                const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                const taskLogger = await getTaskLoggerInstance(undefined, opts);
+                taskLogger.memoryLimit = 'limit';
+                taskLogger._reportMemoryLimit();
+                if (opts.restInterface) {
+                    expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/metrics/limits/memory`, taskLogger.memoryLimit);
+                } else {
+                    expect(Firebase.prototype.push).to.have.been.calledWith(taskLogger.memoryLimit);
                 }
             });
 
-            it('should fail in case of a missing firebaseSecret', async () => {
-                Firebase = createFirebaseStub();
-
-                const TaskLogger = proxyquire('../TaskLogger', {
-                    'firebase': Firebase,
-                });
-
-                const task = { accountId: 'accountId', jobId: 'jobId' };
-                const opts = {
-                    baseFirebaseUrl: 'url',
-                };
-
-                try {
-                    await TaskLogger.factory(task, opts);
-                    throw new Error('should have failed');
-                } catch (err) {
-                    expect(err.toString()).to.equal('Error: failed to create taskLogger because Firebase secret reference must be provided');
+            it('should report log size', async () => {
+                const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                const taskLogger = await getTaskLoggerInstance(undefined, opts);
+                taskLogger.logSize = 'size';
+                taskLogger._reportLogSize();
+                if (opts.restInterface) {
+                    expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/metrics/logs/total`, taskLogger.logSize);
+                } else {
+                    expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.logSize);
                 }
             });
 
-        });
-    });
+            it('should report visibility', async () => {
+                const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                const taskLogger = await getTaskLoggerInstance(undefined, opts);
+                taskLogger.visibility = 'public';
+                taskLogger._reportVisibility();
+                if (opts.restInterface) {
+                    expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/visibility`, taskLogger.visibility);
+                } else {
+                    expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.visibility);
+                }
+            });
 
-    describe('reporting', () => {
-        it('should report memory usage', async () => {
-            const taskLogger = await getTaskLoggerInstance();
-            const time = new Date();
-            const memoryUsage = 'usage';
-            taskLogger._reportMemoryUsage(time, memoryUsage);
-            expect(Firebase.prototype.push).to.have.been.calledWith({ time, usage: memoryUsage });
+            it('should report data', async () => {
+                const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                const taskLogger = await getTaskLoggerInstance(undefined, opts);
+                taskLogger.data = { key: 'value' };
+                taskLogger._reportData();
+                if (opts.restInterface) {
+                    expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/data`, taskLogger.data);
+                } else {
+                    expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.data);
+                }
+            });
+
+            it('should report status', async () => {
+                const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                const taskLogger = await getTaskLoggerInstance(undefined, opts);
+                taskLogger.status = 'running';
+                taskLogger._reportStatus();
+                if (opts.restInterface) {
+                    expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/status`, taskLogger.status);
+                } else {
+                    expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.status);
+                }
+            });
+
+            it('should report accountId', async () => {
+                const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                const taskLogger = await getTaskLoggerInstance(undefined, opts);
+                taskLogger.reportAccountId();
+                if (opts.restInterface) {
+                    expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/accountId`, taskLogger.accountId);
+                } else {
+                    expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.accountId);
+                }
+            });
+
+            it('should report job id', async () => {
+                const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                const taskLogger = await getTaskLoggerInstance(undefined, opts);
+                taskLogger.reportId();
+                if (opts.restInterface) {
+                    expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/id`, taskLogger.jobId);
+                } else {
+                    expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.jobId);
+                }
+            });
         });
 
-        it('should report memory limit', async () => {
-            const taskLogger = await getTaskLoggerInstance();
-            taskLogger.memoryLimit = 'limit';
-            taskLogger._reportMemoryLimit();
-            expect(Firebase.prototype.push).to.have.been.calledWith(taskLogger.memoryLimit);
-        });
+        if (!int.opts.restInterface) {
+            describe('debugger streams', () => {
 
-        it('should report log size', async () => {
-            const taskLogger = await getTaskLoggerInstance();
-            taskLogger.logSize = 'size';
-            taskLogger._reportLogSize();
-            expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.logSize);
-        });
+                describe('positive', () => {
+                    it('should pass data through debug streams', async () => {
+                        const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                        const taskLogger = await getTaskLoggerInstanceWithDebugger(undefined, opts);
+                        const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                        streams.commandsStream.pipe(streams.transformOutputStream).pipe(streams.outputStream);
+                        taskLogger.baseRef.child_added('8header_ls\n');
+                        const result = await taskLogger.outputPromise;
+                        expect(result).to.be.equal('ls\n');
+                        streams._destroyStreams();
+                    });
 
-        it('should report visibility', async () => {
-            const taskLogger = await getTaskLoggerInstance();
-            taskLogger.visibility = 'public';
-            taskLogger._reportVisibility();
-            expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.visibility);
-        });
+                    it('should pass allowed command in filter stream', async () => {
+                        const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                        const taskLogger = await getTaskLoggerInstanceWithDebugger(undefined, opts);
+                        const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                        streams.commandsStream.pipe(streams.limitStream).pipe(streams.outputStream);
+                        taskLogger.baseRef.child_added('ls');
+                        const result = await taskLogger.outputPromise;
+                        streams._destroyStreams();
+                        expect(result).to.be.equal('ls\r');
+                    });
 
-        it('should report data', async () => {
-            const taskLogger = await getTaskLoggerInstance();
-            taskLogger.data = { key: 'value' };
-            taskLogger._reportData();
-            expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.data);
-        });
+                    it('should block restricted command in filter stream', async () => {
+                        const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                        const taskLogger = await getTaskLoggerInstanceWithDebugger(undefined, opts);
+                        const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                        streams.commandsStream.pipe(streams.limitStream).pipe(streams.outputStream);
+                        taskLogger.baseRef.child_added('cmd');
+                        const result = await taskLogger.outputPromise;
+                        streams._destroyStreams();
+                        expect(result).to.be.equal('Using of command is restricted\n');
+                    });
 
-        it('should report status', async () => {
-            const taskLogger = await getTaskLoggerInstance();
-            taskLogger.status = 'running';
-            taskLogger._reportStatus();
-            expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.status);
-        });
+                    it('should pass ^C in filter stream', async () => {
+                        const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                        const taskLogger = await getTaskLoggerInstanceWithDebugger(undefined, opts);
+                        const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                        streams.commandsStream.pipe(streams.limitStream).pipe(streams.outputStream);
+                        taskLogger.baseRef.child_added('\x03');
+                        const result = await taskLogger.outputPromise;
+                        expect(result).to.be.equal('\x03');
+                        streams._destroyStreams();
+                    });
+                });
 
-        it('should report accountId', async () => {
-            const taskLogger = await getTaskLoggerInstance();
-            taskLogger.reportAccountId();
-            expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.accountId);
-        });
+                describe('negative', () => {
+                    it('should block data in filter stream (blocked command)', async () => {
+                        const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                        const taskLogger = await getTaskLoggerInstanceWithDebugger(undefined, opts);
+                        const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                        streams.commandsStream.pipe(streams.limitStream).pipe(streams.transformOutputStream).pipe(streams.outputStream);
+                        taskLogger.baseRef.child_added('rm\n');
+                        const result = await taskLogger.outputPromise;
+                        expect(result).to.be.equal('Using of command is restricted\n');
+                        streams._destroyStreams();
+                    });
 
-        it('should report job id', async () => {
-            const taskLogger = await getTaskLoggerInstance();
-            taskLogger.reportId();
-            expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.jobId);
-        });
+                    it('should block data in filter stream (more than one command)', async () => {
+                        const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                        const taskLogger = await getTaskLoggerInstanceWithDebugger(undefined, opts);
+                        const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                        streams.commandsStream.pipe(streams.limitStream).pipe(streams.transformOutputStream).pipe(streams.outputStream);
+                        taskLogger.baseRef.child_added('rm && cat\n');
+                        const result = await taskLogger.outputPromise;
+                        expect(result).to.be.equal('Combining commands is restricted\n');
+                        streams._destroyStreams();
+                    });
+                });
+
+            });
+        }
     });
 });

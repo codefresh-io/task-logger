@@ -7,7 +7,12 @@ const main = async () => {
     }, {
         type: TYPES.FIREBASE,
         baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs',
-        firebaseSecret: process.env.FIREBASE_SECRET
+        firebaseSecret: process.env.FIREBASE_SECRET,
+        restInterface: true
+    });
+
+    taskLogger.on('error', (err) => {
+        console.error(err.stack);
     });
 
     console.log(JSON.stringify(taskLogger.getConfiguration()));
@@ -20,7 +25,11 @@ const main = async () => {
     taskLogger.updateMemoryUsage(new Date(), 'sd');
     taskLogger.setData({ key: 'value' });
 
-    const stepLogger = taskLogger.create('stepName', undefined, undefined, true);
+    const newStep = taskLogger.create('stepName1', undefined, true);
+    newStep.start();
+    newStep.finish();
+    const stepLogger2 = taskLogger.create('stepName2', undefined, true);
+    const stepLogger = taskLogger.create('stepName', undefined, true);
     stepLogger.start();
     stepLogger.write('hey');
     stepLogger.reportName();
@@ -40,6 +49,9 @@ const main = async () => {
     stepLogger.updateMemoryUsage(new Date().getTime(), 'mem');
     stepLogger.updateCpuUsage(new Date().getTime(), 'cpu');
 
+    stepLogger2.start();
+    taskLogger.addErrorMessageToEndOfSteps('my error!!');
+
     // stepLogger.markTerminating();
 
     // stepLogger.finish(new Error('err'));
@@ -47,21 +59,21 @@ const main = async () => {
 
     // await stepLogger.delete();
 
-    const restoredTaskLogger = await Firebase({
-        accountId: 'accountId',
-        jobId: 'jobId'
-    }, {
-        type: TYPES.FIREBASE,
-        baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs',
-        firebaseSecret: process.env.FIREBASE_SECRET
-    });
-    await restoredTaskLogger.restore();
-    const restoredStepLogger = restoredTaskLogger.create('stepName', undefined, undefined, true);
-    restoredStepLogger.write('makore');
-
-    restoredTaskLogger.addErrorMessageToEndOfSteps('my error!');
-
-    taskLogger.setStatus('success');
+    // const restoredTaskLogger = await Firebase({
+    //     accountId: 'accountId',
+    //     jobId: 'jobId'
+    // }, {
+    //     type: TYPES.FIREBASE,
+    //     baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs',
+    //     firebaseSecret: process.env.FIREBASE_SECRET
+    // });
+    // await restoredTaskLogger.restore();
+    // const restoredStepLogger = restoredTaskLogger.create('stepName', undefined, undefined, true);
+    // restoredStepLogger.write('makore');
+    //
+    // restoredTaskLogger.addErrorMessageToEndOfSteps('my error!');
+    //
+    // taskLogger.setStatus('success');
     // await taskLogger.clearSteps();
     // await taskLogger.delete();
     // taskLogger.finish();

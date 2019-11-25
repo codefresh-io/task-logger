@@ -8,8 +8,7 @@ const StepLogger                       = require('./StepLogger');
 const DebuggerStreamFactory            = require('./DebuggerStreamFactory');
 const { TYPES }                        = require('../enums');
 const { wrapWithRetry }                = require('../helpers');
-
-const STEPS_REFERENCES_KEY = 'stepsReferences';
+const RestClient                       = require('./rest/client');
 
 class FirebaseTaskLogger extends BaseTaskLogger {
     constructor(task, opts) {
@@ -18,7 +17,15 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     static async factory(task, opts) {
-        const taskLogger = new FirebaseTaskLogger(task, opts);
+        const { restInterface } = opts;
+
+        let taskLogger;
+        if (restInterface) {
+            const FirebaseRestTaskLogger = require('./rest/TaskLogger'); // eslint-disable-line global-require
+            taskLogger = new FirebaseRestTaskLogger(task, opts);
+        } else {
+            taskLogger = new FirebaseTaskLogger(task, opts);
+        }
 
         const { baseFirebaseUrl, firebaseSecret } = opts;
 
@@ -41,21 +48,26 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         taskLogger.stepsUrl = `${taskLogger.baseUrl}/steps`;
         taskLogger.stepsRef = new Firebase(taskLogger.stepsUrl);
 
-        try {
-            if (!FirebaseTaskLogger.authenticated) {
-                await Q.ninvoke(taskLogger.baseRef, 'authWithCustomToken', firebaseSecret);
-                debug(`TaskLogger created and authenticated to firebase url: ${taskLogger.baseUrl}`);
+        if (restInterface) {
+            taskLogger.restClient = new RestClient(taskLogger.firebaseSecret);
+        } else {
+            // establishing connection is only rqeuired in case of stream interface
+            try {
+                if (!FirebaseTaskLogger.authenticated) {
+                    await Q.ninvoke(taskLogger.baseRef, 'authWithCustomToken', firebaseSecret);
+                    debug(`TaskLogger created and authenticated to firebase url: ${taskLogger.baseUrl}`);
 
-                // workaround to not authenticate each time
-                FirebaseTaskLogger.authenticated = true;
-            } else {
-                debug('TaskLogger created without authentication');
+                    // workaround to not authenticate each time
+                    FirebaseTaskLogger.authenticated = true;
+                } else {
+                    debug('TaskLogger created without authentication');
+                }
+            } catch (err) {
+                throw new CFError({
+                    cause: err,
+                    message: `Failed to create taskLogger because authentication to firebase url ${taskLogger.baseUrl}`
+                });
             }
-        } catch (err) {
-            throw new CFError({
-                cause: err,
-                message: `Failed to create taskLogger because authentication to firebase url ${taskLogger.baseUrl}`
-            });
         }
 
         return taskLogger;
@@ -67,7 +79,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             if (val && val.name === step.name) {
                 step.stepRef.off('value');
                 this.emit('step-pushed', step.name);
-                this._updateCurrentStepReferences();
+                this._updateCurrentStepReferences(step);
             }
         });
     }
@@ -101,15 +113,15 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         return debuggerStreams.createStreams(step, phase);
     }
 
-    initDebuggerState(state) {
-        return this.baseRef.update(state);
+    async initDebuggerState(state) {
+        return this.baseRef.child('debug').set(state);
     }
 
-    setUseDebugger() {
+    async setUseDebugger() {
         return this.baseRef.child('debug/useDebugger').set(true);
     }
 
-    getUseDebugger() {
+    async getUseDebugger() {
         const value = Q.defer();
         this.baseRef.child('debug/useDebugger').on('value', (snapshot) => {
             const val = snapshot.val();
@@ -129,13 +141,13 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             const deferred = Q.defer();
             debug(`performing restore for job: ${this.jobId}`);
 
-            this.baseRef.child(STEPS_REFERENCES_KEY).once('value', (snapshot) => {
+            this.baseRef.child(FirebaseTaskLogger.STEPS_REFERENCES_KEY).once('value', (snapshot) => {
                 const stepsReferences = snapshot.val();
                 if (!stepsReferences) {
                     deferred.resolve();
                 }
 
-                Q.all(_.map(stepsReferences, async (name, key) => { // eslint-disable-line
+                Q.all(_.map(stepsReferences, async ({name, key}) => { // eslint-disable-line
                     const step = new StepLogger({
                         accountId: this.accountId,
                         jobId: this.jobId,
@@ -164,12 +176,8 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         }, {  errorAfterTimeout: 120000, retries: 3  }, extraPrintData);
     }
 
-    _updateCurrentStepReferences() {
-        const stepsReferences = {};
-        _.forEach(this.steps, (step) => {
-            stepsReferences[_.last(step.stepRef.toString().split('/'))] = step.name;
-        });
-        this.baseRef.child(STEPS_REFERENCES_KEY).set(stepsReferences);
+    _updateCurrentStepReferences(step) {
+        this.baseRef.child(FirebaseTaskLogger.STEPS_REFERENCES_KEY).push({ key: _.last(step.stepRef.toString().split('/')), name: step.name });
     }
 
     async addErrorMessageToEndOfSteps(message) {
@@ -268,5 +276,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 }
 FirebaseTaskLogger.TYPE          = TYPES.FIREBASE;
 FirebaseTaskLogger.authenticated = false;
+FirebaseTaskLogger.STEPS_REFERENCES_KEY = 'stepsReferences';
+
 
 module.exports = FirebaseTaskLogger;

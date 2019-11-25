@@ -12,6 +12,9 @@ const createFirebaseStub = function () {
     Firebase.prototype.child = function (newPath) {
         return new Firebase(`${this.path}/${newPath}`);
     };
+    Firebase.prototype.ref = function () {
+        return this.path;
+    };
 
     return Firebase;
 };
