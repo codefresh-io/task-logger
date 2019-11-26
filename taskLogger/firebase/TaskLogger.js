@@ -15,6 +15,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     constructor(task, opts) {
         super(task, opts);
         this.type = TYPES.FIREBASE;
+        this.pauseTimeout = 10 * 60 * 1000; // 10 min
     }
 
     static async factory(task, opts) {
@@ -133,12 +134,17 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             reason: `Step ${step.name} failed. Set breakpoint and debug failed step.`
         });
         const pauseAwaitingDeferred = Q.defer();
-        this.pauseDebuggerAwaiting = pauseAwaitingDeferred.promise.timeout(10 * 60 * 1000).finally(() => {
-            this.debugRef.child('pauseDebugger').set({
-                pause: false,
+        this.pauseDebuggerAwaiting = pauseAwaitingDeferred.promise
+            .timeout(this.pauseTimeout)
+            // .catch((err) => {
+            //     console.log(err);
+            // })
+            .finally(() => {
+                this.debugRef.child('pauseDebugger').set({
+                    pause: false,
+                });
+                this.debugRef.child('pauseDebugger').off('value');
             });
-            this.debugRef.child('pauseDebugger').off('value');
-        });
         this.debugRef.child('pauseDebugger').on('value', (pauseDebuggerSnapshot) => {
             if (pauseDebuggerSnapshot.val().pause === false) {
                 pauseAwaitingDeferred.resolve();

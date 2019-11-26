@@ -123,6 +123,51 @@ describe('Firebase TaskLogger tests', () => {
                 expect(result).to.be.equal('\x03');
                 streams._destroyStreams();
             });
+
+            it('should pause debugger until `continue` is pressed', async () => {
+                const taskLogger = await getTaskLoggerInstanceWithDebugger();
+                taskLogger.useDebugger = true;
+                taskLogger.pauseTimeout = 5000;
+                let onValueHandler;
+                taskLogger.debugRef = {
+                    child: () => ({
+                        set: () => {},
+                        off: () => {},
+                        on: (name, handler) => {
+                            onValueHandler = handler;
+                        }
+                    }),
+                };
+
+                setTimeout(() => onValueHandler({ val: () => ({ pause: false }) }), 1000);
+                await taskLogger.pauseDebugger({ name: 'stepName' });
+            });
+
+            it('should stop pause debugger by timeout', async () => {
+                const taskLogger = await getTaskLoggerInstanceWithDebugger(undefined, undefined, {
+                    value: () => ({
+                        val: arg => ({ pause: arg }),
+                    }),
+                });
+                taskLogger.useDebugger = true;
+                taskLogger.pauseTimeout = 1000;
+                taskLogger.debugRef = {
+                    child: () => ({
+                        set: () => {},
+                        off: () => {},
+                        on: (name, handler) => {
+                            handler({ val: () => ({ pause: true }) });
+                        }
+                    }),
+                };
+                try {
+                    await taskLogger.pauseDebugger({ name: 'stepName' });
+                } catch (err) {
+                    expect(err.message).to.be.equal(`Timed out after ${taskLogger.pauseTimeout} ms`);
+                    return;
+                }
+                throw new Error('Error expected but not occurred');
+            });
         });
 
         describe('negative', () => {
