@@ -187,8 +187,12 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         }, {  errorAfterTimeout: 120000, retries: 3  }, extraPrintData);
     }
 
-    _updateCurrentStepReferences(step) {
-        this.baseRef.child(FirebaseTaskLogger.STEPS_REFERENCES_KEY).push({ key: _.last(step.stepRef.toString().split('/')), name: step.name });
+    _updateCurrentStepReferences() {
+        const stepsReferences = {};
+        _.forEach(this.steps, (step) => {
+            stepsReferences[_.last(step.stepRef.toString().split('/'))] = step.name;
+        });
+        this.baseRef.child(FirebaseTaskLogger.STEPS_REFERENCES_KEY).set(stepsReferences);
     }
 
     async addErrorMessageToEndOfSteps(message) {

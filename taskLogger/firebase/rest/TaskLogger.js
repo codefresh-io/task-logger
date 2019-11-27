@@ -11,7 +11,7 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
     newStepAdded(step) {
         step.once('step-pushed', () => {
             this.emit('step-pushed', step.name);
-            this._updateCurrentStepReferences(step);
+            this._updateCurrentStepReferences();
         });
     }
 
@@ -102,8 +102,13 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
         }, {  errorAfterTimeout: 120000, retries: 3  }, extraPrintData);
     }
 
-    _updateCurrentStepReferences(step) {
-        this.restClient.push(`${this.baseRef.ref().toString()}/${FirebaseTaskLogger.STEPS_REFERENCES_KEY}`, { key: _.last(step.stepRef.toString().split('/')), name: step.name })
+    _updateCurrentStepReferences() {
+        const stepsReferences = {};
+        _.forEach(this.steps, (step) => {
+            stepsReferences[_.last(step.stepRef.toString().split('/'))] = step.name;
+        });
+
+        this.restClient.set(`${this.baseRef.ref().toString()}/${FirebaseTaskLogger.STEPS_REFERENCES_KEY}`, stepsReferences)
             .catch((err) => {
                 this.emit('error', err);
             });
