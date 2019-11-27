@@ -66,22 +66,11 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
                 return;
             }
 
-            await Q.all(_.map(stepsReferences, async (struct, key) => {
-                let finalName;
-                let finalKey;
-
-                if (struct.name && struct.key) {
-                    finalName = struct.name;
-                    finalKey = struct.key;
-                } else { // old structure can be removed once api and engines are using taskLogger >= 1.2.0
-                    finalName = struct;
-                    finalKey = key;
-                }
-
+            await Q.all(_.map(stepsReferences, async (name, key) => {
                 const step = new StepLogger({
                     accountId: this.accountId,
                     jobId: this.jobId,
-                    name: finalKey
+                    name: key
                 }, {
                     ...this.opts,
                     restClient: this.restClient
@@ -91,7 +80,7 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
                     this.emit('error', err);
                 });
                 step.on('finished', () => {
-                    delete this.steps[finalName];
+                    delete this.steps[name];
                 });
 
                 step.logs = {};
