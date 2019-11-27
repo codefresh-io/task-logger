@@ -136,9 +136,6 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         const pauseAwaitingDeferred = Q.defer();
         this.pauseDebuggerAwaiting = pauseAwaitingDeferred.promise
             .timeout(this.pauseTimeout)
-            // .catch((err) => {
-            //     console.log(err);
-            // })
             .finally(() => {
                 this.debugRef.child('pauseDebugger').set({
                     pause: false,
