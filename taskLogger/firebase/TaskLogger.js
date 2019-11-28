@@ -130,8 +130,9 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         }
         this.debugRef.child('pauseDebugger').set({
             pause: true,
-            step: step.name,
-            reason: `Step ${step.name} failed. Set breakpoint and debug failed step.`
+            stepName: step.name,
+            stepTitle: step.title,
+            reason: `Step "${step.title}" failed. Set breakpoint and debug failed step.`
         });
         const pauseAwaitingDeferred = Q.defer();
         this.pauseDebuggerAwaiting = pauseAwaitingDeferred.promise

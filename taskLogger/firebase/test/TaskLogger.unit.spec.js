@@ -140,7 +140,7 @@ describe('Firebase TaskLogger tests', () => {
                 };
 
                 setTimeout(() => onValueHandler({ val: () => ({ pause: false }) }), 1000);
-                await taskLogger.pauseDebugger({ name: 'stepName' });
+                await taskLogger.pauseDebugger({ stepName: 'stepName', stepTitle: 'stepTitle' });
             });
 
             it('should stop pause debugger by timeout', async () => {
@@ -161,7 +161,7 @@ describe('Firebase TaskLogger tests', () => {
                     }),
                 };
                 try {
-                    await taskLogger.pauseDebugger({ name: 'stepName' });
+                    await taskLogger.pauseDebugger({ stepName: 'stepName', stepTitle: 'stepTitle' });
                 } catch (err) {
                     expect(err.message).to.be.equal(`Timed out after ${taskLogger.pauseTimeout} ms`);
                     return;
