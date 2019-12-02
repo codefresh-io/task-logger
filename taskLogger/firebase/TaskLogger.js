@@ -204,6 +204,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         }, {  errorAfterTimeout: 120000, retries: 3  }, extraPrintData);
     }
 
+    // TODO change this to push new step as it occurs, currently it does not work well in sync worfklows, finished steps will get deleted and then on next report we will have only part of steps
     _updateCurrentStepReferences() {
         const stepsReferences = {};
         _.forEach(this.steps, (step) => {
