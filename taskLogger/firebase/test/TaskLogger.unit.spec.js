@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const Q = require('q');
 const proxyquire = require('proxyquire').noCallThru();
 const chai       = require('chai');
@@ -124,6 +125,29 @@ describe('Firebase TaskLogger tests', () => {
                 streams._destroyStreams();
             });
 
+            it('should notify UI if step is failed', async () => {
+                const taskLogger = await getTaskLoggerInstanceWithDebugger();
+                taskLogger.useDebugger = true;
+                taskLogger.pauseTimeout = 5000;
+                _.set(taskLogger, 'breakpoints.stepName.phases.after', true);
+                taskLogger.debugRef = {
+                    child: () => ({
+                        set: (arg) => {
+                            expect(arg).to.eql({
+                                pause: false,
+                                failed: true,
+                                stepName: 'stepName',
+                                stepTitle: 'stepTitle',
+                            });
+                        },
+                        off: () => {},
+                        on: () => {}
+                    }),
+                };
+
+                await taskLogger.pauseDebugger({ name: 'stepName', title: 'stepTitle' });
+            });
+
             it('should pause debugger until `continue` is pressed', async () => {
                 const taskLogger = await getTaskLoggerInstanceWithDebugger();
                 taskLogger.useDebugger = true;
@@ -140,7 +164,7 @@ describe('Firebase TaskLogger tests', () => {
                 };
 
                 setTimeout(() => onValueHandler({ val: () => ({ pause: false }) }), 1000);
-                await taskLogger.pauseDebugger({ stepName: 'stepName', stepTitle: 'stepTitle' });
+                await taskLogger.pauseDebugger({ name: 'stepName', title: 'stepTitle' });
             });
 
             it('should stop pause debugger by timeout', async () => {
@@ -161,7 +185,7 @@ describe('Firebase TaskLogger tests', () => {
                     }),
                 };
                 try {
-                    await taskLogger.pauseDebugger({ stepName: 'stepName', stepTitle: 'stepTitle' });
+                    await taskLogger.pauseDebugger({ name: 'stepName', title: 'stepTitle' });
                 } catch (err) {
                     expect(err.message).to.be.equal(`Timed out after ${taskLogger.pauseTimeout} ms`);
                     return;

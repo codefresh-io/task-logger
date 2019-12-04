@@ -128,8 +128,20 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         if (!this.useDebugger) {
             return Q.resolve();
         }
+
+        if (_.get(this, `breakpoints['${step.name}'].phases.after`) === true) {
+            this.debugRef.child('pauseDebugger').set({
+                pause: false,
+                failed: true,
+                stepName: step.name,
+                stepTitle: step.title,
+            });
+            return Q.resolve();
+        }
+
         this.debugRef.child('pauseDebugger').set({
             pause: true,
+            failed: true,
             stepName: step.name,
             stepTitle: step.title,
             reason: `Step "${step.title}" failed. Set breakpoint and debug failed step.`
