@@ -121,7 +121,30 @@ _.forEach(interfaces, (int) => {
                     };
 
                     setTimeout(() => onValueHandler({ val: () => ({ pause: false }) }), 1000);
-                    await taskLogger.pauseDebugger({ stepName: 'stepName', stepTitle: 'stepTitle' });
+                    await taskLogger.pauseDebugger({ name: 'stepName', title: 'stepTitle' });
+                });
+
+                it('should notify UI if step is failed', async () => {
+                    const taskLogger = await getTaskLoggerInstanceWithDebugger();
+                    taskLogger.useDebugger = true;
+                    taskLogger.pauseTimeout = 5000;
+                    _.set(taskLogger, 'breakpoints.stepName.phases.after', true);
+                    taskLogger.debugRef = {
+                        child: () => ({
+                            set: (arg) => {
+                                expect(arg).to.eql({
+                                    pause: false,
+                                    failed: true,
+                                    stepName: 'stepName',
+                                    stepTitle: 'stepTitle',
+                                });
+                            },
+                            off: () => {},
+                            on: () => {}
+                        }),
+                    };
+
+                    await taskLogger.pauseDebugger({ name: 'stepName', title: 'stepTitle' });
                 });
 
                 it('should stop pause debugger by timeout', async () => {
@@ -142,7 +165,7 @@ _.forEach(interfaces, (int) => {
                         }),
                     };
                     try {
-                        await taskLogger.pauseDebugger({ stepName: 'stepName', stepTitle: 'stepTitle' });
+                        await taskLogger.pauseDebugger({ name: 'stepName', title: 'stepTitle' });
                     } catch (err) {
                         expect(err.message).to.be.equal(`Timed out after ${taskLogger.pauseTimeout} ms`);
                         return;
