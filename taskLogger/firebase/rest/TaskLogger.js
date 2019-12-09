@@ -142,39 +142,24 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
             });
     }
 
-    _reportVisibility() {
-        this.restClient.set(`${this.baseRef.ref().toString()}/visibility`, this.visibility)
-            .catch((err) => {
-                this.emit('error', err);
-            });
+    async _reportVisibility() {
+        return this.restClient.set(`${this.baseRef.ref().toString()}/visibility`, this.visibility);
     }
 
-    _reportData() {
-        this.restClient.set(`${this.baseRef.ref().toString()}/data`, this.data)
-            .catch((err) => {
-                this.emit('error', err);
-            });
+    async _reportData() {
+        return this.restClient.set(`${this.baseRef.ref().toString()}/data`, this.data);
     }
 
-    _reportStatus() {
-        this.restClient.set(`${this.baseRef.ref().toString()}/status`, this.status)
-            .catch((err) => {
-                this.emit('error', err);
-            });
+    async _reportStatus() {
+        return this.restClient.set(`${this.baseRef.ref().toString()}/status`, this.status);
     }
 
-    reportAccountId() {
-        this.restClient.set(`${this.baseRef.ref().toString()}/accountId`, this.accountId)
-            .catch((err) => {
-                this.emit('error', err);
-            });
+    async reportAccountId() {
+        return this.restClient.set(`${this.baseRef.ref().toString()}/accountId`, this.accountId);
     }
 
-    reportId() {
-        this.restClient.set(`${this.baseRef.ref().toString()}/id`, this.jobId)
-            .catch((err) => {
-                this.emit('error', err);
-            });
+    async reportId() {
+        return this.restClient.set(`${this.baseRef.ref().toString()}/id`, this.jobId);
     }
 
     _reportLastUpdate(value) {

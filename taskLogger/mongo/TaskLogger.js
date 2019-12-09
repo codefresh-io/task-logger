@@ -118,20 +118,20 @@ class MongoTaskLogger extends TaskLogger {
         });
     }
 
-    reportId() {
+    async reportId() {
         const key = 'id';
         const filter = this.getFilter();
-        this.db.collection(this.getCollection(key)).updateOne(filter,
+        return this.db.collection(this.getCollection(key)).updateOne(filter,
         { $set: Object.assign({ [key]: this.jobId }, filter) }, { upsert: true }, (err) => {
             if (err) {
                 this.emitter.emit('ERROR', err);
             }
         });
     }
-    reportAccountId() {
+    async reportAccountId() {
         const key = 'accountId';
         const filter = this.getFilter();
-        this.db.collection(this.getCollection(key)).updateOne(filter,
+        return this.db.collection(this.getCollection(key)).updateOne(filter,
         { $set: Object.assign({ [key]: this.accountId }, filter) }, { upsert: true }, (err) => {
             if (err) {
                 this.emitter.emit('ERROR', err);
@@ -160,9 +160,9 @@ class MongoTaskLogger extends TaskLogger {
 
     }
 
-    _reportVisibility() {
+    async _reportVisibility() {
         const key = 'visibility';
-        this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
+        return this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
         { $set: { [key]: this.visibility } }, { upsert: true }, (err) => {
             if (err) {
                 this.emitter.emit('ERROR', err);
@@ -170,9 +170,9 @@ class MongoTaskLogger extends TaskLogger {
         });
     }
 
-    _reportData() {
+    async _reportData() {
         const key = 'data';
-        this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
+        return this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
         { $set: { 'data': this.data } }, { upsert: true }, (err) => {
             if (err) {
                 this.emitter.emit('ERROR', err);
@@ -180,9 +180,9 @@ class MongoTaskLogger extends TaskLogger {
         });
     }
 
-    _reportStatus() {
+    async _reportStatus() {
         const key = 'data';
-        this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
+        return this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
         { $set: { 'status': this.status } }, { upsert: true }, (err) => {
             if (err) {
                 this.emitter.emit('ERROR', err);

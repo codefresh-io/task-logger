@@ -9,12 +9,51 @@ const DebuggerStreamFactory            = require('./DebuggerStreamFactory');
 const { TYPES }                        = require('../enums');
 const { wrapWithRetry }                = require('../helpers');
 const RestClient                       = require('./rest/client');
+const FirebaseTokenGenerator           = require("firebase-token-generator");
 
 class FirebaseTaskLogger extends BaseTaskLogger {
     constructor(task, opts) {
         super(task, opts);
         this.type = TYPES.FIREBASE;
         this.pauseTimeout = 10 * 60 * 1000; // 10 min
+    }
+
+    // TODO once everyone is moving to new model for token per progress, this should also contain the build id and restrict only access to this specific job
+    _provisionToken(accountId, userId, isAdmin) {
+        try {
+            const tokenGenerator = new FirebaseTokenGenerator(this.firebaseSecret);
+            var token = tokenGenerator.createToken(
+                {
+                    uid: userId,
+                    userId: userId,
+                    accountId: accountId,
+                    admin: isAdmin
+                },
+                {
+                    expires: Math.floor((new Date()).getTime() / 1000) + this.sessionExpirationInSeconds
+                });
+            return { token, url: this.baseFirebaseUrl };
+        }
+        catch (err) {
+            return Promise.reject(new CFError({
+                cause: err,
+                message: "failed to create user firebase token"
+            }));
+        }
+    }
+
+    getConfiguration(accountId, userId, isAdmin) {
+        return {
+            task: {
+                accountId: this.accountId,
+                jobId: this.jobId,
+            },
+            opts: {
+                type: this.opts.type,
+                baseFirebaseUrl: this.opts.baseFirebaseUrl,
+                firebaseSecret: this._provisionToken(accountId, userId, isAdmin)
+            }
+        };
     }
 
     static async factory(task, opts) {
@@ -255,23 +294,23 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         this.baseRef.child('metrics').child('logs').child('total').set(this.logSize);
     }
 
-    _reportVisibility() {
+    async _reportVisibility() {
         this.baseRef.child('visibility').set(this.visibility);
     }
 
-    _reportData() {
+    async _reportData() {
         this.baseRef.child('data').set(this.data);
     }
 
-    _reportStatus() {
+    async _reportStatus() {
         this.baseRef.child('status').set(this.status);
     }
 
-    reportAccountId() {
+    async reportAccountId() {
         this.baseRef.child('accountId').set(this.accountId);
     }
 
-    reportId() {
+    async reportId() {
         this.baseRef.child('id').set(this.jobId);
     }
 

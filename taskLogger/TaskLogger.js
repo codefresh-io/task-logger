@@ -33,7 +33,7 @@ class TaskLogger extends EventEmitter {
         this.steps    = {};
     }
 
-    create(name, resetStatus, runCreationLogic) {
+    async create(name, resetStatus, runCreationLogic) {
 
         let step = this.steps[name];
         if (!step) {
@@ -51,18 +51,18 @@ class TaskLogger extends EventEmitter {
                 this._reportLastUpdate(value);
             });
             if (runCreationLogic) {
-                step.reportName();
-                step.clearLogs();
-                step.setStatus(STATUS.PENDING);
+                await step.reportName();
+                await step.clearLogs();
+                await step.setStatus(STATUS.PENDING);
                 this.newStepAdded(step);
             }
 
             debug(`Created new step logger for: ${name}`);
         } else if (resetStatus) {
             debug(`Reusing step logger and resetting for: ${name}`);
-            step.setStatus(STATUS.PENDING);
-            step.setFinishTimestamp('');
-            step.setCreationTimestamp('');
+            await step.setStatus(STATUS.PENDING);
+            await step.setFinishTimestamp('');
+            await step.setCreationTimestamp('');
         } else {
             debug(`Reusing step logger state for: ${name}`);
         }
@@ -163,9 +163,9 @@ class TaskLogger extends EventEmitter {
     }
 
     syncStepsByWorkflowContextRevision(contextRevision) {
-        _.forEach(contextRevision, (step, stepName) => {
+        _.forEach(contextRevision, async (step, stepName) => {
             if (_.get(step, 'status') !== STATUS.PENDING) {
-                const stepLogger = this.create(stepName, false, false);
+                const stepLogger = await this.create(stepName, false, false);
                 if (stepLogger) {
                     const { status, finishTime } = this._validateStepDataFromContextRevision({
                         status: _.get(step, 'status'),
