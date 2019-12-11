@@ -19,22 +19,21 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     // TODO once everyone is moving to new model for token per progress, this should also contain the build id and restrict only access to this specific job
-    _provisionToken(accountId, userId, isAdmin) {
+    async _provisionToken(userId, isAdmin) {
         try {
             const tokenGenerator = new FirebaseTokenGenerator(this.firebaseSecret);
-            var token = tokenGenerator.createToken(
+            const token = tokenGenerator.createToken(
                 {
-                    uid: userId,
-                    userId: userId,
-                    accountId: accountId,
+                    uid: userId.toString(),
+                    userId: userId.toString(),
+                    accountId: this.accountId,
                     admin: isAdmin
                 },
                 {
-                    expires: Math.floor((new Date()).getTime() / 1000) + this.sessionExpirationInSeconds
+                    expires: Math.floor((new Date()).getTime() / 1000) + _.get(this.opts, 'sessionExpirationInSeconds', 1680) // default is 1680 - one day
                 });
-            return { token, url: this.baseFirebaseUrl };
-        }
-        catch (err) {
+            return token;
+        } catch (err) {
             return Promise.reject(new CFError({
                 cause: err,
                 message: "failed to create user firebase token"
@@ -42,7 +41,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         }
     }
 
-    getConfiguration(accountId, userId, isAdmin) {
+    async getConfiguration(userId, isAdmin) {
         return {
             task: {
                 accountId: this.accountId,
@@ -51,7 +50,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             opts: {
                 type: this.opts.type,
                 baseFirebaseUrl: this.opts.baseFirebaseUrl,
-                firebaseSecret: this._provisionToken(accountId, userId, isAdmin)
+                firebaseSecret: await this._provisionToken(userId, isAdmin)
             }
         };
     }
