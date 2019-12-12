@@ -1,8 +1,7 @@
-const debug              = require('debug')('codefresh:firebase:stepLogger');
+const debug              = require('debug')('codefresh:firebase:rest:stepLogger');
 const CFError            = require('cf-errors');
 const { STATUS }         = require('../../enums');
 const FirebaseStepLogger = require('../StepLogger');
-const { wrapWithRetry }  = require('../../helpers');
 
 class FirebaseRestStepLogger extends FirebaseStepLogger {
 
@@ -20,20 +19,17 @@ class FirebaseRestStepLogger extends FirebaseStepLogger {
     }
 
     async restore() {
-        const extraPrintData = { step: this.name };
-        return wrapWithRetry(async () => {
-            debug(`performing restore for step: ${this.name}`);
+        debug(`performing restore for step: ${this.name}`);
 
-            debug(`firebase name reference: ${this.stepRef.child('name').ref()}`);
-            this.name = await this.restClient.get(`${this.stepRef.ref().toString()}/name`);
+        debug(`firebase name reference: ${this.stepRef.child('name').ref()}`);
+        this.name = await this.restClient.get(`${this.stepRef.ref().toString()}/name`);
 
-            debug(`firebase status reference: ${this.stepRef.child('status').ref()}`);
-            this.status = await this.restClient.get(`${this.stepRef.ref().toString()}/status`);
-            debug(`received status: ${this.status} for step: ${this.name}`);
-            if (this.status === STATUS.PENDING_APPROVAL) {
-                this.pendingApproval = true;
-            }
-        }, undefined, extraPrintData);
+        debug(`firebase status reference: ${this.stepRef.child('status').ref()}`);
+        this.status = await this.restClient.get(`${this.stepRef.ref().toString()}/status`);
+        debug(`received status: ${this.status} for step: ${this.name}`);
+        if (this.status === STATUS.PENDING_APPROVAL) {
+            this.pendingApproval = true;
+        }
     }
 
     _reportLog(message) {

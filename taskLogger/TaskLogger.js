@@ -33,7 +33,7 @@ class TaskLogger extends EventEmitter {
         this.steps    = {};
     }
 
-    async create(name, resetStatus, runCreationLogic) {
+    create(name, resetStatus, runCreationLogic) {
 
         let step = this.steps[name];
         if (!step) {
@@ -51,18 +51,18 @@ class TaskLogger extends EventEmitter {
                 this._reportLastUpdate(value);
             });
             if (runCreationLogic) {
-                await step.reportName();
-                await step.clearLogs();
-                await step.setStatus(STATUS.PENDING);
+                step.reportName();
+                step.clearLogs();
+                step.setStatus(STATUS.PENDING);
                 this.newStepAdded(step);
             }
 
             debug(`Created new step logger for: ${name}`);
         } else if (resetStatus) {
             debug(`Reusing step logger and resetting for: ${name}`);
-            await step.setStatus(STATUS.PENDING);
-            await step.setFinishTimestamp('');
-            await step.setCreationTimestamp('');
+            step.setStatus(STATUS.PENDING);
+            step.setFinishTimestamp('');
+            step.setCreationTimestamp('');
         } else {
             debug(`Reusing step logger state for: ${name}`);
         }
@@ -131,23 +131,23 @@ class TaskLogger extends EventEmitter {
         this._reportLogSize();
     }
 
-    setVisibility(visibility) {
+    async setVisibility(visibility) {
         if (![VISIBILITY.PRIVATE, VISIBILITY.PUBLIC].includes(visibility)) {
             throw new Error(`Visibility: ${visibility} is not supported. use public/private`);
         }
 
         this.visibility = visibility;
-        this._reportVisibility();
+        return this._reportVisibility();
     }
 
-    setData(data) {
+    async setData(data) {
         this.data = data;
-        this._reportData();
+        return this._reportData();
     }
 
-    setStatus(status) {
+    async setStatus(status) {
         this.status = status;
-        this._reportStatus();
+        return this._reportStatus();
     }
 
     getConfiguration() {
@@ -163,9 +163,9 @@ class TaskLogger extends EventEmitter {
     }
 
     syncStepsByWorkflowContextRevision(contextRevision) {
-        _.forEach(contextRevision, async (step, stepName) => {
+        _.forEach(contextRevision, (step, stepName) => {
             if (_.get(step, 'status') !== STATUS.PENDING) {
-                const stepLogger = await this.create(stepName, false, false);
+                const stepLogger = this.create(stepName, false, false);
                 if (stepLogger) {
                     const { status, finishTime } = this._validateStepDataFromContextRevision({
                         status: _.get(step, 'status'),

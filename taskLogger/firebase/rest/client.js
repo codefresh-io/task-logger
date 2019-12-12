@@ -61,22 +61,32 @@ class Client extends EventEmitter {
         return finalOptions;
     }
 
-    _sendRequest(opts) {
+    _sendRequest(httpOpts, opts = { inOrder: true }) {
         const deferred = Q.defer();
 
         const func = async () => {
-            const finalOpts = this._getRequestOptions(opts);
-            debug(`going to perform: ${JSON.stringify(finalOpts.uri)}`);
+            const finalOpts = this._getRequestOptions(httpOpts);
+            debug(`going to perform: ${JSON.stringify(finalOpts)}`);
             return request(finalOpts)
                 .catch(this._catchHandler.bind(this))
                 .then(this._createResponseHandler(finalOpts))
                 .then(deferred.resolve.bind(deferred), deferred.reject.bind(deferred));
         };
 
-        this.queue.push(func);
-        setInterval(() => {
-            this.emit('task-added');
-        }, 1);
+        if (opts.inOrder) {
+            this.queue.push(func);
+            setTimeout(() => {
+                this.emit('task-added');
+            }, 1);
+        } else {
+            setTimeout(async () => {
+                try {
+                    await func();
+                } catch (err) {
+                    deferred.reject(err);
+                }
+            }, 1);
+        }
 
         return deferred.promise;
     }
@@ -100,38 +110,38 @@ class Client extends EventEmitter {
         }
     }
 
-    async get(uri, opts = {}) {
+    async get(uri, qs = {}, opts = { inOrder: true }) {
         return this._sendRequest({
             uri,
-            qs: opts,
+            qs,
             method: 'GET',
-        });
+        }, opts);
     }
 
-    async set(uri, data) {
+    async set(uri, data, opts = { inOrder: true }) {
         return this._sendRequest({
             uri,
             method: 'PUT',
             body: data
-        })
+        }, opts)
             .tap(() => {
                 this.emit('data-set-successfully');
             });
     }
 
-    async remove(uri) {
+    async remove(uri, opts = { inOrder: true }) {
         return this._sendRequest({
             uri,
             method: 'DELETE',
-        });
+        }, opts);
     }
 
-    async push(uri, data) {
+    async push(uri, data, opts = { inOrder: true }) {
         return this._sendRequest({
             uri,
             method: 'POST',
             body: data
-        });
+        }, opts);
     }
 }
 

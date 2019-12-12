@@ -1,10 +1,8 @@
 const _                                = require('lodash');
-const debug                            = require('debug')('codefresh:firebase:taskLogger');
 const Q                                = require('q');
 const CFError                          = require('cf-errors');
 const FirebaseTaskLogger               = require('../TaskLogger');
 const StepLogger                       = require('./StepLogger');
-const { wrapWithRetry }                = require('../../helpers');
 
 class FirebaseRestTaskLogger extends FirebaseTaskLogger {
 
@@ -23,25 +21,20 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
         throw new CFError('debugger is not supported with rest client');
     }
 
+    pauseDebugger(step) { // TODO only called from engine
+        throw new CFError('debugger is not supported with rest client');
+    }
+
     async initDebuggerState(state) {
-        this.restClient.set(`${this.baseRef.ref().toString()}/debug`, state)
-            .catch((err) => {
-                this.emit('error', err);
-            });
+        return this.restClient.set(`${this.baseRef.ref().toString()}/debug`, state);
     }
 
     async setUseDebugger() {
-        this.restClient.set(`${this.baseRef.ref().toString()}/debug/useDebugger`, true)
-            .catch((err) => {
-                this.emit('error', err);
-            });
+        return this.restClient.set(`${this.baseRef.ref().toString()}/debug/useDebugger`, true);
     }
 
     async getUseDebugger() {
-        this.restClient.get(`${this.baseRef.ref().toString()}/debug/useDebugger`)
-            .catch((err) => {
-                this.emit('error', err);
-            });
+        return this.restClient.get(`${this.baseRef.ref().toString()}/debug/useDebugger`);
     }
 
     createStepLogger(name, opts) {
@@ -57,38 +50,7 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
     }
 
     async restore() {
-        const extraPrintData = { jobId: this.jobId };
-        return wrapWithRetry(async () => {
-            debug(`performing restore for job: ${this.jobId}`);
-
-            const stepsReferences = await this.restClient.get(`${this.baseRef.ref().toString()}/${FirebaseTaskLogger.STEPS_REFERENCES_KEY}`);
-            if (!stepsReferences) {
-                return;
-            }
-
-            await Q.all(_.map(stepsReferences, async (name, key) => {
-                const step = new StepLogger({
-                    accountId: this.accountId,
-                    jobId: this.jobId,
-                    name: key
-                }, {
-                    ...this.opts,
-                    restClient: this.restClient
-                });
-
-                step.on('error', (err) => {
-                    this.emit('error', err);
-                });
-                step.on('finished', () => {
-                    delete this.steps[name];
-                });
-
-                step.logs = {};
-
-                await step.restore();
-                this.steps[step.name] = step;
-            }));
-        }, {  errorAfterTimeout: 120000, retries: 3  }, extraPrintData);
+        return Q.resolve();
     }
 
     _updateCurrentStepReferences() {
@@ -104,7 +66,8 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
     }
 
     async addErrorMessageToEndOfSteps(message) {
-        const inProgressSteps = _.filter(this.steps, step => ['running', 'terminating'].includes(step.status));
+        return Q.resolve();
+        /*const inProgressSteps = _.filter(this.steps, step => ['running', 'terminating'].includes(step.status));
         if (!inProgressSteps.length && this.steps[0]) {
             inProgressSteps.push(this.steps[0]);
         }
@@ -117,7 +80,7 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
                 cause: err,
                 message: `could not add error message to end of steps for jobId: ${this.jobId}`
             });
-        }
+        }*/
     }
 
     _reportMemoryUsage(time, memoryUsage) {
@@ -143,7 +106,7 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
     }
 
     async _reportVisibility() {
-        return this.restClient.set(`${this.baseRef.ref().toString()}/visibility`, this.visibility);
+        return this.restClient.set(`${this.baseRef.ref().toString()}/visibility`, this.visibility, { inOrder: false });
     }
 
     async _reportData() {
@@ -155,11 +118,11 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
     }
 
     async reportAccountId() {
-        return this.restClient.set(`${this.baseRef.ref().toString()}/accountId`, this.accountId);
+        return this.restClient.set(`${this.baseRef.ref().toString()}/accountId`, this.accountId, { inOrder: false });
     }
 
     async reportId() {
-        return this.restClient.set(`${this.baseRef.ref().toString()}/id`, this.jobId);
+        return this.restClient.set(`${this.baseRef.ref().toString()}/id`, this.jobId, { inOrder: false });
     }
 
     _reportLastUpdate(value) {
@@ -197,6 +160,10 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
                 message: `could not fetch logs from firebase for jobId:${this.jobId}`
             });
         }
+    }
+
+    syncStepsByWorkflowContextRevision() {
+        return Q.resolve();
     }
 }
 
