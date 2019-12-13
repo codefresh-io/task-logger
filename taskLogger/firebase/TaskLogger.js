@@ -8,7 +8,7 @@ const StepLogger                       = require('./StepLogger');
 const DebuggerStreamFactory            = require('./DebuggerStreamFactory');
 const { TYPES }                        = require('../enums');
 const { wrapWithRetry }                = require('../helpers');
-const RestClient                       = require('./rest/client');
+const RestClient                       = require('./rest/Client');
 const FirebaseTokenGenerator           = require('firebase-token-generator');
 
 class FirebaseTaskLogger extends BaseTaskLogger {
@@ -295,23 +295,23 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     async _reportVisibility() {
-        this.baseRef.child('visibility').set(this.visibility);
+        return this.baseRef.child('visibility').set(this.visibility);
     }
 
     async _reportData() {
-        this.baseRef.child('data').set(this.data);
+        return this.baseRef.child('data').set(this.data);
     }
 
     async _reportStatus() {
-        this.baseRef.child('status').set(this.status);
+        return this.baseRef.child('status').set(this.status);
     }
 
     async reportAccountId() {
-        this.baseRef.child('accountId').set(this.accountId);
+        return this.baseRef.child('accountId').set(this.accountId);
     }
 
     async reportId() {
-        this.baseRef.child('id').set(this.jobId);
+        return this.baseRef.child('id').set(this.jobId);
     }
 
     _reportLastUpdate(value) {

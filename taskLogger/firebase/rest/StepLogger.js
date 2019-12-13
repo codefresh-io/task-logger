@@ -33,7 +33,7 @@ class FirebaseRestStepLogger extends FirebaseStepLogger {
     }
 
     _reportLog(message) {
-        this.restClient.push(`${this.stepRef.ref().toString()}/logs`, message)
+        this.restClient.push(`${this.stepRef.ref().toString()}/logs`, message, { inOrder: false })
             .catch((err) => {
                 this.emit('error', err);
             });

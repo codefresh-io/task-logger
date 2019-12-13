@@ -19,7 +19,7 @@ const getTaskLoggerInstance = async (task = { accountId: 'accountId', jobId: 'jo
 
     const TaskLogger = proxyquire('../TaskLogger', {
         'firebase': Firebase,
-        './rest/client': RestClientStub
+        './rest/Client': RestClientStub
     });
 
     const taskLogger = await TaskLogger.factory(task, opts);
@@ -338,6 +338,22 @@ _.forEach(interfaces, (int) => {
                     expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.jobId);
                 }
             });
+        });
+
+        describe('getConfiguration', () => {
+
+            describe('positive', () => {
+                it('should return configuration including a firebase token', () => {
+                    throw new Error('not implmeneted');
+                });
+            });
+
+            describe('negative', () => {
+                it('should fail in case user id is not passed', () => {
+                    throw new Error('not implmeneted');
+                });
+            });
+
         });
 
         if (!int.opts.restInterface) {

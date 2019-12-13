@@ -1,4 +1,4 @@
-const RestClient = require('../rest/client');
+const RestClient = require('../rest/Client');
 const sinon = require('sinon');
 
 const RestClientStub = function () {

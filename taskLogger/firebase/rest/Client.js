@@ -12,7 +12,7 @@ request = request.defaults(
             return request.RetryStrategies.NetworkError(err, response) || RETRY_STATUS_CODES.includes(response.statusCode);
         },
         maxAttempts: 5,
-        retryDelay: 5 * 1000, // 'ECONNRESET', 'ENOTFOUND', 'ESOCKETTIMEDOUT', 'ETIMEDOUT', 'ECONNREFUSED', 'EHOSTUNREACH', 'EPIPE', 'EAI_AGAIN'
+        retryDelay: process.env.RETRY_DELAY || 5000, // 'ECONNRESET', 'ENOTFOUND', 'ESOCKETTIMEDOUT', 'ETIMEDOUT', 'ECONNREFUSED', 'EHOSTUNREACH', 'EPIPE', 'EAI_AGAIN'
         promiseFactory: (resolver) => {
             return Q.promise(resolver);
         }
