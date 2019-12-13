@@ -118,7 +118,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             if (val && val.name === step.name) {
                 step.stepRef.off('value');
                 this.emit('step-pushed', step.name);
-                this._updateCurrentStepReferences(step);
+                this._updateCurrentStepReferences();
             }
         });
     }
