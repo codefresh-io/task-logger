@@ -65,9 +65,9 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
             });
     }
 
-    async addErrorMessageToEndOfSteps(message) {
+    async addErrorMessageToEndOfSteps(message) { // eslint-disable-line
         return Q.resolve();
-        /*const inProgressSteps = _.filter(this.steps, step => ['running', 'terminating'].includes(step.status));
+        /* const inProgressSteps = _.filter(this.steps, step => ['running', 'terminating'].includes(step.status));
         if (!inProgressSteps.length && this.steps[0]) {
             inProgressSteps.push(this.steps[0]);
         }
@@ -80,7 +80,7 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
                 cause: err,
                 message: `could not add error message to end of steps for jobId: ${this.jobId}`
             });
-        }*/
+        } */
     }
 
     _reportMemoryUsage(time, memoryUsage) {
@@ -126,7 +126,7 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
     }
 
     _reportLastUpdate(value) {
-        this.restClient.set(`${this.lastUpdateRef.ref().toString()}`, value)
+        this.restClient.set(`${this.lastUpdateRef.ref().toString()}`, value, { inOrder: false })
             .catch((err) => {
                 this.emit('error', err);
             });

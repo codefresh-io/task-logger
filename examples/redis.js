@@ -14,13 +14,13 @@ const main = async () => {
         }
     });
 
-    redisTaskLogger.reportId();
-    redisTaskLogger.reportAccountId();
-    redisTaskLogger.setVisibility('public');
-    redisTaskLogger.setStatus('running');
+    await redisTaskLogger.reportId();
+    await redisTaskLogger.reportAccountId();
+    await redisTaskLogger.setVisibility('public');
+    await redisTaskLogger.setStatus('running');
     redisTaskLogger.setMemoryLimit('2');
     redisTaskLogger.updateMemoryUsage(new Date(), 'sd');
-    redisTaskLogger.setData({ key: 'value' });
+    await redisTaskLogger.setData({ key: 'value' });
     redisTaskLogger.setLogSize(100);
 
 
@@ -87,7 +87,7 @@ const main = async () => {
 
     redisRestoredTaskLogger.addErrorMessageToEndOfSteps('my error!');
 
-    redisTaskLogger.setStatus('success');
+    await redisTaskLogger.setStatus('success');
 };
 
 main();

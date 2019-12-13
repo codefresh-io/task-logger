@@ -9,7 +9,7 @@ const DebuggerStreamFactory            = require('./DebuggerStreamFactory');
 const { TYPES }                        = require('../enums');
 const { wrapWithRetry }                = require('../helpers');
 const RestClient                       = require('./rest/client');
-const FirebaseTokenGenerator           = require("firebase-token-generator");
+const FirebaseTokenGenerator           = require('firebase-token-generator');
 
 class FirebaseTaskLogger extends BaseTaskLogger {
     constructor(task, opts) {
@@ -36,7 +36,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         } catch (err) {
             return Promise.reject(new CFError({
                 cause: err,
-                message: "failed to create user firebase token"
+                message: 'failed to create user firebase token'
             }));
         }
     }
@@ -254,7 +254,8 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         }, {  errorAfterTimeout: 120000, retries: 3  }, extraPrintData);
     }
 
-    // TODO change this to push new step as it occurs, currently it does not work well in sync worfklows, finished steps will get deleted and then on next report we will have only part of steps
+    // TODO change this to push new step as it occurs, currently it does not work well in sync worfklows
+    // finished steps will get deleted and then on next report we will have only part of steps
     _updateCurrentStepReferences() {
         const stepsReferences = {};
         _.forEach(this.steps, (step) => {

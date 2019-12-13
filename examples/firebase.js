@@ -12,13 +12,13 @@ const main = async () => {
 
     console.log(JSON.stringify(taskLogger.getConfiguration()));
 
-    taskLogger.reportId();
-    taskLogger.reportAccountId();
-    taskLogger.setVisibility('public');
-    taskLogger.setStatus('running');
+    await taskLogger.reportId();
+    await taskLogger.reportAccountId();
+    await taskLogger.setVisibility('public');
+    await taskLogger.setStatus('running');
     taskLogger.setMemoryLimit('2');
     taskLogger.updateMemoryUsage(new Date(), 'sd');
-    taskLogger.setData({ key: 'value' });
+    await taskLogger.setData({ key: 'value' });
 
     const stepLogger = taskLogger.create('stepName', undefined, undefined, true);
     stepLogger.start();
@@ -61,7 +61,7 @@ const main = async () => {
 
     restoredTaskLogger.addErrorMessageToEndOfSteps('my error!');
 
-    taskLogger.setStatus('success');
+    await taskLogger.setStatus('success');
     // await taskLogger.clearSteps();
     // await taskLogger.delete();
     // taskLogger.finish();

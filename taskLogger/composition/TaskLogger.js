@@ -1,3 +1,4 @@
+const _                                 = require('lodash');
 const TaskLogger                        = require('../TaskLogger');
 const { TYPES }                         = require('../enums');
 
@@ -37,13 +38,14 @@ class CompositionTaskLogger extends TaskLogger {
         this.loggers.forEach(logger => logger._reportLastUpdate(value));
     }
 
-    reportId() {
-        this.loggers.forEach(logger => logger.reportId());
+    async reportId() {
+        return _.map(this.loggers, logger => logger.reportId());
     }
-    reportAccountId() {
-        this.loggers.forEach(logger => logger.reportAccountId());
 
+    async reportAccountId() {
+        return _.map(this.loggers, logger => logger.reportAccountId());
     }
+
     _reportMemoryUsage(time, memoryUsage) {
         const syncId = Date.now();
         this.loggers.forEach(logger => logger._reportMemoryUsage(time, memoryUsage, syncId));
@@ -59,28 +61,25 @@ class CompositionTaskLogger extends TaskLogger {
 
     }
 
-    _reportVisibility() {
-        this.loggers.forEach((logger) => {
+    async _reportVisibility() {
+        return _.map(this.loggers, (logger) => {
             logger.visibility = this.visibility;
-            logger._reportVisibility();
+            return logger._reportVisibility();
         });
-
     }
 
     _reportData() {
-        this.loggers.forEach((logger) =>  {
+        return _.map(this.loggers, (logger) => {
             logger.data = this.data;
-            logger._reportData();
+            return logger._reportData();
         });
-
     }
 
     _reportStatus() {
-        this.loggers.forEach((logger) => {
+        return _.map(this.loggers, (logger) => {
             logger.status = this.status;
-            logger._reportStatus();
+            return logger._reportStatus();
         });
-
     }
     _reportLogSize() {
         this.loggers.forEach((logger) => {

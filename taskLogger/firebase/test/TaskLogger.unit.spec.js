@@ -285,7 +285,7 @@ _.forEach(interfaces, (int) => {
                 const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
                 const taskLogger = await getTaskLoggerInstance(undefined, opts);
                 taskLogger.visibility = 'public';
-                taskLogger._reportVisibility();
+                await taskLogger._reportVisibility();
                 if (opts.restInterface) {
                     expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/visibility`, taskLogger.visibility);
                 } else {
@@ -297,7 +297,7 @@ _.forEach(interfaces, (int) => {
                 const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
                 const taskLogger = await getTaskLoggerInstance(undefined, opts);
                 taskLogger.data = { key: 'value' };
-                taskLogger._reportData();
+                await taskLogger._reportData();
                 if (opts.restInterface) {
                     expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/data`, taskLogger.data);
                 } else {
@@ -309,7 +309,7 @@ _.forEach(interfaces, (int) => {
                 const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
                 const taskLogger = await getTaskLoggerInstance(undefined, opts);
                 taskLogger.status = 'running';
-                taskLogger._reportStatus();
+                await taskLogger._reportStatus();
                 if (opts.restInterface) {
                     expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/status`, taskLogger.status);
                 } else {
@@ -320,7 +320,7 @@ _.forEach(interfaces, (int) => {
             it('should report accountId', async () => {
                 const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
                 const taskLogger = await getTaskLoggerInstance(undefined, opts);
-                taskLogger.reportAccountId();
+                await taskLogger.reportAccountId();
                 if (opts.restInterface) {
                     expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/accountId`, taskLogger.accountId);
                 } else {
@@ -331,7 +331,7 @@ _.forEach(interfaces, (int) => {
             it('should report job id', async () => {
                 const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
                 const taskLogger = await getTaskLoggerInstance(undefined, opts);
-                taskLogger.reportId();
+                await taskLogger.reportId();
                 if (opts.restInterface) {
                     expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/id`, taskLogger.jobId);
                 } else {
