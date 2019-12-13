@@ -21,20 +21,20 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
         throw new CFError('debugger is not supported with rest client');
     }
 
-    pauseDebugger(step) { // TODO only called from engine
+    pauseDebugger() { // TODO only called from engine
         throw new CFError('debugger is not supported with rest client');
     }
 
     async initDebuggerState(state) {
-        return this.restClient.set(`${this.baseRef.ref().toString()}/debug`, state);
+        return this.restClient.set(`${this.baseRef.ref().toString()}/debug`, state, { inOrder: false });
     }
 
     async setUseDebugger() {
-        return this.restClient.set(`${this.baseRef.ref().toString()}/debug/useDebugger`, true);
+        return this.restClient.set(`${this.baseRef.ref().toString()}/debug/useDebugger`, true, { inOrder: false });
     }
 
     async getUseDebugger() {
-        return this.restClient.get(`${this.baseRef.ref().toString()}/debug/useDebugger`);
+        return this.restClient.get(`${this.baseRef.ref().toString()}/debug/useDebugger`, { inOrder: false });
     }
 
     createStepLogger(name, opts) {
