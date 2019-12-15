@@ -17,9 +17,7 @@ describe('Firebase rest Client', () => {
     describe('retries', () => {
 
         describe('positive', () => {
-            it('should perform retry in case of rate limit error', () => {
-                throw new Error('not implemented');
-            });
+            it.skip('should perform retry in case of rate limit error', () => {});
 
             it('should perform retry in case of network error', () => {
                 const response = {
