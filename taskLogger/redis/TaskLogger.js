@@ -114,11 +114,11 @@ class RedisTaskLogger extends TaskLogger {
         this.writter.child('lastUpdate').set(value);
     }
 
-    reportId() {
-        this.writter.child('id').set(this.jobId);
+    async reportId() {
+        return this.writter.child('id').set(this.jobId);
     }
-    reportAccountId() {
-        this.writter.child('accountId').set(this.accountId);
+    async reportAccountId() {
+        return this.writter.child('accountId').set(this.accountId);
     }
     _reportMemoryUsage(time, memoryUsage, syncId) {
         this.writter.child('metrics').child('memory').push({ time, usage: memoryUsage }, syncId);
@@ -128,16 +128,16 @@ class RedisTaskLogger extends TaskLogger {
         this.writter.child('metrics.limits.memory').push(this.memoryLimit);
     }
 
-    _reportVisibility() {
-        this.writter.child('visibility').set(this.visibility);
+    async _reportVisibility() {
+        return this.writter.child('visibility').set(this.visibility);
     }
 
-    _reportData() {
-        this.writter.child('data').set(this.data);
+    async _reportData() {
+        return this.writter.child('data').set(this.data);
     }
 
-    _reportStatus() {
-        this.writter.child('status').set(this.status);
+    async _reportStatus() {
+        return this.writter.child('status').set(this.status);
     }
     _reportLogSize() {
         this.writter.child('metrics.logs.total').set(this.logSize);

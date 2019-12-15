@@ -131,23 +131,23 @@ class TaskLogger extends EventEmitter {
         this._reportLogSize();
     }
 
-    setVisibility(visibility) {
+    async setVisibility(visibility) {
         if (![VISIBILITY.PRIVATE, VISIBILITY.PUBLIC].includes(visibility)) {
             throw new Error(`Visibility: ${visibility} is not supported. use public/private`);
         }
 
         this.visibility = visibility;
-        this._reportVisibility();
+        return this._reportVisibility();
     }
 
-    setData(data) {
+    async setData(data) {
         this.data = data;
-        this._reportData();
+        return this._reportData();
     }
 
-    setStatus(status) {
+    async setStatus(status) {
         this.status = status;
-        this._reportStatus();
+        return this._reportStatus();
     }
 
     getConfiguration() {

@@ -8,8 +8,8 @@ const StepLogger                       = require('./StepLogger');
 const DebuggerStreamFactory            = require('./DebuggerStreamFactory');
 const { TYPES }                        = require('../enums');
 const { wrapWithRetry }                = require('../helpers');
-
-const STEPS_REFERENCES_KEY = 'stepsReferences';
+const RestClient                       = require('./rest/Client');
+const FirebaseTokenGenerator           = require('firebase-token-generator');
 
 class FirebaseTaskLogger extends BaseTaskLogger {
     constructor(task, opts) {
@@ -18,8 +18,53 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         this.pauseTimeout = 10 * 60 * 1000; // 10 min
     }
 
+    // TODO once everyone is moving to new model for token per progress, this should also contain the build id and restrict only access to this specific job
+    _provisionToken(userId, isAdmin) {
+        try {
+            const tokenGenerator = new FirebaseTokenGenerator(this.firebaseSecret);
+            const token = tokenGenerator.createToken(
+                {
+                    uid: userId.toString(),
+                    userId: userId.toString(),
+                    accountId: this.accountId,
+                    admin: isAdmin
+                },
+                {
+                    expires: Math.floor((new Date()).getTime() / 1000) + _.get(this.opts, 'sessionExpirationInSeconds', 1680) // default is 1680 - one day
+                });
+            return token;
+        } catch (err) {
+            throw new CFError({
+                cause: err,
+                message: 'failed to create user firebase token'
+            });
+        }
+    }
+
+    getConfiguration(userId, isAdmin, skipTokenCreation) {
+        return {
+            task: {
+                accountId: this.accountId,
+                jobId: this.jobId,
+            },
+            opts: {
+                type: this.opts.type,
+                baseFirebaseUrl: this.opts.baseFirebaseUrl,
+                firebaseSecret: skipTokenCreation ? this.firebaseSecret : this._provisionToken(userId, isAdmin)
+            }
+        };
+    }
+
     static async factory(task, opts) {
-        const taskLogger = new FirebaseTaskLogger(task, opts);
+        const { restInterface } = opts;
+
+        let taskLogger;
+        if (restInterface) {
+            const FirebaseRestTaskLogger = require('./rest/TaskLogger'); // eslint-disable-line global-require
+            taskLogger = new FirebaseRestTaskLogger(task, opts);
+        } else {
+            taskLogger = new FirebaseTaskLogger(task, opts);
+        }
 
         const { baseFirebaseUrl, firebaseSecret } = opts;
 
@@ -42,21 +87,26 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         taskLogger.stepsUrl = `${taskLogger.baseUrl}/steps`;
         taskLogger.stepsRef = new Firebase(taskLogger.stepsUrl);
 
-        try {
-            if (!FirebaseTaskLogger.authenticated) {
-                await Q.ninvoke(taskLogger.baseRef, 'authWithCustomToken', firebaseSecret);
-                debug(`TaskLogger created and authenticated to firebase url: ${taskLogger.baseUrl}`);
+        if (restInterface) {
+            taskLogger.restClient = new RestClient(taskLogger.firebaseSecret);
+        } else {
+            // establishing connection is only rqeuired in case of stream interface
+            try {
+                if (!FirebaseTaskLogger.authenticated) {
+                    await Q.ninvoke(taskLogger.baseRef, 'authWithCustomToken', firebaseSecret);
+                    debug(`TaskLogger created and authenticated to firebase url: ${taskLogger.baseUrl}`);
 
-                // workaround to not authenticate each time
-                FirebaseTaskLogger.authenticated = true;
-            } else {
-                debug('TaskLogger created without authentication');
+                    // workaround to not authenticate each time
+                    FirebaseTaskLogger.authenticated = true;
+                } else {
+                    debug('TaskLogger created without authentication');
+                }
+            } catch (err) {
+                throw new CFError({
+                    cause: err,
+                    message: `Failed to create taskLogger because authentication to firebase url ${taskLogger.baseUrl}`
+                });
             }
-        } catch (err) {
-            throw new CFError({
-                cause: err,
-                message: `Failed to create taskLogger because authentication to firebase url ${taskLogger.baseUrl}`
-            });
         }
 
         return taskLogger;
@@ -102,15 +152,15 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         return debuggerStreams.createStreams(step, phase);
     }
 
-    initDebuggerState(state) {
+    async initDebuggerState(state) {
         return this.baseRef.child('debug').set(state);
     }
 
-    setUseDebugger() {
+    async setUseDebugger() {
         return this.baseRef.child('debug/useDebugger').set(true);
     }
 
-    getUseDebugger() {
+    async getUseDebugger() {
         const value = Q.defer();
         this.baseRef.child('debug/useDebugger').on('value', (snapshot) => {
             const val = snapshot.val();
@@ -169,7 +219,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             const deferred = Q.defer();
             debug(`performing restore for job: ${this.jobId}`);
 
-            this.baseRef.child(STEPS_REFERENCES_KEY).once('value', (snapshot) => {
+            this.baseRef.child(FirebaseTaskLogger.STEPS_REFERENCES_KEY).once('value', (snapshot) => {
                 const stepsReferences = snapshot.val();
                 if (!stepsReferences) {
                     deferred.resolve();
@@ -204,12 +254,14 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         }, {  errorAfterTimeout: 120000, retries: 3  }, extraPrintData);
     }
 
+    // TODO change this to push new step as it occurs, currently it does not work well in sync worfklows
+    // finished steps will get deleted and then on next report we will have only part of steps
     _updateCurrentStepReferences() {
         const stepsReferences = {};
         _.forEach(this.steps, (step) => {
             stepsReferences[_.last(step.stepRef.toString().split('/'))] = step.name;
         });
-        this.baseRef.child(STEPS_REFERENCES_KEY).set(stepsReferences);
+        this.baseRef.child(FirebaseTaskLogger.STEPS_REFERENCES_KEY).set(stepsReferences);
     }
 
     async addErrorMessageToEndOfSteps(message) {
@@ -242,24 +294,24 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         this.baseRef.child('metrics').child('logs').child('total').set(this.logSize);
     }
 
-    _reportVisibility() {
-        this.baseRef.child('visibility').set(this.visibility);
+    async _reportVisibility() {
+        return this.baseRef.child('visibility').set(this.visibility);
     }
 
-    _reportData() {
-        this.baseRef.child('data').set(this.data);
+    async _reportData() {
+        return this.baseRef.child('data').set(this.data);
     }
 
-    _reportStatus() {
-        this.baseRef.child('status').set(this.status);
+    async _reportStatus() {
+        return this.baseRef.child('status').set(this.status);
     }
 
-    reportAccountId() {
-        this.baseRef.child('accountId').set(this.accountId);
+    async reportAccountId() {
+        return this.baseRef.child('accountId').set(this.accountId);
     }
 
-    reportId() {
-        this.baseRef.child('id').set(this.jobId);
+    async reportId() {
+        return this.baseRef.child('id').set(this.jobId);
     }
 
     _reportLastUpdate(value) {
@@ -308,5 +360,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 }
 FirebaseTaskLogger.TYPE          = TYPES.FIREBASE;
 FirebaseTaskLogger.authenticated = false;
+FirebaseTaskLogger.STEPS_REFERENCES_KEY = 'stepsReferences';
+
 
 module.exports = FirebaseTaskLogger;

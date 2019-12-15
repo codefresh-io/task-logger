@@ -14,13 +14,13 @@ const main = async () => {
         }
     });
 
-    mongoTaskLogger.reportId();
-    mongoTaskLogger.reportAccountId();
-    mongoTaskLogger.setVisibility('public');
-    mongoTaskLogger.setStatus('running');
+    await mongoTaskLogger.reportId();
+    await mongoTaskLogger.reportAccountId();
+    await mongoTaskLogger.setVisibility('public');
+    await mongoTaskLogger.setStatus('running');
     mongoTaskLogger.setMemoryLimit('2');
     mongoTaskLogger.updateMemoryUsage(new Date(), 'sd');
-    mongoTaskLogger.setData({ key: 'value' });
+    await mongoTaskLogger.setData({ key: 'value' });
 
 
     const stepLoggerMongo = mongoTaskLogger.create('stepName', undefined, undefined, true);
@@ -81,7 +81,7 @@ const main = async () => {
 
     mongoTaskLoggerRestored.addErrorMessageToEndOfSteps('my error!');
 
-    mongoTaskLogger.setStatus('success');
+    await mongoTaskLogger.setStatus('success');
 };
 
 main();

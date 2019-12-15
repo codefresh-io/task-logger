@@ -33,13 +33,13 @@ const main = async () => {
 
     });
 
-    composeTaskLogger.reportId();
-    composeTaskLogger.reportAccountId();
-    composeTaskLogger.setVisibility('public');
-    composeTaskLogger.setStatus('running');
+    await composeTaskLogger.reportId();
+    await composeTaskLogger.reportAccountId();
+    await composeTaskLogger.setVisibility('public');
+    await composeTaskLogger.setStatus('running');
     composeTaskLogger.setMemoryLimit('2');
     composeTaskLogger.updateMemoryUsage(new Date(), 'sd');
-    composeTaskLogger.setData({ key: 'value' });
+    await composeTaskLogger.setData({ key: 'value' });
 
 
     const stepLoggerCompose = composeTaskLogger.create('stepName', undefined, undefined, true);
@@ -141,7 +141,7 @@ const main = async () => {
 
     composeTaskLoggerRestored.addErrorMessageToEndOfSteps('my error!');
 
-    composeTaskLogger.setStatus('success');
+    await composeTaskLogger.setStatus('success');
 };
 
 main();

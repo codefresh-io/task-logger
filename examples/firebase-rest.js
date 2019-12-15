@@ -7,10 +7,12 @@ const main = async () => {
     }, {
         type: TYPES.FIREBASE,
         baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs',
-        firebaseSecret: process.env.FIREBASE_SECRET
+        firebaseSecret: process.env.FIREBASE_SECRET,
+        restInterface: true
     });
 
-    console.log(JSON.stringify(taskLogger.getConfiguration()));
+    const userId = 'userId';
+    console.log(JSON.stringify(taskLogger.getConfiguration(userId)));
 
     await taskLogger.reportId();
     await taskLogger.reportAccountId();

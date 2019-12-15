@@ -253,26 +253,26 @@ describe('Base TaskLogger tests', () => {
     describe('setVisibility', () => {
 
         describe('positive', () => {
-            it('should set the visiblity to private', () => {
+            it('should set the visiblity to private', async () => {
                 const taskLogger = getTaskLoggerInstance();
-                taskLogger.setVisibility(VISIBILITY.PRIVATE);
+                await taskLogger.setVisibility(VISIBILITY.PRIVATE);
                 expect(taskLogger.visibility).to.equal(VISIBILITY.PRIVATE);
                 expect(taskLogger._reportVisibility).to.have.been.calledWith();
             });
 
-            it('should set the visiblity to public', () => {
+            it('should set the visiblity to public', async () => {
                 const taskLogger = getTaskLoggerInstance();
-                taskLogger.setVisibility(VISIBILITY.PUBLIC);
+                await taskLogger.setVisibility(VISIBILITY.PUBLIC);
                 expect(taskLogger.visibility).to.equal(VISIBILITY.PUBLIC);
                 expect(taskLogger._reportVisibility).to.have.been.calledWith();
             });
         });
 
         describe('negative', () => {
-            it('should fail in case the visiblity is not supported', () => {
+            it('should fail in case the visiblity is not supported', async () => {
                 const taskLogger = getTaskLoggerInstance();
                 try {
-                    taskLogger.setVisibility('non-valid');
+                    await taskLogger.setVisibility('non-valid');
                     throw new Error('should have failed');
                 } catch (err) {
                     expect(err.toString()).to.equal('Error: Visibility: non-valid is not supported. use public/private');
@@ -284,10 +284,10 @@ describe('Base TaskLogger tests', () => {
 
     describe('setData', () => {
 
-        it('should set data', () => {
+        it('should set data', async () => {
             const taskLogger = getTaskLoggerInstance();
             const data = {};
-            taskLogger.setData(data);
+            await taskLogger.setData(data);
             expect(taskLogger.data).to.equal(data);
             expect(taskLogger._reportData).to.have.been.calledWith();
         });
@@ -296,10 +296,10 @@ describe('Base TaskLogger tests', () => {
 
     describe('setData', () => {
 
-        it('should set data', () => {
+        it('should set data', async () => {
             const taskLogger = getTaskLoggerInstance();
             const status = 'status';
-            taskLogger.setStatus(status);
+            await taskLogger.setStatus(status);
             expect(taskLogger.status).to.equal(status);
             expect(taskLogger._reportStatus).to.have.been.calledWith();
         });
