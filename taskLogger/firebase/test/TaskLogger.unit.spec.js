@@ -121,6 +121,25 @@ _.forEach(interfaces, (int) => {
                     });
                 });
 
+                it('should return original firebase token in case of asking to skip token creation', async () => {
+                    const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                    const taskLogger = await getTaskLoggerInstance(undefined, opts);
+
+                    const configuration = await taskLogger.getConfiguration(undefined, undefined, true);
+                    expect(createTokenSpy).to.not.have.been.called;
+                    expect(configuration).to.deep.equal({
+                        'opts': {
+                            'baseFirebaseUrl': 'url',
+                            'firebaseSecret': 'secret',
+                            'type': undefined
+                        },
+                        'task': {
+                            'accountId': 'accountId',
+                            'jobId': 'jobId'
+                        }
+                    });
+                });
+
             });
 
             describe('negative tests', () => {

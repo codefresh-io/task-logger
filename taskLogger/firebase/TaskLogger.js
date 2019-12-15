@@ -19,7 +19,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     // TODO once everyone is moving to new model for token per progress, this should also contain the build id and restrict only access to this specific job
-    async _provisionToken(userId, isAdmin) {
+    _provisionToken(userId, isAdmin) {
         try {
             const tokenGenerator = new FirebaseTokenGenerator(this.firebaseSecret);
             const token = tokenGenerator.createToken(
@@ -34,14 +34,14 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                 });
             return token;
         } catch (err) {
-            return Promise.reject(new CFError({
+            throw new CFError({
                 cause: err,
                 message: 'failed to create user firebase token'
-            }));
+            });
         }
     }
 
-    async getConfiguration(userId, isAdmin) {
+    getConfiguration(userId, isAdmin, skipTokenCreation) {
         return {
             task: {
                 accountId: this.accountId,
@@ -50,7 +50,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             opts: {
                 type: this.opts.type,
                 baseFirebaseUrl: this.opts.baseFirebaseUrl,
-                firebaseSecret: await this._provisionToken(userId, isAdmin)
+                firebaseSecret: skipTokenCreation ? this.firebaseSecret : this._provisionToken(userId, isAdmin)
             }
         };
     }
