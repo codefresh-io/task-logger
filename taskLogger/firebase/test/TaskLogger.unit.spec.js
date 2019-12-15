@@ -13,13 +13,28 @@ const { RestClientStub } = require('./RestClientStub');
 
 let Firebase;
 
+let createTokenSpy = sinon.spy((opts) => {
+    if (opts.admin) {
+        return 'admin-token';
+    } else {
+        return 'token';
+    }
+});
+const originalTokenSpy = createTokenSpy;
+
+
 const getTaskLoggerInstance = async (task = { accountId: 'accountId', jobId: 'jobId' },
     opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }) => {
     Firebase = createFirebaseStub();
 
     const TaskLogger = proxyquire('../TaskLogger', {
         'firebase': Firebase,
-        './rest/Client': RestClientStub
+        './rest/Client': RestClientStub,
+        'firebase-token-generator': function () {
+            return {
+                createToken: createTokenSpy
+            };
+        }
     });
 
     const taskLogger = await TaskLogger.factory(task, opts);
@@ -46,13 +61,92 @@ const getTaskLoggerInstanceWithDebugger = async (task = { accountId: 'accountId'
 };
 
 const interfaces = [
-    // { name: 'base class', opts: {} },
+    { name: 'base class', opts: {} },
     { name: 'REST class', opts: { restInterface: true } }
 ];
 
 _.forEach(interfaces, (int) => {
 
     describe(`Firebase TaskLogger '${int.name}' tests`, () => {
+
+        beforeEach(() => {
+            createTokenSpy.resetHistory();
+        });
+
+        afterEach(() => {
+            createTokenSpy = originalTokenSpy;
+        });
+
+        describe('getConfiguration', () => {
+
+            describe('positive tests', () => {
+
+                it('should return a regular token in case params were passed correctly but without admin option', async () => {
+                    const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                    const taskLogger = await getTaskLoggerInstance(undefined, opts);
+
+                    const userId = 'userId';
+                    const configuration = await taskLogger.getConfiguration(userId);
+                    expect(createTokenSpy).to.have.been.calledOnce;
+                    expect(configuration).to.deep.equal({
+                        'opts': {
+                            'baseFirebaseUrl': 'url',
+                            'firebaseSecret': 'token',
+                            'type': undefined
+                        },
+                        'task': {
+                            'accountId': 'accountId',
+                            'jobId': 'jobId'
+                        }
+                    });
+                });
+
+                it('should return an admin token in case params were passed correctly with admin flag', async () => {
+                    const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                    const taskLogger = await getTaskLoggerInstance(undefined, opts);
+
+                    const userId = 'userId';
+                    const configuration = await taskLogger.getConfiguration(userId, true);
+                    expect(createTokenSpy).to.have.been.calledOnce;
+                    expect(configuration).to.deep.equal({
+                        'opts': {
+                            'baseFirebaseUrl': 'url',
+                            'firebaseSecret': 'admin-token',
+                            'type': undefined
+                        },
+                        'task': {
+                            'accountId': 'accountId',
+                            'jobId': 'jobId'
+                        }
+                    });
+                });
+
+            });
+
+            describe('negative tests', () => {
+
+                it('should fail in case generating a new token failed', async () => {
+                    createTokenSpy = sinon.spy(() => {
+                        throw new Error('token creation error');
+                    });
+
+                    const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                    const taskLogger = await getTaskLoggerInstance(undefined, opts);
+
+                    const userId = 'userId';
+                    try {
+                        await taskLogger.getConfiguration(userId, true);
+                    } catch (err) {
+                        expect(err.toString()).to.equal('Error: failed to create user firebase token; caused by Error: token creation error');
+                        return;
+                    }
+
+                    throw new Error('should have failed');
+                });
+
+            });
+
+        });
 
         describe('factory', () => {
 
@@ -338,139 +432,6 @@ _.forEach(interfaces, (int) => {
                     expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.jobId);
                 }
             });
-        });
-
-        describe.skip('getConfiguration', () => {
-
-            describe('positive tests', () => {
-
-                it('should return a regular token in case params were passed correctly but without admin option', async () => {
-                    Firebase = createFirebaseStub();
-
-                    const createTokenSpy = sinon.spy((opts) => {
-                        if (opts.admin) {
-                            return 'admin-token';
-                        } else {
-                            return 'token';
-                        }
-                    });
-                    const TaskLogger = proxyquire('../TaskLogger', {
-                        'firebase': Firebase,
-                        'firebase-token-generator': function () {
-                            return {
-                                createToken: createTokenSpy
-                            };
-                        }
-                    });
-
-                    const task = { accountId: 'accountId', jobId: 'jobId' };
-                    const opts = _.merge({}, {
-                        baseFirebaseUrl: 'url',
-                        firebaseSecret: 'secret',
-                        //type: 'firebase'
-                    }, int.opts);
-                    const taskLogger = await TaskLogger.factory(task, opts);
-
-                    const userId = 'userId';
-                    const configuration = await taskLogger.getConfiguration(userId);
-                    // expect(createTokenSpy).to.have.been.calledOnce;
-                    expect(configuration).to.deep.equal({
-                        'opts': {
-                            'baseFirebaseUrl': 'url',
-                            'firebaseSecret': 'token',
-                            'type': undefined
-                        },
-                        'task': {
-                            'accountId': 'accountId',
-                            'jobId': 'jobId'
-                        }
-                    });
-                });
-
-                it('should return an admin token in case params were passed correctly with admin flag', async () => {
-                    Firebase = createFirebaseStub();
-
-                    const createTokenSpy = sinon.spy((opts) => {
-                        if (opts.admin) {
-                            return 'admin-token';
-                        } else {
-                            return 'token';
-                        }
-                    });
-                    const TaskLogger = proxyquire('../TaskLogger', {
-                        'firebase': Firebase,
-                        'firebase-token-generator': function () {
-                            return {
-                                createToken: createTokenSpy
-                            };
-                        }
-                    });
-
-                    const task = { accountId: 'accountId', jobId: 'jobId' };
-                    const opts = _.merge({}, {
-                        baseFirebaseUrl: 'url',
-                        firebaseSecret: 'secret',
-                        //type: 'firebase'
-                    }, int.opts);
-                    const taskLogger = await TaskLogger.factory(task, opts);
-
-                    const userId = 'userId';
-                    const configuration = await taskLogger.getConfiguration(userId, true);
-                    // expect(createTokenSpy).to.have.been.calledOnce;
-                    expect(configuration).to.deep.equal({
-                        'opts': {
-                            'baseFirebaseUrl': 'url',
-                            'firebaseSecret': 'admin-token',
-                            'type': undefined
-                        },
-                        'task': {
-                            'accountId': 'accountId',
-                            'jobId': 'jobId'
-                        }
-                    });
-                });
-
-            });
-
-            describe('negative tests', () => {
-
-                it('should fail in case generating a new token failed', () => {
-                    Firebase = createFirebaseStub();
-
-                    const createTokenSpy = sinon.spy(() => {
-                        throw new Error('token creation error');
-                    });
-                    const TaskLogger = proxyquire('../TaskLogger', {
-                        'firebase': Firebase,
-                        'firebase-token-generator': function () {
-                            return {
-                                createToken: createTokenSpy
-                            };
-                        }
-                    });
-
-                    const task = { accountId: 'accountId', jobId: 'jobId' };
-                    const opts = _.merge({}, {
-                        baseFirebaseUrl: 'url',
-                        firebaseSecret: 'secret',
-                        //type: 'firebase'
-                    }, int.opts);
-
-                    return TaskLogger.factory(task, opts)
-                        .then((taskLogger) => {
-                            const userId = 'userId';
-                            return taskLogger.getConfiguration(userId)
-                                .then(() => {
-                                    throw new Error('should have failed');
-                                }, (err) => {
-                                    expect(err.toString()).to.equal('Error: failed to create user firebase token; caused by Error: token creation error');
-                                });
-                        });
-
-                });
-
-            });
-
         });
 
         if (!int.opts.restInterface) {
