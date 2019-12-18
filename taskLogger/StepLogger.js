@@ -25,6 +25,8 @@ class StepLogger extends EventEmitter {
         this.name = name;
 
         this.fatal = false;
+
+        this.origin = opts.origin || 'unknown';
     }
 
     start(eventReporting) {
@@ -63,23 +65,31 @@ class StepLogger extends EventEmitter {
     }
 
     write(message) {
-        this._reportLog(message);
+        this._reportLog(this.createLogContext(message));
         this.updateLastUpdate();
     }
 
     debug(message) {
-        this._reportLog(`${message}\r\n`);
+        this._reportLog(this.createLogContext(`${message}\r\n`));
         this.updateLastUpdate();
     }
 
     warn(message) {
-        this._reportLog(`\x1B[01;93m${message}\x1B[0m\r\n`);
+        this._reportLog(this.createLogContext(`\x1B[01;93m${message}\x1B[0m\r\n`));
         this.updateLastUpdate();
     }
 
     info(message) {
-        this._reportLog(`${message}\r\n`);
+        this._reportLog(this.createLogContext(`${message}\r\n`));
         this.updateLastUpdate();
+    }
+
+    createLogContext(message) {
+        return {
+            message,
+            origin: this.origin,
+            timestamp: new Date().toISOString()
+        };
     }
 
     finish(err, skip, finishTime) {
