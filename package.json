@@ -1,6 +1,6 @@
 {
   "name": "nazar-codefresh-task-logger",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "description": "Codefresh utilities for working with build logs",
   "main": "index.js",
   "scripts": {
