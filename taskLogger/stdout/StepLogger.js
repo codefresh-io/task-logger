@@ -63,4 +63,4 @@ class StdOutStepLogger extends BaseStepLogger {
     }
 }
 
-module.exports = FirebaseStepLogger;
+module.exports = StdOutStepLogger;
