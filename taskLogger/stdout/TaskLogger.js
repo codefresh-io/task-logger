@@ -31,6 +31,10 @@ class StdOutTaskLogger extends TaskLogger {
 
     }
 
+    restore() {
+        return Q.resolve();
+    }
+
     reportId() {
 
     }
