@@ -17,7 +17,8 @@ const TYPES = {
     FIREBASE: 'firebase',
     REDIS: 'redis',
     MONGO: 'mongo',
-    COMPOSE: 'composition'
+    COMPOSE: 'composition',
+    STDOUT: 'stdout',
 };
 
 const VISIBILITY = {

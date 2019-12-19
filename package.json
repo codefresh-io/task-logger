@@ -1,5 +1,5 @@
 {
-  "name": "@codefresh-io/task-logger",
+  "name": "nazar-codefresh-task-logger",
   "version": "0.0.23",
   "description": "Codefresh utilities for working with build logs",
   "main": "index.js",
