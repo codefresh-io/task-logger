@@ -1,5 +1,6 @@
 const TaskLogger = require('../TaskLogger');
-const { TYPES, STATUS } = require('../enums');
+const {TYPES, STATUS} = require('../enums');
+const Q = require('q');
 
 
 class StdOutTaskLogger extends TaskLogger {
@@ -8,6 +9,7 @@ class StdOutTaskLogger extends TaskLogger {
         this.type = TYPES.STDOUT
 
     }
+
     static async factory(task, opts) {
         return new StdOutTaskLogger(task, opts);
     }
@@ -18,7 +20,7 @@ class StdOutTaskLogger extends TaskLogger {
 
     async getLastUpdate() {
 
-        return  this.writter.child('lastUpdate').get();
+        return this.writter.child('lastUpdate').get();
     }
 
     async addErrorMessageToEndOfSteps(message) {
@@ -38,9 +40,11 @@ class StdOutTaskLogger extends TaskLogger {
     reportId() {
 
     }
+
     reportAccountId() {
 
     }
+
     _reportMemoryUsage(time, memoryUsage, syncId) {
 
     }
@@ -60,6 +64,7 @@ class StdOutTaskLogger extends TaskLogger {
     _reportStatus() {
 
     }
+
     _reportLogSize() {
 
     }
