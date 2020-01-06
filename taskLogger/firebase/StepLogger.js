@@ -25,10 +25,6 @@ class FirebaseStepLogger extends BaseStepLogger {
         this.stepRef = new Firebase(this.stepUrl);
 
         this.writableStream = new FirebaseWritableStream(this.stepRef, opts.rateLimitOptions);
-
-       /* this._reportLog = this._logWriteStrategyFactory();
-        this._logsBatch = null;
-        this._logBatchFlushTimeout = null; */
     }
 
     async restore() {
