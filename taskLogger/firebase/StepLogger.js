@@ -5,8 +5,10 @@ const CFError            = require('cf-errors');
 const { STATUS }         = require('../enums');
 const BaseStepLogger     = require('../StepLogger');
 const { wrapWithRetry }  = require('../helpers');
+const FirebaseWritableStream = require('./FirebaseWritableStream');
 
 class FirebaseStepLogger extends BaseStepLogger {
+
     constructor(step, opts) {
         super(step, opts);
 
@@ -21,6 +23,12 @@ class FirebaseStepLogger extends BaseStepLogger {
 
         this.stepUrl = `${this.baseUrl}/steps/${this.name}`;
         this.stepRef = new Firebase(this.stepUrl);
+
+        this.writableStream = new FirebaseWritableStream(this.stepRef, opts.rateLimitOptions);
+
+       /* this._reportLog = this._logWriteStrategyFactory();
+        this._logsBatch = null;
+        this._logBatchFlushTimeout = null; */
     }
 
     async restore() {
@@ -93,6 +101,27 @@ class FirebaseStepLogger extends BaseStepLogger {
 
     clearLogs() {
         this.stepRef.child('logs').set({});
+    }
+
+    streamLog() {
+        return this.writableStream;
+    }
+
+    _setBatchFlushTimeout(flushInterval) {
+        this._logBatchFlushTimeout = setTimeout(() => {
+            this.stepRef.update(this._logsBatch, err => console.log(err));
+            this._logsBatch = {};
+        }, flushInterval);
+    }
+
+    _logWriteStrategyFactory(logWriteStrategy) {
+        switch (logWriteStrategy) {
+            case 'batchLogWrite':
+                this._logsBatch = {};
+                return this.batchLogWrite.bind(this);
+            case 'singleLogWrite':
+            default: return this.singleLogWrite.bind(this);
+        }
     }
 
     async delete() {

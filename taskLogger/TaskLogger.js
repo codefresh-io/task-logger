@@ -31,6 +31,10 @@ class TaskLogger extends EventEmitter {
         this.fatal    = false;
         this.finished = false;
         this.steps    = {};
+
+        this.rateLimitOptions = opts.rateLimitOptions;
+
+        this.origin = opts.origin || 'unknown';
     }
 
     create(name, resetStatus, runCreationLogic) {
@@ -75,7 +79,8 @@ class TaskLogger extends EventEmitter {
         const step = new StepClass({
             accountId: this.accountId,
             jobId: this.jobId,
-            name
+            name,
+            origin: this.origin
         }, {
             ...opts
         }, this);
