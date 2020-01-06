@@ -179,7 +179,8 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                     const step = new StepLogger({
                         accountId: this.accountId,
                         jobId: this.jobId,
-                        name: key
+                        name: key,
+                        rateLimitOptions: this.rateLimitOptions
                     }, {
                         ...this.opts
                     });

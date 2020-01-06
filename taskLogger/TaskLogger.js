@@ -32,6 +32,8 @@ class TaskLogger extends EventEmitter {
         this.finished = false;
         this.steps    = {};
 
+        this.rateLimitOptions = opts.rateLimitOptions;
+
         this.origin = opts.origin || 'unknown';
     }
 

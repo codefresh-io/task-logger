@@ -26,7 +26,9 @@ class StepLogger extends EventEmitter {
 
         this.fatal = false;
 
-        this.origin = opts.origin || 'unknown';
+        const { origin, logWriteStrategyOptions } = opts;
+        this.origin = origin || 'unknown';
+        this.logWriteStrategyOptions = logWriteStrategyOptions || { logWriteStrategy: 'singleLogWrite' };
     }
 
     start(eventReporting) {
@@ -67,6 +69,11 @@ class StepLogger extends EventEmitter {
     write(message) {
         this._reportLog(this.createLogContext(message));
         this.updateLastUpdate();
+    }
+
+    writeStream() {
+        return this.streamLog();
+        // TODO: this.updateLastUpdate(); ? should we pass it into stream log?
     }
 
     debug(message) {
