@@ -12,6 +12,10 @@ class FirebaseWritableStream extends Writable {
         this._debounceDelay = options.debounceDelay;
         this._messageSizeLimitPerTimeUnit = options.messageSizeLimitPerTimeUnit;
         this._batchSize = options.batchSize;
+
+        this._logsBatch = Object.create(null);
+        this._currentLogByteSize = 0;
+        this._debounceTimeout = null;
     }
 
     _write(chunk, encoding, next) {
@@ -62,7 +66,7 @@ class FirebaseWritableStream extends Writable {
 
         if (_.size(this._logsBatch) < this._batchSize) {
             console.log(`${new Date().toISOString()} FirebaseWritableStream._write: batch capacity is still
-                     available [${_.keys(this._logsBatch).length}/${this._batchSize}], resetting debounce flush and continue`);
+                     available [${_.size(this._logsBatch)}/${this._batchSize}], resetting debounce flush and continue`);
             this._setBatchFlushTimeout(this._debounceDelay);
             next();
             return;
@@ -90,7 +94,7 @@ class FirebaseWritableStream extends Writable {
                 return;
             }
             console.log(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: timeout 
-                        triggered, [${this._logBatchByteSize / 1024} KB /${FIREBASE_MESSAGE_SIZE_LIMIT / 1024} KB], flushing...`);
+                        triggered, [${this._currentLogByteSize / 1024} KB /${FIREBASE_MESSAGE_SIZE_LIMIT / 1024} KB], flushing...`);
             this._firebaseClient.update(this._logsBatch, (err) => {
                 if (err) {
                     console.error(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: flushed successfully`);

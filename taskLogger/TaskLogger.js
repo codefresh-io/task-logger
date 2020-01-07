@@ -31,6 +31,7 @@ class TaskLogger extends EventEmitter {
         this.fatal    = false;
         this.finished = false;
         this.steps    = {};
+        this.rateLimitOptions = opts.rateLimitOptions;
     }
 
     create(name, resetStatus, runCreationLogic) {
