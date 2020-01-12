@@ -161,7 +161,7 @@ describe('Base StepLogger tests', () => {
                 const stepLogger = getStepLoggerInstance();
                 const message = 'message';
                 stepLogger.write(message);
-                expect(stepLogger._reportLog).to.have.been.calledWithMatch({ message, origin: 'unknwon' });
+                expect(stepLogger._reportLog).to.have.been.calledWith(message);
                 expect(stepLogger.updateLastUpdate).to.have.been.calledWith();
             });
         });

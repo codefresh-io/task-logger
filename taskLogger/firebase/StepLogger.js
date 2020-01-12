@@ -102,23 +102,6 @@ class FirebaseStepLogger extends BaseStepLogger {
         return new FirebaseWritableStream(this.stepRef, this.opts.logsRateLimitConfig);
     }
 
-    _setBatchFlushTimeout(flushInterval) {
-        this._logBatchFlushTimeout = setTimeout(() => {
-            this.stepRef.update(this._logsBatch, err => console.log(err));
-            this._logsBatch = {};
-        }, flushInterval);
-    }
-
-    _logWriteStrategyFactory(logWriteStrategy) {
-        switch (logWriteStrategy) {
-            case 'batchLogWrite':
-                this._logsBatch = {};
-                return this.batchLogWrite.bind(this);
-            case 'singleLogWrite':
-            default: return this.singleLogWrite.bind(this);
-        }
-    }
-
     async delete() {
         return this.stepRef.remove();
     }
