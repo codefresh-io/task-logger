@@ -51,7 +51,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                 type: this.opts.type,
                 baseFirebaseUrl: this.opts.baseFirebaseUrl,
                 firebaseSecret: skipTokenCreation ? this.firebaseSecret : this._provisionToken(userId, isAdmin),
-                rateLimitOptions: this.rateLimitOptions
+                logsRateLimitConfig: this.opts.logsRateLimitConfig
             }
         };
     }

@@ -73,7 +73,7 @@ class FirebaseWritableStream extends Writable {
         }
 
         console.log(`${new Date().toISOString()} FirebaseWritableStream._write: logs batch size has been met [${this._batchSize}] flushing...`);
-        this._firebaseClient.update(this._logsBatch, (err) => {
+        this._firebaseClient.child('logs').update(this._logsBatch, (err) => {
             if (err) {
                 next(err);
                 return;
@@ -94,8 +94,8 @@ class FirebaseWritableStream extends Writable {
                 return;
             }
             console.log(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: timeout 
-                        triggered, [${this._currentLogByteSize / 1024} KB /${FIREBASE_MESSAGE_SIZE_LIMIT / 1024} KB], flushing...`);
-            this._firebaseClient.update(this._logsBatch, (err) => {
+                        triggered, [${this._currentLogByteSize / 1024} KB /${this._messageSizeLimitPerTimeUnit / 1024} KB], flushing...`);
+            this._firebaseClient.child('logs').update(this._logsBatch, (err) => {
                 if (err) {
                     console.error(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: flushed successfully`);
                 } else {

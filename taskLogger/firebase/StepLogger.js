@@ -24,7 +24,6 @@ class FirebaseStepLogger extends BaseStepLogger {
         this.stepUrl = `${this.baseUrl}/steps/${this.name}`;
         this.stepRef = new Firebase(this.stepUrl);
 
-        this.writableStream = new FirebaseWritableStream(this.stepRef, opts.rateLimitOptions);
     }
 
     async restore() {
@@ -100,7 +99,7 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     streamLog() {
-        return this.writableStream;
+        return new FirebaseWritableStream(this.stepRef, this.opts.logsRateLimitConfig);
     }
 
     _setBatchFlushTimeout(flushInterval) {
