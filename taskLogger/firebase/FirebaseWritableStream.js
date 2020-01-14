@@ -44,7 +44,7 @@ class FirebaseWritableStream extends Writable {
 
             this._firebaseClient.update(this._logsBatch, (err) => {
                 if (err) {
-                    next(err);
+                    next(err); // do we want to only warn or fail execution
                     return;
                 }
 
@@ -83,6 +83,23 @@ class FirebaseWritableStream extends Writable {
             this._logsBatch = Object.create(null);
             this._setBatchFlushTimeout(this._debounceDelay);
             next();
+        });
+    }
+
+    _final(callback) {
+        clearTimeout(this._debounceTimeout);
+        if (_.isEmpty(this._logsBatch)) {
+            console.log(`${new Date().toISOString()} FirebaseWritableStream._final: batch is empty`);
+            callback();
+            return;
+        }
+
+        this._firebaseClient.update(this._logsBatch, (err) => {
+            if (err) {
+                callback(err);
+                return;
+            }
+            callback();
         });
     }
 
