@@ -124,7 +124,6 @@ class StepLogger extends EventEmitter {
     }
 
     updateLastUpdate() {
-        console.log('received updateLastUpdate event');
         this.lastUpdate = new Date().getTime();
         this.emit('lastUpdateChanged', this.lastUpdate);
     }
