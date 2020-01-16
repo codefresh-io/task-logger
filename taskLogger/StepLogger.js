@@ -68,8 +68,7 @@ class StepLogger extends EventEmitter {
     }
 
     writeStream() {
-        return this.streamLog();
-        // TODO: this.updateLastUpdate(); ? should we pass it into stream log?
+        return this.streamLog().on('write', this.updateLastUpdate.bind(this));
     }
 
     debug(message) {
@@ -125,6 +124,7 @@ class StepLogger extends EventEmitter {
     }
 
     updateLastUpdate() {
+        console.log('received updateLastUpdate event');
         this.lastUpdate = new Date().getTime();
         this.emit('lastUpdateChanged', this.lastUpdate);
     }
