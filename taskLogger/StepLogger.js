@@ -67,6 +67,10 @@ class StepLogger extends EventEmitter {
         this.updateLastUpdate();
     }
 
+    writeStream() {
+        return this.streamLog().on('write', this.updateLastUpdate.bind(this));
+    }
+
     debug(message) {
         this._reportLog(`${message}\r\n`);
         this.updateLastUpdate();

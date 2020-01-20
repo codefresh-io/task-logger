@@ -5,8 +5,10 @@ const CFError            = require('cf-errors');
 const { STATUS }         = require('../enums');
 const BaseStepLogger     = require('../StepLogger');
 const { wrapWithRetry }  = require('../helpers');
+const FirebaseWritableStream = require('./FirebaseWritableStream');
 
 class FirebaseStepLogger extends BaseStepLogger {
+
     constructor(step, opts) {
         super(step, opts);
 
@@ -21,6 +23,7 @@ class FirebaseStepLogger extends BaseStepLogger {
 
         this.stepUrl = `${this.baseUrl}/steps/${this.name}`;
         this.stepRef = new Firebase(this.stepUrl);
+
     }
 
     async restore() {
@@ -93,6 +96,10 @@ class FirebaseStepLogger extends BaseStepLogger {
 
     clearLogs() {
         this.stepRef.child('logs').set({});
+    }
+
+    streamLog() {
+        return new FirebaseWritableStream(this.stepRef, this.opts.logsRateLimitConfig);
     }
 
     async delete() {
