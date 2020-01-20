@@ -95,7 +95,7 @@ class FirebaseWritableStream extends Writable {
         }
 
         debug(`${new Date().toISOString()} FirebaseWritableStream._final: flushing remaining batch items`);
-        this._firebaseClient.update(this._logsBatch, (err) => {
+        this._firebaseClient.child('logs').update(this._logsBatch, (err) => {
             if (err) {
                 callback(err);
                 return;
