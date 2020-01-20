@@ -40,7 +40,7 @@ describe('Firebase Writable Stream Tests', () => {
     });
 
     it('should successfully write messages to logs batch and flush to firebase', () => {
-        for (let i = 0; i < fireBaseWritableStreamOpts.batchSize; i + 1) {
+        for (let i = 0; i < fireBaseWritableStreamOpts.batchSize; i += 1) {
             fireBaseWritableStream._write(Buffer.from('some fake str', 'utf8'), 'utf8', () => {});
         }
         expect(Object.keys(fireBaseWritableStream._logsBatch).length).to.be.equal(0);
