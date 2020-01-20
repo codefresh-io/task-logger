@@ -2,7 +2,7 @@ const { Writable } = require('stream');
 const _ = require('lodash');
 const debug = require('debug')('codefresh:firebase:firebaseWritableStream');
 
-const FIREBASE_MESSAGE_SIZE_LIMIT = 10 * 1024 * 1024; // 10 MB Maximum size of a string
+// const FIREBASE_MESSAGE_SIZE_LIMIT = 10 * 1024 * 1024; // 10 MB Maximum size of a string
 
 
 class FirebaseWritableStream extends Writable {
@@ -100,6 +100,7 @@ class FirebaseWritableStream extends Writable {
                 callback(err);
                 return;
             }
+
             debug(`${new Date().toISOString()} FirebaseWritableStream._final: flushed successfully, stream has finished`);
             callback();
         });
@@ -109,7 +110,7 @@ class FirebaseWritableStream extends Writable {
         debug(new Date().toISOString(), 'FirebaseWritableStream._setBatchFlushTimeout: setting flush timout', flushInterval);
         this._debounceTimeout = setTimeout(() => {
             if (_.isEmpty(this._logsBatch)) {
-                console.log(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: logs batch is empty, no update is required`);
+                debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: logs batch is empty, no update is required`);
                 return;
             }
             debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: timeout 
