@@ -88,7 +88,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 
         taskLogger.stepsUrl = `${taskLogger.baseUrl}/steps`;
         taskLogger.stepsRef = new Firebase(taskLogger.stepsUrl);
-        this.opts.firebaseWritableStream = new FirebaseWritableStream(this.stepRef, this.opts.logsRateLimitConfig);
+        taskLogger.opts.firebaseWritableStream = new FirebaseWritableStream(taskLogger.stepRef, this.opts.logsRateLimitConfig);
 
         if (restInterface) {
             taskLogger.restClient = new RestClient(taskLogger.firebaseSecret);
