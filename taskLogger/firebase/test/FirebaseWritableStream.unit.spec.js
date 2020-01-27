@@ -46,9 +46,19 @@ describe('Firebase Writable Stream Tests', () => {
         expect(Object.keys(fireBaseWritableStream._logsBatch).length).to.be.equal(0);
     });
 
-    /* it('should successfully flush to firebase after message size per unit time has exceeded', () => {
-        expect(Object.keys(fireBaseWritableStream._logsBatch).length).to.be.equal(0);
-    }); */
+/*    xit('should successfully flush to firebase after message size per unit time has exceeded', (done) => {
+        const chunk = new Array(524288 / 2).fill('a').join(); // create 500k string
+        console.log(Buffer.byteLength(chunk));
+        let totalSize = 0;
+        for (let i = 0; i < 3; i += 1) {
+            totalSize += Buffer.byteLength(chunk);
+            console.log(`total size: ${totalSize}/${fireBaseWritableStreamOpts.messageSizeLimitPerTimeUnit}`);
+            fireBaseWritableStream._write(Buffer.from(chunk, 'utf8'), 'utf8', () => {
+                expect(Object.keys(fireBaseWritableStream._logsBatch).length).to.be.equal(1);
+                done();
+            });
+        }
+    });*/
 
     it('should successfully write message to logs batch and flush to firebase after debounce delay', (done) => {
         fireBaseWritableStream._write(Buffer.from('some fake str', 'utf8'), 'utf8', () => {});

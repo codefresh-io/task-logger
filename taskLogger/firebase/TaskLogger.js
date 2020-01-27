@@ -10,6 +10,7 @@ const { TYPES }                        = require('../enums');
 const { wrapWithRetry }                = require('../helpers');
 const RestClient                       = require('./rest/Client');
 const FirebaseTokenGenerator           = require('firebase-token-generator');
+const FirebaseWritableStream = require('./step-streams/FirebaseWritableStream');
 
 class FirebaseTaskLogger extends BaseTaskLogger {
     constructor(task, opts) {
@@ -87,6 +88,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 
         taskLogger.stepsUrl = `${taskLogger.baseUrl}/steps`;
         taskLogger.stepsRef = new Firebase(taskLogger.stepsUrl);
+        this.opts.firebaseWritableStream = new FirebaseWritableStream(this.stepRef, this.opts.logsRateLimitConfig);
 
         if (restInterface) {
             taskLogger.restClient = new RestClient(taskLogger.firebaseSecret);
