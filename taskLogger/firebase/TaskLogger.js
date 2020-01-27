@@ -68,7 +68,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             taskLogger = new FirebaseTaskLogger(task, opts);
         }
 
-        const { baseFirebaseUrl, firebaseSecret } = opts;
+        const { baseFirebaseUrl, firebaseSecret, logsRateLimitConfig } = opts;
 
         if (!baseFirebaseUrl) {
             throw new CFError('failed to create taskLogger because baseFirebaseUrl must be provided');
@@ -88,7 +88,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 
         taskLogger.stepsUrl = `${taskLogger.baseUrl}/steps`;
         taskLogger.stepsRef = new Firebase(taskLogger.stepsUrl);
-        taskLogger.opts.firebaseWritableStream = new FirebaseWritableStream(taskLogger.stepRef, this.opts.logsRateLimitConfig);
+        taskLogger.opts.firebaseWritableStream = new FirebaseWritableStream(taskLogger.stepRef, logsRateLimitConfig);
 
         if (restInterface) {
             taskLogger.restClient = new RestClient(taskLogger.firebaseSecret);
