@@ -26,6 +26,7 @@ class FirebaseWritableStream extends Writable {
         const stepName = chunk.slice(1, stepNameLength + 1);
         const message = chunk.slice(stepNameLength + 1);
 
+        console.log(`step name length ${stepNameLength}, step name '${stepName}'`);
         const newLogKey = `${stepName}/logs/${this._firebaseClient.child(stepName).child('logs').push().key()}`;
         const currentMessageSize = Buffer.byteLength(message);
 
