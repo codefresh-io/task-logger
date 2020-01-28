@@ -5,14 +5,14 @@ const CFError            = require('cf-errors');
 const { STATUS }         = require('../enums');
 const BaseStepLogger     = require('../StepLogger');
 const { wrapWithRetry }  = require('../helpers');
-const FirebaseWritableStream = require('./FirebaseWritableStream');
+const StepNameTransformStream = require('./step-streams/StepNameTransformStream');
 
 class FirebaseStepLogger extends BaseStepLogger {
 
     constructor(step, opts) {
         super(step, opts);
 
-        const { baseFirebaseUrl } = opts;
+        const { baseFirebaseUrl, firebaseWritableStream } = opts;
 
         if (!baseFirebaseUrl) {
             throw new CFError('failed to create stepLogger because baseFirebaseUrl must be provided');
@@ -24,6 +24,8 @@ class FirebaseStepLogger extends BaseStepLogger {
         this.stepUrl = `${this.baseUrl}/steps/${this.name}`;
         this.stepRef = new Firebase(this.stepUrl);
 
+        this.firebaseWritableStream = firebaseWritableStream;
+        this.stepNameTransformStream = new StepNameTransformStream(this.name);
     }
 
     async restore() {
@@ -99,7 +101,7 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     streamLog() {
-        return new FirebaseWritableStream(this.stepRef, this.opts.logsRateLimitConfig);
+        return this.firebaseWritableStream;
     }
 
     async delete() {

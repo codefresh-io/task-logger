@@ -10,6 +10,7 @@ const { TYPES }                        = require('../enums');
 const { wrapWithRetry }                = require('../helpers');
 const RestClient                       = require('./rest/Client');
 const FirebaseTokenGenerator           = require('firebase-token-generator');
+const FirebaseWritableStream = require('./step-streams/FirebaseWritableStream');
 
 class FirebaseTaskLogger extends BaseTaskLogger {
     constructor(task, opts) {
@@ -67,7 +68,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             taskLogger = new FirebaseTaskLogger(task, opts);
         }
 
-        const { baseFirebaseUrl, firebaseSecret } = opts;
+        const { baseFirebaseUrl, firebaseSecret, logsRateLimitConfig } = opts;
 
         if (!baseFirebaseUrl) {
             throw new CFError('failed to create taskLogger because baseFirebaseUrl must be provided');
@@ -86,7 +87,11 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         taskLogger.lastUpdateRef = new Firebase(taskLogger.lastUpdateUrl);
 
         taskLogger.stepsUrl = `${taskLogger.baseUrl}/steps`;
-        taskLogger.stepsRef = new Firebase(taskLogger.stepsUrl);
+        const stepRef = new Firebase(taskLogger.stepsUrl);
+        taskLogger.stepsRef = stepRef;
+        if (logsRateLimitConfig) {
+            taskLogger.opts.firebaseWritableStream = new FirebaseWritableStream(stepRef, logsRateLimitConfig);
+        }
 
         if (restInterface) {
             taskLogger.restClient = new RestClient(taskLogger.firebaseSecret);
