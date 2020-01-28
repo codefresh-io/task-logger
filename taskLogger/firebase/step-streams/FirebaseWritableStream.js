@@ -22,6 +22,7 @@ class FirebaseWritableStream extends Writable {
     _write(chunk, encoding, next) {
         clearTimeout(this._debounceTimeout);
         // Extract step name headers
+        console.log('_write: recieved chunk, reading headers...');
         const stepNameLength = chunk.readUInt8(0);
         const stepName = chunk.slice(1, stepNameLength + 1);
         const message = chunk.slice(stepNameLength + 1);
