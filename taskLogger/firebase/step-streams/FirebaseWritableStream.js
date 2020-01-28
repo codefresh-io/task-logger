@@ -24,12 +24,12 @@ class FirebaseWritableStream extends Writable {
         // Extract step name headers
         console.log('_write: recieved chunk, reading headers...');
         const stepNameLength = chunk.readUInt8(0);
-        const stepName = encodeURIComponent(chunk.slice(1, stepNameLength + 1));
+        const stepName = chunk.slice(1, stepNameLength + 1);
         const message = chunk.slice(stepNameLength + 1);
 
         console.log(`step name length ${stepNameLength}, step name '${stepName}'`);
         // const newLogKey = `${stepName}/logs/${this._firebaseClient.child(stepName).child('logs').push().key()}`;
-        const newLogKey = `${stepName}/logs/${this._firebaseClient.child(stepName).push().key()}`;
+        const newLogKey = `${stepName}/logs/${this._firebaseClient.child("logs").push().key()}`;
         const currentMessageSize = Buffer.byteLength(message);
 
         this._previousTimestamp = this._previousTimestamp || new Date().getTime();
