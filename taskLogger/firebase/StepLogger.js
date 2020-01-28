@@ -25,7 +25,6 @@ class FirebaseStepLogger extends BaseStepLogger {
         this.stepRef = new Firebase(this.stepUrl);
 
         this.firebaseWritableStream = firebaseWritableStream;
-        this.stepNameTransformStream = new StepNameTransformStream(this.name);
     }
 
     async restore() {
@@ -102,6 +101,10 @@ class FirebaseStepLogger extends BaseStepLogger {
 
     streamLog() {
         return this.firebaseWritableStream;
+    }
+
+    stepNameTransformStream() {
+        return new StepNameTransformStream(this.name);
     }
 
     async delete() {
