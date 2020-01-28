@@ -104,10 +104,6 @@ class FirebaseStepLogger extends BaseStepLogger {
         return this.firebaseWritableStream;
     }
 
-    stepNameTransfromStream() {
-        return this.stepNameTransfromStream;
-    }
-
     async delete() {
         return this.stepRef.remove();
     }
