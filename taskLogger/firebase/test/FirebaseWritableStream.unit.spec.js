@@ -1,4 +1,4 @@
-const FireBaseWritableStream = require('../FirebaseWritableStream');
+const FireBaseWritableStream = require('../step-streams/FirebaseWritableStream');
 // const sinon = require('sinon');
 const { expect } =  require('chai');
 
