@@ -1,6 +1,6 @@
 const { Writable } = require('stream');
 const _ = require('lodash');
-// const debug = require('debug')('codefresh:firebase:firebaseWritableStream');
+const debug = require('debug')('codefresh:firebase:firebaseWritableStream');
 
 // const FIREBASE_MESSAGE_SIZE_LIMIT = 10 * 1024 * 1024; // 10 MB Maximum size of a string
 
@@ -37,19 +37,20 @@ class FirebaseWritableStream extends Writable {
 
         // time unit (minute) has passed, reset current byte size
         if (msDelta > this._timeUnitLimitMs) {
-            // debug(`${new Date().toISOString()} FirebaseWritableStream._write: ${this._timeUnitLimitMs} has passed resetting current log byte size to 0`);
+            debug(`${new Date().toISOString()} FirebaseWritableStream._write: ${this._timeUnitLimitMs} has passed resetting current log byte size to 0`);
             this._currentLogByteSize = 0;
             this._previousTimestamp = now;
         }
 
         // current logs size during timeUnit exceeds limit (1MB/Second)
         if (currentMessageSize + this._currentLogByteSize > this._messageSizeLimitPerTimeUnit) {
-            /* debug(`${new Date().toISOString()} FirebaseWritableStream._write: current log size + message [${currentMessageSize + this._currentLogByteSize}
-             / ${this._messageSizeLimitPerTimeUnit}] exceeded, flushing...`); */
+             debug(`${new Date().toISOString()} FirebaseWritableStream._write: current log size + message [${currentMessageSize + this._currentLogByteSize}
+             / ${this._messageSizeLimitPerTimeUnit}] exceeded, flushing...`);
 
             this._firebaseClient.update(this._logsBatch, (err) => {
                 if (err) {
-                    next(err); // do we want to only warn or fail execution
+                    debug(`${new Date().toISOString()} FirebaseWritableStream._write: failed to flush logs to firebase on: ${err.stack}`);
+                    next();
                     return;
                 }
 
@@ -57,20 +58,21 @@ class FirebaseWritableStream extends Writable {
                 this.emit('write');
                 const waitMs = (this._timeUnitLimitMs - msDelta) + 5;
                 // lets wait till time unit limit + x will pass in order to continue
-                this._debounceTimeout = setTimeout(this._write.bind(this, chunk, encoding, next), waitMs);
-                // debug(`${new Date().toISOString()} FirebaseWritableStream._write: successfully flushed to firebase, waiting ${waitMs} ms for logs byte size reset`);
+                debug(`${new Date().toISOString()} FirebaseWritableStream._write: successfully flushed to firebase, waiting ${waitMs} ms for logs byte size reset`);
+                debug(`${new Date().toISOString()} FirebaseWritableStream._write: waiting ${waitMs} till time interval will pass (${this._timeUnitLimitMs})`);
+                setTimeout(this._write.bind(this, chunk, encoding, next), waitMs);
             });
             return;
         }
 
         this._currentLogByteSize += currentMessageSize;
         this._logsBatch[`${newLogKey}`] = message.toString();
-        /* debug(`${new Date().toISOString()} FirebaseWritableStream._write: updated logs batch with new key
-                 '${newLogKey}', current logs byte size ${this._currentLogByteSize / 1024} KB`); */
+        debug(`${new Date().toISOString()} FirebaseWritableStream._write: updated logs batch with new key
+                 '${newLogKey}', current logs byte size ${this._currentLogByteSize / 1024} KB`);
 
         if (_.size(this._logsBatch) < this._batchSize) {
-             /* debug(`${new Date().toISOString()} FirebaseWritableStream._write: batch capacity is still
-                     available [${_.size(this._logsBatch)}/${this._batchSize}], resetting debounce flush and continue`); */
+            debug(`${new Date().toISOString()} FirebaseWritableStream._write: batch capacity is still
+                     available [${_.size(this._logsBatch)}/${this._batchSize}], resetting debounce flush and continue`);
             this._setBatchFlushTimeout(this._debounceDelay);
             next();
             return;
@@ -79,7 +81,8 @@ class FirebaseWritableStream extends Writable {
         // debug(`${new Date().toISOString()} FirebaseWritableStream._write: logs batch size has been met [${this._batchSize}] flushing...`);
         this._firebaseClient.update(this._logsBatch, (err) => {
             if (err) {
-                next(err);
+                debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: failed to flush logs to firebase on: ${err.stack}`);
+                next();
                 return;
             }
             // debug(`${new Date().toISOString()} FirebaseWritableStream._write: flushed successfully, resetting logs batch and debounce flush`);
@@ -90,7 +93,8 @@ class FirebaseWritableStream extends Writable {
         });
     }
 
-    _final(callback) {
+    // _final is called when receiving the final chunk (using the 'end()' api)
+    /* _final(callback) {
         clearTimeout(this._debounceTimeout);
         if (_.isEmpty(this._logsBatch)) {
             // debug(`${new Date().toISOString()} FirebaseWritableStream._final: batch is empty`);
@@ -109,7 +113,7 @@ class FirebaseWritableStream extends Writable {
             callback();
         });
     }
-
+*/
     _setBatchFlushTimeout(flushInterval) {
         // debug(new Date().toISOString(), 'FirebaseWritableStream._setBatchFlushTimeout: setting flush timout', flushInterval);
         this._debounceTimeout = setTimeout(() => {
@@ -122,7 +126,7 @@ class FirebaseWritableStream extends Writable {
             this._firebaseClient.update(this._logsBatch, (err) => {
                 this._logsBatch = Object.create(null);
                 if (err) {
-                    // debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: failed to flush logs to firebase on: ${err.stack}`);
+                    debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: failed to flush logs to firebase on: ${err.stack}`);
                     return;
                 }
                 this.emit('write');
