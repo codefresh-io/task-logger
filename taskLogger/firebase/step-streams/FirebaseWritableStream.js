@@ -44,7 +44,7 @@ class FirebaseWritableStream extends Writable {
 
         // current logs size during timeUnit exceeds limit (1MB/Second)
         if (currentMessageSize + this._currentLogByteSize > this._messageSizeLimitPerTimeUnit) {
-             debug(`${new Date().toISOString()} FirebaseWritableStream._write: current log size + message [${currentMessageSize + this._currentLogByteSize}
+            debug(`${new Date().toISOString()} FirebaseWritableStream._write: current log size + message [${currentMessageSize + this._currentLogByteSize}
              / ${this._messageSizeLimitPerTimeUnit}] exceeded, flushing...`);
 
             this._firebaseClient.update(this._logsBatch, (err) => {
