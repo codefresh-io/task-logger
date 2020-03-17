@@ -473,7 +473,7 @@ _.forEach(interfaces, (int) => {
                         const taskLogger = await getTaskLoggerInstanceWithDebugger(undefined, opts);
                         const streams = await taskLogger.createDebuggerStreams('step', 'before');
                         streams.commandsStream.pipe(streams.transformCutResizeStream).pipe(streams.transformOutputStream).pipe(streams.outputStream);
-                        taskLogger.baseRef.child_added(`\x1b\[8;20;20t`);
+                        taskLogger.baseRef.child_added(`\x1b[8;20;20t`);
                         taskLogger.baseRef.child_added('8header_ls\n');
                         const result = await taskLogger.outputPromise;
                         expect(result).to.be.equal('ls\n');
