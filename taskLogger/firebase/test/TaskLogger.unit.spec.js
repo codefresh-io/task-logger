@@ -468,6 +468,18 @@ _.forEach(interfaces, (int) => {
                         streams._destroyStreams();
                     });
 
+                    it('should cut resize commands', async () => {
+                        const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                        const taskLogger = await getTaskLoggerInstanceWithDebugger(undefined, opts);
+                        const streams = await taskLogger.createDebuggerStreams('step', 'before');
+                        streams.commandsStream.pipe(streams.transformCutResizeStream).pipe(streams.transformOutputStream).pipe(streams.outputStream);
+                        taskLogger.baseRef.child_added(`\x1b\[8;20;20t`);
+                        taskLogger.baseRef.child_added('8header_ls\n');
+                        const result = await taskLogger.outputPromise;
+                        expect(result).to.be.equal('ls\n');
+                        streams._destroyStreams();
+                    });
+
                     it('should pass allowed command in filter stream', async () => {
                         const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
                         const taskLogger = await getTaskLoggerInstanceWithDebugger(undefined, opts);
