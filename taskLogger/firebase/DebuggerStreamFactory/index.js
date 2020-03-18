@@ -2,6 +2,7 @@
 const CFError = require('cf-errors');
 const CommandsStream = require('./CommandsStream.js');
 const FilterLimitedStream = require('./FilterLimitedStream.js');
+const TransformCutResizeStream = require('./TransformCutResizeStream.js');
 const TransformOutputStream = require('./TransformOutputStream.js');
 const OutputStream = require('./OutputStream.js');
 
@@ -25,6 +26,7 @@ class DebuggerStreamFactory {
         this.stepsStreamsRef = this.jobIdRef.child(`debug/streams/${step}/${phase}`);
 
         this.transformOutputStream = new TransformOutputStream();
+        this.transformCutResizeStream = new TransformCutResizeStream();
         this.commandsStream = new CommandsStream(this.stepsStreamsRef.child('debuggerCommands'), this.errorHandler);
         this.outputStream = new OutputStream(this.stepsStreamsRef, this.stepRef, this._destroyStreams.bind(this));
         this.limitStream = new FilterLimitedStream(this.outputStream);
@@ -35,6 +37,7 @@ class DebuggerStreamFactory {
     _destroyStreams() {
         this.commandsStream.destroy();
         this.limitStream.destroy();
+        this.transformCutResizeStream.destroy();
         this.transformOutputStream.destroy();
         this.outputStream.destroy();
     }
