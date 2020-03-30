@@ -21,7 +21,7 @@ let createTokenSpy = sinon.spy((opts) => {
     }
 });
 const originalTokenSpy = createTokenSpy;
-
+const initHealthCheckSpy = sinon.spy();
 
 const getTaskLoggerInstance = async (task = { accountId: 'accountId', jobId: 'jobId' },
     opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }) => {
@@ -42,6 +42,28 @@ const getTaskLoggerInstance = async (task = { accountId: 'accountId', jobId: 'jo
 
     return taskLogger;
 };
+
+const getTaskLoggerInstanceWithHealthCheck = async (task = { accountId: 'accountId', jobId: 'jobId' },
+    opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }) => {
+    Firebase = createFirebaseStub();
+
+    const TaskLogger = proxyquire('../TaskLogger', {
+        'firebase': Firebase,
+        './rest/Client': RestClientStub,
+        'firebase-token-generator': function () {
+            return {
+                createToken: createTokenSpy
+            };
+        }
+    });
+
+    TaskLogger.prototype._initHealthCheck = initHealthCheckSpy;
+    const taskLogger = await TaskLogger.factory(task, opts);
+    taskLogger.emit  = sinon.spy(taskLogger.emit);
+
+    return taskLogger;
+};
+
 
 const getTaskLoggerInstanceWithDebugger = async (task = { accountId: 'accountId', jobId: 'jobId' },
     opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }) => {
@@ -451,6 +473,72 @@ _.forEach(interfaces, (int) => {
                     expect(Firebase.prototype.set).to.have.been.calledWith(taskLogger.jobId);
                 }
             });
+        });
+
+        describe('healthCheck', () => {
+
+            beforeEach(() => {
+                initHealthCheckSpy.resetHistory();
+            });
+            describe('positive', () => {
+
+                it('should init health check if opts has healthCheckEnabled true', async () => {
+
+                    const task = { accountId: 'accountId', jobId: 'jobId' };
+                    const opts = _.merge({}, {
+                        baseFirebaseUrl: 'url',
+                        firebaseSecret: 'secret',
+                        healthCheckEnabled: true
+                    }, int.opts);
+                    const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts);
+                    expect(taskLogger._initHealthCheck).to.have.been.calledOnce;
+                });
+
+                it.only('should write a value on health check and read it ', (done) => {
+
+                    (async () => {
+                        const task = { accountId: 'accountId', jobId: 'jobId' };
+                        const opts = _.merge({}, {
+                            baseFirebaseUrl: 'url',
+                            firebaseSecret: 'secret',
+                            healthCheckEnabled: true,
+                            healthCheckInterval: 1000, // 1s
+
+                        }, int.opts);
+                        const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts);
+
+                        setTimeout(() => {
+                            if (opts.restInterface) {
+                                expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/healthCheck`, 1);
+                            } else {
+                                expect(Firebase.prototype.push).to.have.been.calledWith(taskLogger.memoryLimit);
+                            }
+                            done();
+                        }, 1500);
+
+                    })();
+
+                });
+
+            });
+
+            describe('negetive', () => {
+
+                it('should not init health check if opts has healthCheckEnabled false', async () => {
+
+                    const task = { accountId: 'accountId', jobId: 'jobId' };
+                    const opts = _.merge({}, {
+                        baseFirebaseUrl: 'url',
+                        firebaseSecret: 'secret',
+                        healthCheckEnabled: false
+                    }, int.opts);
+                    const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts);
+                    expect(taskLogger._initHealthCheck).callCount(0);
+
+                });
+
+            });
+
         });
 
         if (!int.opts.restInterface) {
