@@ -375,6 +375,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         this.timeoutId = func(async () => {
             // eslint-disable-next-line no-plusplus
             this.healthCheckNumber++;
+            const startTime = Date.now();
             debug(`running health check number ${this.healthCheckNumber}`);
             try {
                 await wrapWithRetry(this.healthCheck,
@@ -384,11 +385,11 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                             number: this.healthCheckNumber,
                             baseRef: this.baseRef,
                         } });
-                this.emit('healthCheckStatus', { status: 'succeed', id: this.healthCheckNumber });
+                this.emit('healthCheckStatus', { status: 'succeed', id: this.healthCheckNumber, duration: Date.now - startTime });
 
             } catch (error) {
                 console.log('failed');
-                this.emit('healthCheckStatus', { status: 'failed', id: this.healthCheckNumber, error  });
+                this.emit('healthCheckStatus', { status: 'failed', id: this.healthCheckNumber, error, duration: Date.now - startTime  });
             }
 
         }, interval);
