@@ -17,14 +17,6 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         super(task, opts);
         this.type = TYPES.FIREBASE;
         this.pauseTimeout = 10 * 60 * 1000; // 10 min
-        const performHealthCheck = _.get(this.opts, 'healthCheckEnabled', false);
-        if (performHealthCheck) {
-            this._initHealthCheck(_.get(this.opts, 'healthCheckInterval', 15 * 1000),
-         _.get(this.opts, 'healthCheckRetries', 3),
-         _.get(this.opts, 'healthCheckTimeOutOnError', 5 * 1000)
-        );
-
-        }
     }
 
     // TODO once everyone is moving to new model for token per progress, this should also contain the build id and restrict only access to this specific job
@@ -372,10 +364,15 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         return deferred.promise;
     }
 
-    _initHealthCheck(interval, retries, errorAfterTimeout) {
+    _startHealthCheck() {
         debug('init health check status');
+        const interval = _.get(this.opts, 'healthCheckInterval', 15 * 1000);
+        const retries =  _.get(this.opts, 'healthCheckRetries', 2);
+        const errorAfterTimeout = _.get(this.opts, 'healthCheckTimeOutOnError', 5 * 1000);
+        const callOnce = _.get(this.opts, 'healthCheckCallOnce', false);
         this.healthCheckNumber = 0;
-        setInterval(async () => {
+        const func = callOnce ? setTimeout : setInterval;
+        this.timeoutId = func(async () => {
             // eslint-disable-next-line no-plusplus
             this.healthCheckNumber++;
             debug(`running health check number ${this.healthCheckNumber}`);
@@ -387,13 +384,15 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                             number: this.healthCheckNumber,
                             baseRef: this.baseRef,
                         } });
-                this.emit('healthCheck', this.healthCheckNumber);
+                this.emit('healthCheckStatus', { status: 'succeed', id: this.healthCheckNumber });
 
             } catch (error) {
-                this.emit('healthCheck', new Error(`health check # ${this.healthCheckNumber} failed with error: ${error} `));
+                console.log('failed');
+                this.emit('healthCheckStatus', { status: 'failed', id: this.healthCheckNumber, error  });
             }
 
         }, interval);
+        this.emit('healthCheckStatus', { status: 'started' });
     }
     async healthCheck({ number, baseRef }) {
 
@@ -402,6 +401,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         baseRef.child('healthCheck').set(number);
         baseRef.child('healthCheck').once('value', (snapshot) => {
             const data     = snapshot.val();
+            console.log(`***** once ${data}`);
             if (data === number) {
                 deferred.resolve(data);
             } else {
@@ -414,6 +414,11 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             }));
         });
         return deferred.promise;
+    }
+    _stopHealthCheck() {
+        const callOnce = _.get(this.opts, 'healthCheckCallOnce', false);
+        const func = callOnce ? clearTimeout : clearInterval;
+        func(this.timeoutId);
     }
 }
 FirebaseTaskLogger.TYPE          = TYPES.FIREBASE;

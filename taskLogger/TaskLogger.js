@@ -150,6 +150,13 @@ class TaskLogger extends EventEmitter {
         return this._reportStatus();
     }
 
+    startHealthCheck() {
+        this._startHealthCheck &&  this._startHealthCheck();
+    }
+    stopHealthCheck() {
+        this._stopHealthCheck &&  this._stopHealthCheck();
+    }
+
     getConfiguration() {
         return {
             task: {

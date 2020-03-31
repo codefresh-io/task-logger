@@ -8,7 +8,7 @@ const sinon      = require('sinon');
 const sinonChai  = require('sinon-chai');
 
 chai.use(sinonChai);
-const { createFirebaseStub, createFirebaseStubWithDebugger } = require('./FirebaseStub');
+const { createFirebaseStub, createFirebaseStubWithDebugger, createFirebaseStubWithHealthCheck } = require('./FirebaseStub');
 const { RestClientStub } = require('./RestClientStub');
 
 let Firebase;
@@ -44,8 +44,9 @@ const getTaskLoggerInstance = async (task = { accountId: 'accountId', jobId: 'jo
 };
 
 const getTaskLoggerInstanceWithHealthCheck = async (task = { accountId: 'accountId', jobId: 'jobId' },
-    opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }) => {
-    Firebase = createFirebaseStub();
+    opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' },
+    testingOpts = { onceTimeout: 10 }) => {
+    Firebase = createFirebaseStubWithHealthCheck(testingOpts);
 
     const TaskLogger = proxyquire('../TaskLogger', {
         'firebase': Firebase,
@@ -56,8 +57,6 @@ const getTaskLoggerInstanceWithHealthCheck = async (task = { accountId: 'account
             };
         }
     });
-
-    TaskLogger.prototype._initHealthCheck = initHealthCheckSpy;
     const taskLogger = await TaskLogger.factory(task, opts);
     taskLogger.emit  = sinon.spy(taskLogger.emit);
 
@@ -482,19 +481,20 @@ _.forEach(interfaces, (int) => {
             });
             describe('positive', () => {
 
-                it('should init health check if opts has healthCheckEnabled true', async () => {
+                it('should report health check status started if startHealthCheck called', async () => {
 
                     const task = { accountId: 'accountId', jobId: 'jobId' };
                     const opts = _.merge({}, {
                         baseFirebaseUrl: 'url',
                         firebaseSecret: 'secret',
-                        healthCheckEnabled: true
                     }, int.opts);
-                    const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts);
-                    expect(taskLogger._initHealthCheck).to.have.been.calledOnce;
+                    const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts, true);
+                    taskLogger.startHealthCheck();
+                    expect(taskLogger.emit).to.have.been.calledWith('healthCheckStatus', { status: 'started' });
+                    taskLogger.stopHealthCheck();
                 });
 
-                it.only('should write a value on health check and read it ', (done) => {
+                it('should write a value on health check and read it ', (done) => {
 
                     (async () => {
                         const task = { accountId: 'accountId', jobId: 'jobId' };
@@ -503,16 +503,117 @@ _.forEach(interfaces, (int) => {
                             firebaseSecret: 'secret',
                             healthCheckEnabled: true,
                             healthCheckInterval: 1000, // 1s
+                            healthCheckCallOnce: true,
+
+                        }, int.opts);
+                        const taskLogger = await getTaskLoggerInstanceWithHealthCheck(task, opts);
+                        taskLogger.startHealthCheck();
+                        setTimeout(() => {
+                            if (opts.restInterface) {
+                              //  expect(taskLogger.restClient.push).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/healthCheck`, 1);
+
+                            } else {
+                                expect(Firebase.prototype.set).to.have.been.calledWith(1);
+                                expect(Firebase.prototype.once).to.have.been.calledOnce;
+                            }
+                            taskLogger.stopHealthCheck();
+                            done();
+                        }, 1500);
+
+                    })();
+
+                });
+
+                it('should emit healthCheck once if health check pass  ', (done) => {
+
+                    (async () => {
+                        const task = { accountId: 'accountId', jobId: 'jobId' };
+                        const opts = _.merge({}, {
+                            baseFirebaseUrl: 'url',
+                            firebaseSecret: 'secret',
+                            healthCheckEnabled: true,
+                            healthCheckInterval: 1000, // 1s
+                            healthCheckCallOnce: true,
 
                         }, int.opts);
                         const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts);
-
+                        taskLogger.startHealthCheck();
                         setTimeout(() => {
                             if (opts.restInterface) {
-                                expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/healthCheck`, 1);
+                              //  expect(taskLogger.restClient.push).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/healthCheck`, 1);
+
                             } else {
-                                expect(Firebase.prototype.push).to.have.been.calledWith(taskLogger.memoryLimit);
+                                expect(taskLogger.emit.getCall(0).calledWith('healthCheckStatus', { status: 'started' }));
+                                expect(taskLogger.emit.getCall(1).calledWith('healthCheckStatus', { status: 'succeed', id: 1 }));
+                                expect(taskLogger.emit).to.have.been.calledTwice;
                             }
+                            taskLogger.stopHealthCheck();
+                            done();
+                        }, 1500);
+
+                    })();
+
+                });
+
+                it('should emit healthCheck twice if health check pass twice  ', (done) => {
+
+                    (async () => {
+                        const task = { accountId: 'accountId', jobId: 'jobId' };
+                        const opts = _.merge({}, {
+                            baseFirebaseUrl: 'url',
+                            firebaseSecret: 'secret',
+                            healthCheckEnabled: true,
+                            healthCheckInterval: 100, // 1s
+                            healthCheckCallOnce: false,
+
+                        }, int.opts);
+                        const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts);
+                        taskLogger.startHealthCheck();
+                        setTimeout(() => {
+                            if (opts.restInterface) {
+                              //  expect(taskLogger.restClient.push).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/healthCheck`, 1);
+
+                            } else {
+                                expect(taskLogger.emit.getCall(0).calledWith('healthCheckStatus', { status: 'started' }));
+                                expect(taskLogger.emit.getCall(1).calledWith('healthCheckStatus', { status: 'succeed', id: 1 }));
+                                expect(taskLogger.emit.getCall(2).calledWith('healthCheckStatus', { status: 'succeed', id: 2 }));
+                                expect(taskLogger.emit).to.have.been.calledThrice;
+                            }
+                            taskLogger.stopHealthCheck();
+                            done();
+                        }, 250);
+
+                    })();
+
+                });
+
+                it('should emit healthCheck failed if firebase timed out  ', (done) => {
+
+                    (async () => {
+                        const task = { accountId: 'accountId', jobId: 'jobId' };
+                        const opts = _.merge({}, {
+                            baseFirebaseUrl: 'url',
+                            firebaseSecret: 'secret',
+                            healthCheckEnabled: true,
+                            healthCheckTimeOutOnError: 50,
+                            healthCheckInterval: 200, // 1s
+                            errorAfterTimeout: 50,
+                            healthCheckCallOnce: true,
+
+                        }, int.opts);
+                        const testingOpts = { onceTimeout: 2000 }; // once won't be called
+                        const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts, testingOpts);
+                        taskLogger.startHealthCheck();
+                        setTimeout(() => {
+                            if (opts.restInterface) {
+                              //  expect(taskLogger.restClient.push).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/healthCheck`, 1);
+
+                            } else {
+                                expect(taskLogger.emit.getCall(0).calledWith('healthCheckStatus', { status: 'started' }));
+                                expect(taskLogger.emit.getCall(1).calledWith('healthCheckStatus', { status: 'failed', id: 1 }));
+                                expect(taskLogger.emit).to.have.been.calledTwice;
+                            }
+                            taskLogger.stopHealthCheck();
                             done();
                         }, 1500);
 
@@ -523,19 +624,6 @@ _.forEach(interfaces, (int) => {
             });
 
             describe('negetive', () => {
-
-                it('should not init health check if opts has healthCheckEnabled false', async () => {
-
-                    const task = { accountId: 'accountId', jobId: 'jobId' };
-                    const opts = _.merge({}, {
-                        baseFirebaseUrl: 'url',
-                        firebaseSecret: 'secret',
-                        healthCheckEnabled: false
-                    }, int.opts);
-                    const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts);
-                    expect(taskLogger._initHealthCheck).callCount(0);
-
-                });
 
             });
 
