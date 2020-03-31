@@ -39,7 +39,7 @@ const createFirebaseStubWithDebugger = function (deferredSteamFlow) {
     return Firebase;
 };
 
-const createFirebaseStubWithHealthCheck = ({ onceTimeout }) => {
+const createFirebaseStubWithHealthCheck = ({ onceTimeout = 10, onceValue }) => {
     const Firebase = createFirebaseStub();
     Firebase.prototype.handlers = {};
     Firebase.prototype.count = 0;
@@ -50,7 +50,7 @@ const createFirebaseStubWithHealthCheck = ({ onceTimeout }) => {
                 Firebase.prototype.count++;
                 clearTimeout(timerId);
                 func({
-                    val: () => { return Firebase.prototype.count; }
+                    val: () => { return onceValue || Firebase.prototype.count; }
                 });
             }, onceTimeout); // ticking
 
