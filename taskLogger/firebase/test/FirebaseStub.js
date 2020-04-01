@@ -39,22 +39,18 @@ const createFirebaseStubWithDebugger = function (deferredSteamFlow) {
     return Firebase;
 };
 
-const createFirebaseStubWithHealthCheck = ({ onceTimeout = 10, onceValue }) => {
+const createFirebaseStubWithHealthCheck = ({ timeout = 10, setCallbackValue }) => {
     const Firebase = createFirebaseStub();
     Firebase.prototype.handlers = {};
     Firebase.prototype.count = 0;
-    Firebase.prototype.once = sinon.spy((key, func) => {
-        if (key === 'value') {
-            const timerId = setTimeout(() => {
+    Firebase.prototype.set = sinon.spy((key, func) => {
+        const timerId = setTimeout(() => {
                 // eslint-disable-next-line no-plusplus
-                Firebase.prototype.count++;
-                clearTimeout(timerId);
-                func({
-                    val: () => { return onceValue || Firebase.prototype.count; }
-                });
-            }, onceTimeout); // ticking
+            Firebase.prototype.count++;
+            clearTimeout(timerId);
+            func(setCallbackValue);
+        }, timeout); // ticking
 
-        }
     });
     return Firebase;
 

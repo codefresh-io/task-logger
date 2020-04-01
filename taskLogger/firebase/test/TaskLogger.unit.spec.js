@@ -497,33 +497,6 @@ _.forEach(interfaces, (int) => {
                         taskLogger.stopHealthCheck();
                     });
 
-                    it('should write a value on health check and read it ', (done) => {
-
-                        (async () => {
-                            const task = { accountId: 'accountId', jobId: 'jobId' };
-                            const opts = _.merge({}, {
-                                baseFirebaseUrl: 'url',
-                                firebaseSecret: 'secret',
-                                healthCheckEnabled: true,
-                                healthCheckInterval: 1000, // 1s
-                                healthCheckCallOnce: true,
-
-                            }, int.opts);
-                            const taskLogger = await getTaskLoggerInstanceWithHealthCheck(task, opts);
-                            taskLogger.startHealthCheck();
-                            setTimeout(() => {
-
-                                expect(Firebase.prototype.set).to.have.been.calledWith(1);
-                                expect(Firebase.prototype.once).to.have.been.calledOnce;
-
-                                taskLogger.stopHealthCheck();
-                                done();
-                            }, 1500);
-
-                        })();
-
-                    });
-
                     it('should emit healthCheck once if health check pass  ', (done) => {
 
                         (async () => {
@@ -595,7 +568,7 @@ _.forEach(interfaces, (int) => {
                                 healthCheckCallOnce: true,
 
                             }, int.opts);
-                            const testingOpts = { onceTimeout: 2000 }; // once won't be called
+                            const testingOpts = { timeout: 2000 }; //  won't be called
                             const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts, testingOpts);
                             taskLogger.startHealthCheck();
                             setTimeout(() => {
@@ -612,7 +585,7 @@ _.forEach(interfaces, (int) => {
 
                     });
 
-                    it('should emit healthCheck failed if firebase didnt return expected value ', (done) => {
+                    it('should emit healthCheck failed if firebase return error on callback ', (done) => {
 
                         (async () => {
                             const task = { accountId: 'accountId', jobId: 'jobId' };
@@ -626,14 +599,14 @@ _.forEach(interfaces, (int) => {
                                 healthCheckCallOnce: true,
 
                             }, int.opts);
-                            const testingOpts = { onceValue: 'boom' }; // once won't be called
+                            const testingOpts = { setCallbackValue: new Error('firebase_error') };
                             const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts, testingOpts);
                             taskLogger.startHealthCheck();
                             setTimeout(() => {
 
                                 expect(taskLogger.emit.getCall(0).calledWith('healthCheckStatus', { status: 'started' }));
                                 expect(taskLogger.emit.getCall(1).calledWith('healthCheckStatus', { status: 'failed', id: 1 }));
-                                expect(taskLogger.emit.args[1][1].error.message).to.be.equals('expected 1 and got boom');
+                                expect(taskLogger.emit.args[1][1].error).to.be.equals('could not fetch health check value from firebase #:0');
                                 expect(taskLogger.emit).to.have.been.calledTwice;
 
                                 taskLogger.stopHealthCheck();

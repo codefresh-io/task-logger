@@ -370,26 +370,25 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         const retries =  _.get(this.opts, 'healthCheckRetries', 2);
         const errorAfterTimeout = _.get(this.opts, 'healthCheckTimeOutOnError', 5 * 1000);
         const callOnce = _.get(this.opts, 'healthCheckCallOnce', false);
-        this.healthCheckNumber = 0;
+        this.healthCheckCounter = 0;
         const func = callOnce ? setTimeout : setInterval;
         this.timeoutId = func(async () => {
             // eslint-disable-next-line no-plusplus
-            this.healthCheckNumber++;
+            const counter = this.healthCheckCounter++;
             const startTime = Date.now();
-            debug(`running health check number ${this.healthCheckNumber}`);
+            debug(`running health check number ${counter}`);
             try {
                 await wrapWithRetry(this.healthCheck,
                     { retries,
                         errorAfterTimeout,
                         invocationParams: {
-                            number: this.healthCheckNumber,
+                            number: counter,
                             baseRef: this.baseRef,
                         } });
-                this.emit('healthCheckStatus', { status: 'succeed', id: this.healthCheckNumber, duration: Date.now() - startTime });
+                this.emit('healthCheckStatus', { status: 'succeed', id: counter, duration: Date.now() - startTime });
 
             } catch (error) {
-                console.log('failed');
-                this.emit('healthCheckStatus', { status: 'failed', id: this.healthCheckNumber, error, duration: Date.now() - startTime  });
+                this.emit('healthCheckStatus', { status: 'failed', id: counter, error: error.message, duration: Date.now() - startTime  });
             }
 
         }, interval);
@@ -399,19 +398,15 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 
         const deferred = Q.defer();
         debug(`set value ${number} for health check`);
-        baseRef.child('healthCheck').set(number);
-        baseRef.child('healthCheck').once('value', (snapshot) => {
-            const data     = snapshot.val();
-            if (data === number) {
-                deferred.resolve(data);
+        baseRef.child('healthCheck').set(number, (err) => {
+            if (err) {
+                deferred.reject(new CFError({
+                    cause: err,
+                    message: `could not fetch health check value from firebase #:${number}`
+                }));
             } else {
-                deferred.reject(new CFError({ message: `expected ${number} and got ${data}` }));
+                deferred.resolve('ok');
             }
-        }, (errorObject) => {
-            deferred.reject(new CFError({
-                cause: errorObject,
-                message: `could not fetch health check value from firebase #:${number}`
-            }));
         });
         return deferred.promise;
     }
