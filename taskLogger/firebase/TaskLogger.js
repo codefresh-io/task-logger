@@ -385,11 +385,11 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                             number: this.healthCheckNumber,
                             baseRef: this.baseRef,
                         } });
-                this.emit('healthCheckStatus', { status: 'succeed', id: this.healthCheckNumber, duration: Date.now - startTime });
+                this.emit('healthCheckStatus', { status: 'succeed', id: this.healthCheckNumber, duration: Date.now() - startTime });
 
             } catch (error) {
                 console.log('failed');
-                this.emit('healthCheckStatus', { status: 'failed', id: this.healthCheckNumber, error, duration: Date.now - startTime  });
+                this.emit('healthCheckStatus', { status: 'failed', id: this.healthCheckNumber, error, duration: Date.now() - startTime  });
             }
 
         }, interval);
@@ -402,7 +402,6 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         baseRef.child('healthCheck').set(number);
         baseRef.child('healthCheck').once('value', (snapshot) => {
             const data     = snapshot.val();
-            console.log(`***** once ${data}`);
             if (data === number) {
                 deferred.resolve(data);
             } else {
@@ -420,6 +419,12 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         const callOnce = _.get(this.opts, 'healthCheckCallOnce', false);
         const func = callOnce ? clearTimeout : clearInterval;
         func(this.timeoutId);
+    }
+
+    onHealthCheckReported(handler) {
+        this.addListener('healthCheckStatus', (status) => {
+            handler(status);
+        });
     }
 }
 FirebaseTaskLogger.TYPE          = TYPES.FIREBASE;

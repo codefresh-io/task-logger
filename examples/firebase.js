@@ -8,12 +8,14 @@ const main = async () => {
         type: TYPES.FIREBASE,
         baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs1',
         firebaseSecret: process.env.FIREBASE_SECRET,
-        healthCheckInterval: 500,
-        healthCheckEnabled: false,
+        healthCheckInterval: 100,
     });
 
     console.log(JSON.stringify(taskLogger.getConfiguration('userid')));
-
+    taskLogger.onHealthCheckReported((status) => {
+        console.log(JSON.stringify(status));
+    });
+    taskLogger.startHealthCheck();
     await taskLogger.reportId();
     await taskLogger.reportAccountId();
     await taskLogger.setVisibility('public');
@@ -64,6 +66,7 @@ const main = async () => {
     restoredTaskLogger.addErrorMessageToEndOfSteps('my error!');
 
     await taskLogger.setStatus('success');
+    taskLogger.stopHealthCheck();
     // await taskLogger.clearSteps();
     // await taskLogger.delete();
     // taskLogger.finish();
