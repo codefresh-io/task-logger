@@ -363,6 +363,64 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 
         return deferred.promise;
     }
+
+    _startHealthCheck() {
+        debug('init health check status');
+        const interval = _.get(this.opts, 'healthCheckInterval', 15 * 1000);
+        const retries =  _.get(this.opts, 'healthCheckRetries', 2);
+        const errorAfterTimeout = _.get(this.opts, 'healthCheckTimeOutOnError', 5 * 1000);
+        const callOnce = _.get(this.opts, 'healthCheckCallOnce', false);
+        this.healthCheckCounter = 0;
+        const func = callOnce ? setTimeout : setInterval;
+        this.timeoutId = func(async () => {
+            // eslint-disable-next-line no-plusplus
+            const counter = this.healthCheckCounter++;
+            const startTime = Date.now();
+            debug(`running health check number ${counter}`);
+            try {
+                await wrapWithRetry(this.healthCheck,
+                    { retries,
+                        errorAfterTimeout,
+                        invocationParams: {
+                            number: counter,
+                            baseRef: this.baseRef,
+                        } });
+                this.emit('healthCheckStatus', { status: 'succeed', id: counter, duration: Date.now() - startTime, startTime: new Date(startTime) });
+
+            } catch (error) {
+                this.emit('healthCheckStatus', { status: 'failed', id: counter, error: error.message, duration: Date.now() - startTime, startTime: new Date(startTime) });
+            }
+
+        }, interval);
+        this.emit('healthCheckStatus', { status: 'started' });
+    }
+    async healthCheck({ number, baseRef }) {
+
+        const deferred = Q.defer();
+        debug(`set value ${number} for health check`);
+        baseRef.child('healthCheck').set(number, (err) => {
+            if (err) {
+                deferred.reject(new CFError({
+                    cause: err,
+                    message: `could not fetch health check value from firebase #:${number}`
+                }));
+            } else {
+                deferred.resolve('ok');
+            }
+        });
+        return deferred.promise;
+    }
+    _stopHealthCheck() {
+        const callOnce = _.get(this.opts, 'healthCheckCallOnce', false);
+        const func = callOnce ? clearTimeout : clearInterval;
+        func(this.timeoutId);
+    }
+
+    onHealthCheckReported(handler) {
+        this.addListener('healthCheckStatus', (status) => {
+            handler(status);
+        });
+    }
 }
 FirebaseTaskLogger.TYPE          = TYPES.FIREBASE;
 FirebaseTaskLogger.authenticated = false;

@@ -18,7 +18,7 @@ const RestClientStub = function () {
 
     const pushStub = sinon.stub();
     pushStub.resolves({});
-    restClient.push = getStub;
+    restClient.push = pushStub;
 
     return restClient;
 };

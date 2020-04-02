@@ -11,8 +11,8 @@ const retry = require('retry');
 const defaultRetryOptions = { retries: 60, factor: 1, minTimeout: 1, errorAfterTimeout: 2000 };
 
 const wrapWithRetry = (funcToRetry,
-    opts = defaultRetryOptions, extraPrintData = {}) => {
-    const finalRetryOptions = Object.assign({}, defaultRetryOptions, opts);
+    opts = defaultRetryOptions, extraPrintData = {}, invocationParams = {}) => {
+    const finalRetryOptions = Object.assign({}, defaultRetryOptions, opts, invocationParams);
 
     const deferred = Q.defer();
 
@@ -32,7 +32,7 @@ const wrapWithRetry = (funcToRetry,
 
             deferred.reject(operation.mainError());
         }, finalRetryOptions.errorAfterTimeout);
-        return funcToRetry()
+        return funcToRetry(finalRetryOptions.invocationParams)
             .then((res) => {
                 if (finished) {
                     return;
