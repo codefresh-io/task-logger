@@ -385,10 +385,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                             number: counter,
                             baseRef: this.baseRef,
                         } });
-                this.emit('healthCheckStatus', { status: 'succeed', id: counter, duration: Date.now() - startTime });
+                this.emit('healthCheckStatus', { status: 'succeed', id: counter, duration: Date.now() - startTime, startTime: new Date(startTime) });
 
             } catch (error) {
-                this.emit('healthCheckStatus', { status: 'failed', id: counter, error: error.message, duration: Date.now() - startTime  });
+                this.emit('healthCheckStatus', { status: 'failed', id: counter, error: error.message, duration: Date.now() - startTime, startTime: new Date(startTime) });
             }
 
         }, interval);
