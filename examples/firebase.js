@@ -6,7 +6,7 @@ const main = async () => {
         jobId: 'jobId'
     }, {
         type: TYPES.FIREBASE,
-        baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs1',
+        baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs',
         firebaseSecret: process.env.FIREBASE_SECRET,
         healthCheckInterval: 100,
     });
@@ -56,7 +56,7 @@ const main = async () => {
         jobId: 'jobId'
     }, {
         type: TYPES.FIREBASE,
-        baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs1',
+        baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs',
         firebaseSecret: process.env.FIREBASE_SECRET
     });
     await restoredTaskLogger.restore();
