@@ -31,6 +31,7 @@ class TaskLogger extends EventEmitter {
         this.fatal    = false;
         this.finished = false;
         this.steps    = {};
+        this.compilationPromises = [];
     }
 
     create(name, resetStatus, runCreationLogic) {
@@ -42,6 +43,7 @@ class TaskLogger extends EventEmitter {
             step.on('error', (err) => {
                 this.emit('error', err);
             });
+            this.compilationPromises.push(step.awaitLogsFlushed());
 
             this.steps[name]      = step;
             step.on('finished', () => {
@@ -68,6 +70,9 @@ class TaskLogger extends EventEmitter {
         }
 
         return step;
+    }
+    awaitLogsFlushed() {
+        return Q.all(this.compilationPromises);
     }
 
     createStepLogger(name, opts) {

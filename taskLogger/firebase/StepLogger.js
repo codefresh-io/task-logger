@@ -1,3 +1,4 @@
+/* eslint-disable no-plusplus */
 const Q                  = require('q');
 const debug              = require('debug')('codefresh:firebase:stepLogger');
 const Firebase           = require('firebase');
@@ -25,6 +26,13 @@ class FirebaseStepLogger extends BaseStepLogger {
         this.stepRef = new Firebase(this.stepUrl);
 
         this.firebaseWritableStream = firebaseWritableStream;
+        this.compliationPromise = Q.defer();
+        this.calls = 0;
+        this.fullfilledCalls = 0;
+        this.errorCalls = 0;
+        this.on('finished', () => {
+            this.checkForComplitation = true;
+        })
     }
 
     async restore() {
@@ -56,7 +64,19 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     _reportLog(message) {
-        this.stepRef.child('logs').push(message);
+        this.calls++;
+        this.stepRef.child('logs').push(message).then((err) => {
+            this.fullfilledCalls++;
+            if (err) {
+                this.errorCalls++;
+            }
+            if (this.checkForComplitation && this.calls === (this.fullfilledCalls + this.errorCalls)) {
+                this.compliationPromise.resolve();
+            }
+
+        }).catch(() => {
+            this.errorCalls++;
+        });
     }
 
     _reportOutputUrl() {
@@ -105,6 +125,10 @@ class FirebaseStepLogger extends BaseStepLogger {
 
     stepNameTransformStream() {
         return new StepNameTransformStream(this.name);
+    }
+
+    awaitLogsFlushed() {
+        return this.compliationPromise;
     }
 
     async delete() {
