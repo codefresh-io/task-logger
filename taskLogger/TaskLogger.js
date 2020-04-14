@@ -189,7 +189,7 @@ class TaskLogger extends EventEmitter {
 
     getStatus() {
         return this.allSteps
-            .map(step => step.getStatus())
+            .map(step => step.getLogsStatus())
             .reduce((acc, cur) => ({
                 writeCalls: acc.writeCalls + cur.writeCalls,
                 resolvedCalls: acc.resolvedCalls + cur.resolvedCalls,
