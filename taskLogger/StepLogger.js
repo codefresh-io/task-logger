@@ -28,9 +28,11 @@ class StepLogger extends EventEmitter {
 
         this.fatal = false;
 
-        this.writeCalls = 0;
-        this.resolvedCalls = 0;
-        this.rejectedCalls = 0;
+        this.logsStatus = {
+            writeCalls: 0,
+            resolvedCalls: 0,
+            rejectedCalls: 0,
+        };
     }
 
     start(eventReporting) {
@@ -69,50 +71,41 @@ class StepLogger extends EventEmitter {
     }
 
     write(message) {
-        this.writeCalls++;
         const writePromise = this._reportLog(message);
         this.updateLastUpdate();
-
+        this.logsStatus.writeCalls++;
         if (writePromise) {
             return writePromise
                 .then(() => {
-                    this.resolvedCalls++;
+                    this.logsStatus.resolvedCalls++;
                 })
                 .catch((err) => {
                     this.emit('error', err);
-                    this.rejectedCalls++;
+                    this.logsStatus.rejectedCalls++;
                 })
                 .finally(() => {
-                    this.emit('write'); // a write promise was fulfilled
+                    this.emit('flush'); // a write promise was fulfilled
                 });
+        } else {
+            this.logsStatus.resolvedCalls++;
         }
 
-        return null; // no promise to return
+        return Q.resolve();
     }
 
     awaitAllLogsSent() {
         const deferred = Q.defer();
         this._checkFinished(deferred);
-        this.on('write', this._checkFinished.bind(this, deferred));
+        this.on('flush', () => {
+            if (this.logsStatus.resolvedCalls + this.logsStatus.rejectedCalls === this.logsStatus.writeCalls) {
+                deferred.resolve(this.logsStatus);
+            }
+        });
         return deferred.promise;
     }
 
     getLogsStatus() {
-        return {
-            writeCalls: this.writeCalls,
-            resolvedCalls: this.resolvedCalls,
-            rejectedCalls: this.rejectedCalls,
-        };
-    }
-
-    _checkFinished(deferred) {
-        if (this.resolvedCalls + this.rejectedCalls === this.writeCalls) {
-            deferred.resolve({
-                writeCalls: this.writeCalls,
-                resolvedCalls: this.resolvedCalls,
-                rejectedCalls: this.rejectedCalls,
-            });
-        }
+        return this.logsStatus;
     }
 
     writeStream() {

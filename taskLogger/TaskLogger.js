@@ -36,12 +36,13 @@ class TaskLogger extends EventEmitter {
     }
 
     create(name, resetStatus, runCreationLogic) {
-
         let step = this.steps[name];
         if (!step) {
-
             step = this.createStepLogger(name, this.opts);
             this.allSteps.push(step);
+            step.on('flush', () => {
+                this.emit('flush');
+            });
             step.on('error', (err) => {
                 this.emit('error', err);
             });
@@ -175,16 +176,7 @@ class TaskLogger extends EventEmitter {
     // only call this when you know there will be no more write calls
     awaitLogsFlushed() {
         const promises = this.allSteps.map(step => step.awaitAllLogsSent());
-        return Q.all(promises)
-            .then(allResults => allResults.reduce((acc, cur) => ({
-                writeCalls: acc.writeCalls + cur.writeCalls,
-                resolvedCalls: acc.resolvedCalls + cur.resolvedCalls,
-                rejectedCalls: acc.rejectedCalls + cur.rejectedCalls,
-            }), {
-                writeCalls: 0,
-                resolvedCalls: 0,
-                rejectedCalls: 0,
-            }));
+        return Q.all(promises).then(() => this.getStatus());
     }
 
     getStatus() {
