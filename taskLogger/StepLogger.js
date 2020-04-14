@@ -1,4 +1,6 @@
+/* eslint-disable no-plusplus */
 const _ = require('lodash');
+const Q = require('q');
 const CFError = require('cf-errors');
 const EventEmitter = require('events');
 const { STATUS } = require('./enums');
@@ -25,6 +27,10 @@ class StepLogger extends EventEmitter {
         this.name = name;
 
         this.fatal = false;
+
+        this.writeCalls = 0;
+        this.resolvedCalls = 0;
+        this.rejectedCalls = 0;
     }
 
     start(eventReporting) {
@@ -63,8 +69,42 @@ class StepLogger extends EventEmitter {
     }
 
     write(message) {
-        this._reportLog(message);
+        this.writeCalls++;
+        const writePromise = this._reportLog(message);
         this.updateLastUpdate();
+
+        if (writePromise) {
+            return writePromise
+                .then(() => {
+                    this.resolvedCalls++;
+                })
+                .catch((err) => {
+                    this.emit('error', err);
+                    this.rejectedCalls++;
+                })
+                .finally(() => {
+                    this.emit('write'); // a write promise was fulfilled
+                });
+        }
+
+        return null; // no promise to return
+    }
+
+    awaitAllLogsSent() {
+        const deferred = Q.defer();
+        this._checkFinished(deferred);
+        this.on('write', this._checkFinished.bind(this, deferred));
+        return deferred.promise;
+    }
+
+    _checkFinished(deferred) {
+        if (this.resolvedCalls + this.rejectedCalls === this.writeCalls) {
+            deferred.resolve({
+                writeCalls: this.writeCalls,
+                resolvedCalls: this.resolvedCalls,
+                rejectedCalls: this.rejectedCalls,
+            });
+        }
     }
 
     writeStream() {

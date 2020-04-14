@@ -4,6 +4,7 @@ const _            = require('lodash');
 const CFError      = require('cf-errors');
 const EventEmitter = require('events');
 const { STATUS, VISIBILITY } = require('./enums');
+const Q = require('q');
 
 /**
  * TaskLogger - logging for build/launch/promote jobs
@@ -31,6 +32,7 @@ class TaskLogger extends EventEmitter {
         this.fatal    = false;
         this.finished = false;
         this.steps    = {};
+        this.allSteps = [];
     }
 
     create(name, resetStatus, runCreationLogic) {
@@ -39,6 +41,7 @@ class TaskLogger extends EventEmitter {
         if (!step) {
 
             step = this.createStepLogger(name, this.opts);
+            this.allSteps.push(step);
             step.on('error', (err) => {
                 this.emit('error', err);
             });
@@ -167,6 +170,21 @@ class TaskLogger extends EventEmitter {
                 ...this.opts
             }
         };
+    }
+
+    // only call this when you know there will be no more write calls
+    awaitLogsFlushed() {
+        const promises = this.allSteps.map(step => step.awaitAllLogsSent());
+        return Q.all(promises)
+            .then(allResults => allResults.reduce((acc, cur) => ({
+                writeCalls: acc.writeCalls + cur.writeCalls,
+                resolvedCalls: acc.resolvedCalls + cur.resolvedCalls,
+                rejectedCalls: acc.rejectedCalls + cur.rejectedCalls,
+            }), {
+                writeCalls: 0,
+                resolvedCalls: 0,
+                rejectedCalls: 0,
+            }));
     }
 
     syncStepsByWorkflowContextRevision(contextRevision) {

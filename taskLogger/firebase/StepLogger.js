@@ -56,7 +56,7 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     _reportLog(message) {
-        this.stepRef.child('logs').push(message);
+        return this.stepRef.child('logs').push(message);
     }
 
     _reportOutputUrl() {
