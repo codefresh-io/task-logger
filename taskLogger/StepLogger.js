@@ -97,6 +97,14 @@ class StepLogger extends EventEmitter {
         return deferred.promise;
     }
 
+    getLogsStatus() {
+        return {
+            writeCalls: this.writeCalls,
+            resolvedCalls: this.resolvedCalls,
+            rejectedCalls: this.rejectedCalls,
+        };
+    }
+
     _checkFinished(deferred) {
         if (this.resolvedCalls + this.rejectedCalls === this.writeCalls) {
             deferred.resolve({

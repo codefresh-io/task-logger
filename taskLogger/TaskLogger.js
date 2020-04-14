@@ -187,6 +187,20 @@ class TaskLogger extends EventEmitter {
             }));
     }
 
+    getStatus() {
+        return this.allSteps
+            .map(step => step.getStatus())
+            .reduce((acc, cur) => ({
+                writeCalls: acc.writeCalls + cur.writeCalls,
+                resolvedCalls: acc.resolvedCalls + cur.resolvedCalls,
+                rejectedCalls: acc.rejectedCalls + cur.rejectedCalls,
+            }), {
+                writeCalls: 0,
+                resolvedCalls: 0,
+                rejectedCalls: 0,
+            });
+    }
+
     syncStepsByWorkflowContextRevision(contextRevision) {
         _.forEach(contextRevision, (step, stepName) => {
             if (_.get(step, 'status') !== STATUS.PENDING) {
