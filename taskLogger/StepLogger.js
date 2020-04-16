@@ -92,10 +92,6 @@ class StepLogger extends EventEmitter {
         return Q.resolve();
     }
 
-    getLogsStatus() {
-        return this.logsStatus;
-    }
-
     writeStream() {
         return this.streamLog().on('write', this.updateLastUpdate.bind(this));
     }
