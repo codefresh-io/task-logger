@@ -28,11 +28,11 @@ class StepLogger extends EventEmitter {
 
         this.fatal = false;
 
-        if (this.streamLog && this.streamLog()) {
-            this.streamLog().on('writeCalls', () => {
+        if (this.opts.firebaseWritableStream) {
+            this.opts.firebaseWritableStream.on('writeCalls', () => {
                 this.emit('writeCalls');
             });
-            this.streamLog().on('flush', (err) =>  {
+            this.opts.firebaseWritableStream.on('flush', (err) =>  {
                 this.emit('flush', err);
             });
         }
