@@ -28,20 +28,12 @@ class StepLogger extends EventEmitter {
 
         this.fatal = false;
 
-        this.logsStatus = {
-            writeCalls: 0,
-            resolvedCalls: 0,
-            rejectedCalls: 0,
-        };
         if (this.streamLog && this.streamLog()) {
-            this.streamLog().on('writeCalls', () => this.logsStatus.writeCalls++);
+            this.streamLog().on('writeCalls', () => {
+                this.emit('writeCalls');
+            });
             this.streamLog().on('flush', (err) =>  {
-                if (err) {
-                    this.logsStatus.rejectedCalls++;
-                } else {
-                    this.logsStatus.resolvedCalls++;
-                }
-                this.emit('flush');
+                this.emit('flush', err);
             });
         }
     }
@@ -84,35 +76,20 @@ class StepLogger extends EventEmitter {
     write(message) {
         const writePromise = this._reportLog(message);
         this.updateLastUpdate();
-        this.logsStatus.writeCalls++;
+        this.emit('writeCalls');
         if (writePromise) {
             return writePromise
                 .then(() => {
-                    this.logsStatus.resolvedCalls++;
+                    this.emit('flush');
                 })
                 .catch((err) => {
-                    this.emit('error', err);
-                    this.logsStatus.rejectedCalls++;
-                })
-                .finally(() => {
-                    this.emit('flush'); // a write promise was fulfilled
+                    this.emit('flush', err);
                 });
         } else {
-            this.logsStatus.resolvedCalls++;
+            this.emit('flush');
         }
 
         return Q.resolve();
-    }
-
-    awaitAllLogsSent() {
-        const deferred = Q.defer();
-        this._checkFinished(deferred);
-        this.on('flush', () => {
-            if (this.logsStatus.resolvedCalls + this.logsStatus.rejectedCalls === this.logsStatus.writeCalls) {
-                deferred.resolve(this.logsStatus);
-            }
-        });
-        return deferred.promise;
     }
 
     getLogsStatus() {

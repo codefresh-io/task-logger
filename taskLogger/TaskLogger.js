@@ -33,18 +33,27 @@ class TaskLogger extends EventEmitter {
         this.finished = false;
         this.steps    = {};
         this.allSteps = [];
+        this.logsStatus = {
+            writeCalls: 0,
+            resolvedCalls: 0,
+            rejectedCalls: 0,
+        };
     }
 
     create(name, resetStatus, runCreationLogic) {
         let step = this.steps[name];
         if (!step) {
             step = this.createStepLogger(name, this.opts);
-            this.allSteps.push(step);
-            step.on('flush', () => {
-                this.emit('flush');
+            step.on('writeCalls', () => {
+                this.logsStatus.writeCalls += 1;
             });
-            step.on('error', (err) => {
-                this.emit('error', err);
+            step.on('flush', (err) => {
+                if (err) {
+                    this.logsStatus.rejectedCalls += 1;
+                } else {
+                    this.logsStatus.resolvedCalls += 1;
+                }
+                this.emit('flush', err);
             });
 
             this.steps[name]      = step;
@@ -175,22 +184,20 @@ class TaskLogger extends EventEmitter {
 
     // only call this when you know there will be no more write calls
     awaitLogsFlushed() {
-        const promises = this.allSteps.map(step => step.awaitAllLogsSent());
-        return Q.all(promises).then(() => this.getStatus());
+        const deferred = Q.defer();
+        this._checkAllFlushed(deferred);
+        this.on('flush', this._checkAllFlushed.bind(this, deferred));
+        return deferred.promise;
     }
 
     getStatus() {
-        return this.allSteps
-            .map(step => step.getLogsStatus())
-            .reduce((acc, cur) => ({
-                writeCalls: acc.writeCalls + cur.writeCalls,
-                resolvedCalls: acc.resolvedCalls + cur.resolvedCalls,
-                rejectedCalls: acc.rejectedCalls + cur.rejectedCalls,
-            }), {
-                writeCalls: 0,
-                resolvedCalls: 0,
-                rejectedCalls: 0,
-            });
+        return this.logsStatus;
+    }
+
+    _checkAllFlushed(deferred) {
+        if (this.logsStatus.resolvedCalls + this.logsStatus.rejectedCalls === this.logsStatus.writeCalls) {
+            deferred.resolve();
+        }
     }
 
     syncStepsByWorkflowContextRevision(contextRevision) {
