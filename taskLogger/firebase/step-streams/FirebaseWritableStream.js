@@ -51,15 +51,14 @@ class FirebaseWritableStream extends Writable {
             this.emit('writeCalls');
             this._firebaseClient.update(this._logsBatch, (err) => {
                 if (err) {
-                    this.emit('rejectedCalls');
+                    this.emit('flush', err);
                     debug(`${new Date().toISOString()} FirebaseWritableStream._write: failed to flush logs to firebase on: ${err.stack}`);
                     next();
                     return;
                 }
-                this.emit('resolvedCalls');
+                this.emit('flush');
                 this._logsBatch = Object.create(null);
                 this.emit('write');
-                this.emit('message.logged');
                 const waitMs = (this._timeUnitLimitMs - msDelta) + 5;
                 // lets wait till time unit limit + x will pass in order to continue
                 debug(`${new Date().toISOString()} FirebaseWritableStream._write: successfully flushed to firebase, waiting ${waitMs} ms for logs byte size reset`);
@@ -86,16 +85,15 @@ class FirebaseWritableStream extends Writable {
         this.emit('writeCalls');
         this._firebaseClient.update(this._logsBatch, (err) => {
             if (err) {
-                this.emit('rejectedCalls');
+                this.emit('flush', err);
                 debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: failed to flush logs to firebase on: ${err.stack}`);
                 next();
                 return;
             }
-            this.emit('resolvedCalls');
+            this.emit('flush');
             // debug(`${new Date().toISOString()} FirebaseWritableStream._write: flushed successfully, resetting logs batch and debounce flush`);
             this._logsBatch = Object.create(null);
             this.emit('write');
-            this.emit('message.logged');
             this._setBatchFlushTimeout(this._debounceDelay);
             next();
         });
@@ -135,13 +133,12 @@ class FirebaseWritableStream extends Writable {
             this._firebaseClient.update(this._logsBatch, (err) => {
                 this._logsBatch = Object.create(null);
                 if (err) {
-                    this.emit('rejectedCalls');
+                    this.emit('flush', err);
                     debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: failed to flush logs to firebase on: ${err.stack}`);
                     return;
                 }
-                this.emit('resolvedCalls');
+                this.emit('flush');
                 this.emit('write');
-                this.emit('message.logged');
                 // debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: flushed successfully`);
             });
         }, flushInterval);

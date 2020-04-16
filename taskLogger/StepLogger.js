@@ -35,12 +35,12 @@ class StepLogger extends EventEmitter {
         };
         if (this.streamLog && this.streamLog()) {
             this.streamLog().on('writeCalls', () => this.logsStatus.writeCalls++);
-            this.streamLog().on('resolvedCalls', () =>  {
-                this.logsStatus.resolvedCalls++;
-                this.emit('flush');
-            });
-            this.streamLog().on('rejectedCalls', () => {
-                this.logsStatus.resolvedCalls++;
+            this.streamLog().on('flush', (err) =>  {
+                if (err) {
+                    this.logsStatus.rejectedCalls++;
+                } else {
+                    this.logsStatus.resolvedCalls++;
+                }
                 this.emit('flush');
             });
         }
