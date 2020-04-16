@@ -54,7 +54,9 @@ class TaskLogger extends EventEmitter {
                 }
                 this.emit('flush', err);
             });
-
+            step.on('error', (err) => {
+                this.emit('error', err);
+            });
             this.steps[name]      = step;
             step.on('finished', () => {
                 delete this.steps[name];
