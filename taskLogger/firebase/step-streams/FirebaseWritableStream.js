@@ -1,7 +1,7 @@
 /* eslint-disable no-plusplus */
 const { Writable } = require('stream');
 const _ = require('lodash');
-const debug = require('debug')('codefresh:firebase:firebaseWritableStream');
+const debug = require('debug')('verbose:codefresh:firebase:firebaseWritableStream');
 
 // const FIREBASE_MESSAGE_SIZE_LIMIT = 10 * 1024 * 1024; // 10 MB Maximum size of a string
 
