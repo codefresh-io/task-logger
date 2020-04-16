@@ -1,3 +1,4 @@
+/* eslint-disable no-plusplus */
 const { Writable } = require('stream');
 const _ = require('lodash');
 const debug = require('debug')('codefresh:firebase:firebaseWritableStream');
@@ -47,15 +48,18 @@ class FirebaseWritableStream extends Writable {
             debug(`${new Date().toISOString()} FirebaseWritableStream._write: current log size + message [${currentMessageSize + this._currentLogByteSize}
              / ${this._messageSizeLimitPerTimeUnit}] exceeded, flushing...`);
 
+            this.emit('writeCalls');
             this._firebaseClient.update(this._logsBatch, (err) => {
                 if (err) {
+                    this.emit('rejectedCalls');
                     debug(`${new Date().toISOString()} FirebaseWritableStream._write: failed to flush logs to firebase on: ${err.stack}`);
                     next();
                     return;
                 }
-
+                this.emit('resolvedCalls');
                 this._logsBatch = Object.create(null);
                 this.emit('write');
+                this.emit('message.logged');
                 const waitMs = (this._timeUnitLimitMs - msDelta) + 5;
                 // lets wait till time unit limit + x will pass in order to continue
                 debug(`${new Date().toISOString()} FirebaseWritableStream._write: successfully flushed to firebase, waiting ${waitMs} ms for logs byte size reset`);
@@ -79,15 +83,19 @@ class FirebaseWritableStream extends Writable {
         }
 
         // debug(`${new Date().toISOString()} FirebaseWritableStream._write: logs batch size has been met [${this._batchSize}] flushing...`);
+        this.emit('writeCalls');
         this._firebaseClient.update(this._logsBatch, (err) => {
             if (err) {
+                this.emit('rejectedCalls');
                 debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: failed to flush logs to firebase on: ${err.stack}`);
                 next();
                 return;
             }
+            this.emit('resolvedCalls');
             // debug(`${new Date().toISOString()} FirebaseWritableStream._write: flushed successfully, resetting logs batch and debounce flush`);
             this._logsBatch = Object.create(null);
             this.emit('write');
+            this.emit('message.logged');
             this._setBatchFlushTimeout(this._debounceDelay);
             next();
         });
@@ -123,13 +131,17 @@ class FirebaseWritableStream extends Writable {
             }
             /* debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: timeout
                         triggered, [${this._currentLogByteSize / 1024} KB /${this._messageSizeLimitPerTimeUnit / 1024} KB], flushing...`); */
+            this.emit('writeCalls');
             this._firebaseClient.update(this._logsBatch, (err) => {
                 this._logsBatch = Object.create(null);
                 if (err) {
+                    this.emit('rejectedCalls');
                     debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: failed to flush logs to firebase on: ${err.stack}`);
                     return;
                 }
+                this.emit('resolvedCalls');
                 this.emit('write');
+                this.emit('message.logged');
                 // debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: flushed successfully`);
             });
         }, flushInterval);
