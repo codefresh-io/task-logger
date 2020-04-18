@@ -35,6 +35,10 @@ class StepLogger extends EventEmitter {
             this.opts.firebaseWritableStream.on('flush', (err) =>  {
                 this.emit('flush', err);
             });
+            this.opts.firebaseWritableStream.on('end', () => {
+                this.emit('end');
+            });
+            this.shouldWaitForEndEvent = true;
         }
     }
 

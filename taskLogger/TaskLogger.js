@@ -36,6 +36,7 @@ class TaskLogger extends EventEmitter {
             writeCalls: 0,
             resolvedCalls: 0,
             rejectedCalls: 0,
+            endCalls: 0,
         };
     }
 
@@ -54,6 +55,13 @@ class TaskLogger extends EventEmitter {
                 }
                 this.emit('flush', err);
             });
+            if (step.shouldWaitForEndEvent) {
+                step.on('end', () => {
+                    this.logsStatus.endCalls += 1;
+                });
+            } else {
+                this.logsStatus.endCalls += 1;
+            }
             step.on('error', (err) => {
                 this.emit('error', err);
             });
@@ -196,7 +204,9 @@ class TaskLogger extends EventEmitter {
     }
 
     _checkAllFlushed(deferred) {
-        if (this.logsStatus.resolvedCalls + this.logsStatus.rejectedCalls === this.logsStatus.writeCalls) {
+        const endCallsEquaslStepsCounter = this.logsStatus.endCalls === Object.keys(this.step).length;
+        const resolvedCallsEqualsWriteCalls = this.logsStatus.resolvedCalls + this.logsStatus.rejectedCalls === this.logsStatus.writeCalls;
+        if (endCallsEquaslStepsCounter && resolvedCallsEqualsWriteCalls) {
             deferred.resolve();
         }
     }
