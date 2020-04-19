@@ -73,5 +73,28 @@ describe('Firebase Writable Stream Tests', () => {
             done();
         }, fireBaseWritableStreamOpts.debounceDelay + 10);
     });
+    it('should emit writeCalls and flush calls', (done) => {
+        const status = {
+            writeCalls: 0,
+            resolved: 0,
+            rejected: 0,
+        };
+        // eslint-disable-next-line no-return-assign
+        fireBaseWritableStream.on('writeCalls', () => status.writeCalls += 1);
+        fireBaseWritableStream.on('flush', (err) => {
+            if (err) {
+                status.rejected += 1;
+            } else {
+                status.resolved += 1;
+            }
+        });
+        fireBaseWritableStream._write(Buffer.from('some fake str', 'utf8'), 'utf8', () => {});
+        setTimeout(() => {
+            expect(status.writeCalls).to.be.equals(1);
+            expect(status.resolved).to.be.equals(1);
+            done();
+        }, fireBaseWritableStreamOpts.debounceDelay + 10);
+
+    });
 
 });
