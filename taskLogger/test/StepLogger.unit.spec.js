@@ -164,6 +164,36 @@ describe('Base StepLogger tests', () => {
                 expect(stepLogger._reportLog).to.have.been.calledWith(message);
                 expect(stepLogger.updateLastUpdate).to.have.been.calledWith();
             });
+            it('should emit a writeCalls event', () => {
+                const stepLogger = getStepLoggerInstance();
+                const message = 'message';
+                stepLogger.write(message);
+                expect(stepLogger.emit).to.have.been.calledWith('writeCalls');
+
+            });
+            it('should emit a flush event if writePromise fullfiled ', () => {
+                const stepLogger = getStepLoggerInstance();
+                stepLogger._reportLog = sinon.stub().resolves(undefined);
+                const message = 'message';
+                return stepLogger.write(message).then(() => {
+                    expect(stepLogger.emit).to.have.been.calledWith('writeCalls');
+                    expect(stepLogger.emit).to.have.been.calledWith('flush');
+                });
+
+            });
+
+            it('should emit a flush event with error if writePromise rejected ', () => {
+                const stepLogger = getStepLoggerInstance();
+                const err = new Error('err');
+                stepLogger._reportLog = sinon.stub().rejects(err);
+                const message = 'message';
+                return stepLogger.write(message).then(() => {
+                    expect(stepLogger.emit).to.have.been.calledWith('writeCalls');
+                    expect(stepLogger.emit).to.have.been.calledWith('flush', err);
+                });
+
+            });
+
         });
 
     });

@@ -12,12 +12,18 @@ const createMockedStepClass = () => {
     const StepClass = sinon.spy(() => {
         let onErrorHandler;
         let onFinishedHandler;
+        let onWriteCallsHandler;
+        let onFlushHandler;
         return {
             emit: (event, data) => {
                 if (event === 'error') {
                     onErrorHandler(data);
                 } else if (event === 'finished') {
                     onFinishedHandler(data);
+                } else if (event === 'writeCalls') {
+                    onWriteCallsHandler(data);
+                } else if (event === 'flush') {
+                    onFlushHandler(data);
                 }
             },
             on: sinon.spy((event, handler) => {
@@ -25,6 +31,10 @@ const createMockedStepClass = () => {
                     onErrorHandler = handler;
                 } else if (event === 'finished') {
                     onFinishedHandler = handler;
+                } else if (event === 'writeCalls') {
+                    onWriteCallsHandler = handler;
+                } else if (event === 'flush') {
+                    onFlushHandler = handler;
                 }
             }),
             finish: sinon.spy(),
@@ -173,6 +183,64 @@ describe('Base TaskLogger tests', () => {
             expect(taskLogger.newStepAdded).to.have.been.calledWith(stepLogger);
         });
 
+    });
+
+    describe('awaitLogsFlushed', () => {
+        it('write calls from step loggers should be counted', () => {
+
+            const taskLogger = getTaskLoggerInstance();
+            const stepLogger = taskLogger.create('new-step');
+            stepLogger.emit('writeCalls');
+            expect(taskLogger.logsStatus.writeCalls).to.be.equals(1);
+            expect(taskLogger.logsStatus.resolvedCalls).to.be.equals(0);
+            expect(taskLogger.logsStatus.rejectedCalls).to.be.equals(0);
+
+        });
+        it('flush calls from step loggers should be counted when resolved', () => {
+
+            const taskLogger = getTaskLoggerInstance();
+            const stepLogger = taskLogger.create('new-step');
+            stepLogger.emit('flush');
+            expect(taskLogger.logsStatus.writeCalls).to.be.equals(0);
+            expect(taskLogger.logsStatus.resolvedCalls).to.be.equals(1);
+            expect(taskLogger.logsStatus.rejectedCalls).to.be.equals(0);
+
+        });
+        it('rejected flush calls from step loggers should be counted as rejceted', () => {
+
+            const taskLogger = getTaskLoggerInstance();
+            const stepLogger = taskLogger.create('new-step');
+            stepLogger.emit('flush', new Error());
+            expect(taskLogger.logsStatus.writeCalls).to.be.equals(0);
+            expect(taskLogger.logsStatus.resolvedCalls).to.be.equals(0);
+            expect(taskLogger.logsStatus.rejectedCalls).to.be.equals(1);
+
+        });
+        it('should be resolved when all stream resolved', () => {
+
+            const taskLogger = getTaskLoggerInstance();
+            const stepLogger = taskLogger.create('new-step');
+            stepLogger.emit('writeCalls');
+            stepLogger.emit('flush');
+            return taskLogger.awaitLogsFlushed();
+
+        });
+        it('should not resolved when not all stream resolved', function () {
+            this.timeout(0);
+            const taskLogger = getTaskLoggerInstance();
+            const stepLogger = taskLogger.create('new-step');
+            stepLogger.emit('writeCalls');
+            stepLogger.emit('flush');
+            stepLogger.emit('writeCalls');
+
+            return Promise.race([
+                new Promise(resolve => setTimeout(resolve, 3000, 'timeout')),
+                taskLogger.awaitLogsFlushed().then(
+                  () => { throw Error('unexpectedly resolved'); },
+                  () => { throw Error('unexpectedly rejected'); }
+                  )
+            ]);
+        });
     });
 
     describe('finish', () => {

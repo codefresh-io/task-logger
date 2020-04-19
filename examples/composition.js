@@ -142,6 +142,8 @@ const main = async () => {
     composeTaskLoggerRestored.addErrorMessageToEndOfSteps('my error!');
 
     await composeTaskLogger.setStatus('success');
+    await composeTaskLogger.awaitLogsFlushed();
+    console.log('finished');
 };
 
 main();

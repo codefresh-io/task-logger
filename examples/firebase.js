@@ -67,6 +67,8 @@ const main = async () => {
 
     await taskLogger.setStatus('success');
     taskLogger.stopHealthCheck();
+    await taskLogger.awaitLogsFlushed();
+    console.log('finished');
     // await taskLogger.clearSteps();
     // await taskLogger.delete();
     // taskLogger.finish();
