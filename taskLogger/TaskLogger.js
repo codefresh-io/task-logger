@@ -43,17 +43,8 @@ class TaskLogger extends EventEmitter {
         let step = this.steps[name];
         if (!step) {
             step = this.createStepLogger(name, this.opts);
-            step.on('writeCalls', () => {
-                this.logsStatus.writeCalls += 1;
-            });
-            step.on('flush', (err) => {
-                if (err) {
-                    this.logsStatus.rejectedCalls += 1;
-                } else {
-                    this.logsStatus.resolvedCalls += 1;
-                }
-                this.emit('flush', err);
-            });
+            step.on('writeCalls', this._handleWriteCallsEvent.bind(this));
+            step.on('flush', this._handleFlushEvent.bind(this));
             step.on('error', (err) => {
                 this.emit('error', err);
             });
@@ -199,6 +190,19 @@ class TaskLogger extends EventEmitter {
         if (this.logsStatus.resolvedCalls + this.logsStatus.rejectedCalls === this.logsStatus.writeCalls) {
             deferred.resolve();
         }
+    }
+
+    _handleWriteCallsEvent() {
+        this.logsStatus.writeCalls += 1;
+    }
+
+    _handleFlushEvent(err) {
+        if (err) {
+            this.logsStatus.rejectedCalls += 1;
+        } else {
+            this.logsStatus.resolvedCalls += 1;
+        }
+        this.emit('flush', err);
     }
 
     syncStepsByWorkflowContextRevision(contextRevision) {

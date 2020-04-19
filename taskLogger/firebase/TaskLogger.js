@@ -90,7 +90,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         const stepRef = new Firebase(taskLogger.stepsUrl);
         taskLogger.stepsRef = stepRef;
         if (logsRateLimitConfig) {
-            taskLogger.opts.firebaseWritableStream = new FirebaseWritableStream(stepRef, logsRateLimitConfig);
+            const fbStream = new FirebaseWritableStream(stepRef, logsRateLimitConfig);
+            fbStream.on('writeCalls', this._handleWriteCallsEvent.bind(this));
+            fbStream.on('flush', this._handleFlushEvent.bind(this));
+            taskLogger.opts.firebaseWritableStream = fbStream;
         }
 
         if (restInterface) {
