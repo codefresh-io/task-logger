@@ -106,7 +106,7 @@ describe('Firebase Writable Stream Tests', () => {
         mockReadableStream.pipe(stepNameStream).pipe(fireBaseWritableStream, { end: false });
 
         const checkResolved = () => {
-            console.log('called: ' + JSON.stringify(status));
+            console.log(`called: ${JSON.stringify(status)}`);
             if (status.resolved + status.rejected === status.writeCalls) {
                 deferred.resolve();
             }
