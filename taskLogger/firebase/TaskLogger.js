@@ -92,7 +92,15 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         if (logsRateLimitConfig) {
             const fbStream = new FirebaseWritableStream(stepRef, logsRateLimitConfig);
             fbStream.on('writeCalls', taskLogger._handleWriteCallsEvent.bind(taskLogger));
-            fbStream.on('flush', taskLogger._handleFlushEvent.bind(taskLogger));
+            // override default taskLogger behavior because fbStream can flush n writeCalls at once
+            fbStream.on('flush', (err, nFlushed) => {
+                if (err) {
+                    taskLogger.logsStatus.rejectedCalls += nFlushed;
+                } else {
+                    taskLogger.logsStatus.resolvedCalls += nFlushed;
+                }
+                taskLogger.emit('flush', err, nFlushed);
+            });
             taskLogger.opts.firebaseWritableStream = fbStream;
         }
 

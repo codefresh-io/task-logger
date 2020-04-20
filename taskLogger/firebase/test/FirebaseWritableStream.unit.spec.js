@@ -1,6 +1,9 @@
 const FireBaseWritableStream = require('../step-streams/FirebaseWritableStream');
+const StepNameTransformStream = require('../step-streams/StepNameTransformStream');
+const { Readable } = require('stream');
 // const sinon = require('sinon');
 const { expect } =  require('chai');
+const Q = require('q');
 
 class FirebaseClientMock {
     child() { return this; }
@@ -73,28 +76,95 @@ describe('Firebase Writable Stream Tests', () => {
             done();
         }, fireBaseWritableStreamOpts.debounceDelay + 10);
     });
-    it('should emit writeCalls and flush calls', (done) => {
+
+    it('should emit flush event with the number of flushed writeCalls - _setBatchFlushTimeout', () => {
         const status = {
             writeCalls: 0,
             resolved: 0,
             rejected: 0,
         };
-        // eslint-disable-next-line no-return-assign
-        fireBaseWritableStream.on('writeCalls', () => status.writeCalls += 1);
-        fireBaseWritableStream.on('flush', (err) => {
-            if (err) {
-                status.rejected += 1;
-            } else {
-                status.resolved += 1;
+
+        const deferred = Q.defer();
+
+        const stepNameStream = new StepNameTransformStream('step1');
+        stepNameStream.on('writeCalls', () => { status.writeCalls += 1; });
+
+        fireBaseWritableStream.on('flush', (err, nFlushed) => {
+            expect(err).to.be.null;
+            status.resolved += nFlushed;
+            console.log(`flush called, nflushed:${nFlushed}`);
+        });
+
+        const mockReadableStream = new Readable({
+            read() {
+                this.push(Buffer.from('message1\n', 'utf-8'));
+                this.push(Buffer.from('message2\n', 'utf-8'));
+                this.push(null); // end readable stream
             }
         });
-        fireBaseWritableStream._write(Buffer.from('some fake str', 'utf8'), 'utf8', () => {});
-        setTimeout(() => {
-            expect(status.writeCalls).to.be.equals(1);
-            expect(status.resolved).to.be.equals(1);
-            done();
-        }, fireBaseWritableStreamOpts.debounceDelay + 10);
 
+        mockReadableStream.pipe(stepNameStream).pipe(fireBaseWritableStream, { end: false });
+
+        const checkResolved = () => {
+            console.log('called: ' + JSON.stringify(status));
+            if (status.resolved + status.rejected === status.writeCalls) {
+                deferred.resolve();
+            }
+        };
+
+        stepNameStream.on('end', () => {
+            checkResolved();
+            fireBaseWritableStream.on('flush', checkResolved);
+        });
+
+        return deferred.promise;
     });
 
+    it('should emit flush event with the number of flushed writeCalls - more than batch size', () => {
+        const status = {
+            writeCalls: 0,
+            resolved: 0,
+            rejected: 0,
+        };
+
+        const deferred = Q.defer();
+
+        const stepNameStream = new StepNameTransformStream('step1');
+        stepNameStream.on('writeCalls', () => { status.writeCalls += 1; });
+
+        fireBaseWritableStream.on('flush', (err, nFlushed) => {
+            expect(err).to.be.null;
+            status.resolved += nFlushed;
+            console.log(`flush called, nflushed: ${nFlushed}`);
+        });
+
+        const mockReadableStream = new Readable({
+            read() {
+                this.push(Buffer.from('message1\n', 'utf-8'));
+                this.push(Buffer.from('message2\n', 'utf-8'));
+                this.push(Buffer.from('message3\n', 'utf-8'));
+                this.push(Buffer.from('message4\n', 'utf-8'));
+                this.push(Buffer.from('message5\n', 'utf-8'));
+                this.push(Buffer.from('message6\n', 'utf-8')); // this will be sent in a 2nd batch
+
+                this.push(null); // end readable stream
+            }
+        });
+
+        mockReadableStream.pipe(stepNameStream).pipe(fireBaseWritableStream, { end: false });
+
+        const checkResolved = () => {
+            console.log(`called: ${JSON.stringify(status)}`);
+            if (status.resolved + status.rejected === status.writeCalls) {
+                deferred.resolve();
+            }
+        };
+
+        stepNameStream.on('end', () => {
+            checkResolved();
+            fireBaseWritableStream.on('flush', checkResolved);
+        });
+
+        return deferred.promise;
+    });
 });
