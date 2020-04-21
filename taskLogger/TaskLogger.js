@@ -39,7 +39,7 @@ class TaskLogger extends EventEmitter {
             rejectedCalls: 0,
             kbps: 0.0,
         };
-        setInterval(this._updateLogsRate.bind(this), 1000);
+        setInterval(this._updateLogsRate.bind(this), 1000).unref(); // to update the logs rate every second
     }
 
     create(name, resetStatus, runCreationLogic) {
