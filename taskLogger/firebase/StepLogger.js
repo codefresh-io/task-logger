@@ -10,8 +10,7 @@ const StepNameTransformStream = require('./step-streams/StepNameTransformStream'
 class FirebaseStepLogger extends BaseStepLogger {
 
     constructor(step, opts, taskLogger) {
-        super(step, opts);
-        this.taskLogger = taskLogger;
+        super(step, opts, taskLogger);
         const { baseFirebaseUrl, firebaseWritableStream } = opts;
 
         if (!baseFirebaseUrl) {

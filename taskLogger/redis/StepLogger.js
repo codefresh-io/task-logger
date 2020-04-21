@@ -5,8 +5,8 @@ const RedisTaskLogger                  = require('./TaskLogger');
 const { STATUS }                       = require('../enums');
 
 class RedisStepLogger extends BaseStepLogger {
-    constructor(step, opts) {
-        super(step, opts);
+    constructor(step, opts, taskLogger) {
+        super(step, opts, taskLogger);
         const extendOpts = Object.assign({}, step, opts);
         extendOpts.key = `${step.accountId}:${step.jobId}:steps:${step.name}`;
         const redisConnection = RedisTaskLogger.getRedisConnectionFromCache(extendOpts);

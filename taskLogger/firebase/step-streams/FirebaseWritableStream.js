@@ -17,6 +17,7 @@ class FirebaseWritableStream extends Writable {
 
         this._logsBatch = Object.create(null);
         this._currentLogByteSize = 0;
+        this._currentBatchSize = 0;
         this._debounceTimeout = null;
     }
 
@@ -50,13 +51,14 @@ class FirebaseWritableStream extends Writable {
 
             this._firebaseClient.update(this._logsBatch, (err) => {
                 if (err) {
-                    this.emit('flush', err, _.size(this._logsBatch));
+                    this.emit('flush', err, _.size(this._logsBatch), this._currentBatchSize);
                     debug(`${new Date().toISOString()} FirebaseWritableStream._write: failed to flush logs to firebase on: ${err.stack}`);
                     next();
                     return;
                 }
-                this.emit('flush', null, _.size(this._logsBatch));
+                this.emit('flush', null, _.size(this._logsBatch), this._currentBatchSize);
                 this._logsBatch = Object.create(null);
+                this._currentBatchSize = 0;
                 this.emit('write');
                 const waitMs = (this._timeUnitLimitMs - msDelta) + 5;
                 // lets wait till time unit limit + x will pass in order to continue
@@ -68,6 +70,7 @@ class FirebaseWritableStream extends Writable {
         }
 
         this._currentLogByteSize += currentMessageSize;
+        this._currentBatchSize += currentMessageSize;
         this._logsBatch[`${newLogKey}`] = message.toString();
         debug(`${new Date().toISOString()} FirebaseWritableStream._write: updated logs batch with new key
                  '${newLogKey}', current logs byte size ${this._currentLogByteSize / 1024} KB`);
@@ -83,14 +86,15 @@ class FirebaseWritableStream extends Writable {
         // debug(`${new Date().toISOString()} FirebaseWritableStream._write: logs batch size has been met [${this._batchSize}] flushing...`);
         this._firebaseClient.update(this._logsBatch, (err) => {
             if (err) {
-                this.emit('flush', err, _.size(this._logsBatch));
+                this.emit('flush', err, _.size(this._logsBatch), this._currentBatchSize);
                 debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: failed to flush logs to firebase on: ${err.stack}`);
                 next();
                 return;
             }
-            this.emit('flush', null, _.size(this._logsBatch));
+            this.emit('flush', null, _.size(this._logsBatch), this._currentBatchSize);
             // debug(`${new Date().toISOString()} FirebaseWritableStream._write: flushed successfully, resetting logs batch and debounce flush`);
             this._logsBatch = Object.create(null);
+            this._currentBatchSize = 0;
             this.emit('write');
             this._setBatchFlushTimeout(this._debounceDelay);
             next();
@@ -129,12 +133,13 @@ class FirebaseWritableStream extends Writable {
                         triggered, [${this._currentLogByteSize / 1024} KB /${this._messageSizeLimitPerTimeUnit / 1024} KB], flushing...`); */
             this._firebaseClient.update(this._logsBatch, (err) => {
                 if (err) {
-                    this.emit('flush', err, _.size(this._logsBatch));
+                    this.emit('flush', err, _.size(this._logsBatch), this._currentBatchSize);
                     debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: failed to flush logs to firebase on: ${err.stack}`);
                     return;
                 }
-                this.emit('flush', null, _.size(this._logsBatch));
+                this.emit('flush', null, _.size(this._logsBatch), this._currentBatchSize);
                 this._logsBatch = Object.create(null);
+                this._currentBatchSize = 0;
                 this.emit('write');
                 // debug(`${new Date().toISOString()} FirebaseWritableStream._setBatchFlushTimeout: flushed successfully`);
             });

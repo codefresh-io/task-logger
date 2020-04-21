@@ -5,8 +5,8 @@ const FirebaseStepLogger = require('../StepLogger');
 
 class FirebaseRestStepLogger extends FirebaseStepLogger {
 
-    constructor(step, opts) {
-        super(step, opts);
+    constructor(step, opts, taskLogger) {
+        super(step, opts, taskLogger);
 
         this.restClient = opts.restClient;
         if (!this.restClient) {

@@ -32,11 +32,14 @@ class TaskLogger extends EventEmitter {
         this.fatal    = false;
         this.finished = false;
         this.steps    = {};
+        this._curLogSize = 0;
         this.logsStatus = {
             writeCalls: 0,
             resolvedCalls: 0,
             rejectedCalls: 0,
+            kbps: 0.0,
         };
+        setInterval(this._updateLogsRate.bind(this), 1000);
     }
 
     create(name, resetStatus, runCreationLogic) {
@@ -203,6 +206,15 @@ class TaskLogger extends EventEmitter {
             this.logsStatus.resolvedCalls += 1;
         }
         this.emit('flush', err);
+    }
+
+    _updateCurrentLogSize(size) {
+        this._curLogSize += size;
+    }
+
+    _updateLogsRate() {
+        this.logsStatus.kbps = this._curLogSize / 1000;
+        this._curLogSize = 0.0;
     }
 
     syncStepsByWorkflowContextRevision(contextRevision) {

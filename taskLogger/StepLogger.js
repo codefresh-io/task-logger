@@ -7,8 +7,9 @@ const { STATUS } = require('./enums');
 const request = require('request');
 
 class StepLogger extends EventEmitter {
-    constructor({ accountId, jobId, name }, opts) {
+    constructor({ accountId, jobId, name }, opts, taskLogger) {
         super();
+        this.taskLogger = taskLogger;
         this.opts = opts;
 
         if (!accountId && !opts.skipAccountValidation) {
@@ -71,6 +72,7 @@ class StepLogger extends EventEmitter {
         if (writePromise) {
             return writePromise
                 .then(() => {
+                    this.taskLogger._updateCurrentLogSize(Buffer.byteLength(message));
                     this.emit('flush');
                 })
                 .catch((err) => {
