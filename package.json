@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "eslint": "eslint . --ext .js",
-    "test": "RETRY_DELAY=1 mocha './{,!(node_modules)/**/}*.spec.js'",
+    "test": "RETRY_DELAY=1 mocha './{,!(node_modules)/**/}*.spec.js' --exit",
     "ci-publish": "ci-publish"
   },
   "author": "Codefresh",
