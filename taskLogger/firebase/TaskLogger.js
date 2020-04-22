@@ -52,7 +52,8 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                 type: this.opts.type,
                 baseFirebaseUrl: this.opts.baseFirebaseUrl,
                 firebaseSecret: skipTokenCreation ? this.firebaseSecret : this._provisionToken(userId, isAdmin),
-                ...(this.opts.logsRateLimitConfig && { logsRateLimitConfig: this.opts.logsRateLimitConfig })
+                ...(this.opts.logsRateLimitConfig && { logsRateLimitConfig: this.opts.logsRateLimitConfig }),
+                ...(this.opts.healthCheckConfig && { healthCheckConfig: this.opts.healthCheckConfig })
             }
         };
     }
@@ -90,7 +91,18 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         const stepRef = new Firebase(taskLogger.stepsUrl);
         taskLogger.stepsRef = stepRef;
         if (logsRateLimitConfig) {
-            taskLogger.opts.firebaseWritableStream = new FirebaseWritableStream(stepRef, logsRateLimitConfig);
+            const fbStream = new FirebaseWritableStream(stepRef, logsRateLimitConfig);
+            // override default taskLogger behavior because fbStream can flush n writeCalls at once
+            fbStream.on('flush', (err, nFlushed, batchSize) => {
+                taskLogger._updateCurrentLogSize(batchSize);
+                if (err) {
+                    taskLogger.logsStatus.rejectedCalls += nFlushed;
+                } else {
+                    taskLogger.logsStatus.resolvedCalls += nFlushed;
+                }
+                taskLogger.emit('flush', err, nFlushed, batchSize);
+            });
+            taskLogger.opts.firebaseWritableStream = fbStream;
         }
 
         if (restInterface) {
@@ -366,10 +378,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 
     _startHealthCheck() {
         debug('init health check status');
-        const interval = _.get(this.opts, 'healthCheckInterval', 15 * 1000);
-        const retries =  _.get(this.opts, 'healthCheckRetries', 2);
-        const errorAfterTimeout = _.get(this.opts, 'healthCheckTimeOutOnError', 5 * 1000);
-        const callOnce = _.get(this.opts, 'healthCheckCallOnce', false);
+        const interval = _.get(this.opts, 'healthCheckConfig.interval', 30 * 1000);
+        const retries =  _.get(this.opts, 'healthCheckConfig.retries', 2);
+        const errorAfterTimeout = _.get(this.opts, 'healthCheckConfig.errorAfterTimeout', 15 * 1000);
+        const callOnce = _.get(this.opts, 'healthCheckConfig.callOnce', false);
         this.healthCheckCounter = 0;
         const func = callOnce ? setTimeout : setInterval;
         this.timeoutId = func(async () => {

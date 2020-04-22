@@ -504,9 +504,11 @@ _.forEach(interfaces, (int) => {
                             const opts = _.merge({}, {
                                 baseFirebaseUrl: 'url',
                                 firebaseSecret: 'secret',
-                                healthCheckEnabled: true,
-                                healthCheckInterval: 1000, // 1s
-                                healthCheckCallOnce: true,
+                                healthCheckConfig: {
+                                    enabled: true,
+                                    interval: 1000, // 1s
+                                    callOnce: true
+                                }
 
                             }, int.opts);
                             const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts);
@@ -532,9 +534,11 @@ _.forEach(interfaces, (int) => {
                             const opts = _.merge({}, {
                                 baseFirebaseUrl: 'url',
                                 firebaseSecret: 'secret',
-                                healthCheckEnabled: true,
-                                healthCheckInterval: 100, // 1s
-                                healthCheckCallOnce: false,
+                                healthCheckConfig: {
+                                    enabled: true,
+                                    interval: 100,
+                                    callOnce: false
+                                }
 
                             }, int.opts);
                             const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts);
@@ -561,11 +565,12 @@ _.forEach(interfaces, (int) => {
                             const opts = _.merge({}, {
                                 baseFirebaseUrl: 'url',
                                 firebaseSecret: 'secret',
-                                healthCheckEnabled: true,
-                                healthCheckTimeOutOnError: 50,
-                                healthCheckInterval: 200, // 1s
-                                errorAfterTimeout: 50,
-                                healthCheckCallOnce: true,
+                                healthCheckConfig: {
+                                    enabled: true,
+                                    interval: 200,
+                                    callOnce: true,
+                                    errorAfterTimeout: 50
+                                }
 
                             }, int.opts);
                             const testingOpts = { timeout: 2000 }; //  won't be called
@@ -592,11 +597,12 @@ _.forEach(interfaces, (int) => {
                             const opts = _.merge({}, {
                                 baseFirebaseUrl: 'url',
                                 firebaseSecret: 'secret',
-                                healthCheckEnabled: true,
-                                healthCheckTimeOutOnError: 50,
-                                healthCheckInterval: 200,
-                                errorAfterTimeout: 50,
-                                healthCheckCallOnce: true,
+                                healthCheckConfig: {
+                                    enabled: true,
+                                    interval: 200,
+                                    callOnce: true,
+                                    errorAfterTimeout: 50
+                                },
 
                             }, int.opts);
                             const testingOpts = { setCallbackValue: new Error('firebase_error') };

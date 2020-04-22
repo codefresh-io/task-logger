@@ -8,7 +8,9 @@ const main = async () => {
         type: TYPES.FIREBASE,
         baseFirebaseUrl: 'https://codefresh-dev.firebaseio.com/development-docker/build-logs',
         firebaseSecret: process.env.FIREBASE_SECRET,
-        healthCheckInterval: 100,
+        healthCheckConfig: {
+            enabled: true,
+        }
     });
 
     console.log(JSON.stringify(taskLogger.getConfiguration('userid')));
@@ -67,6 +69,8 @@ const main = async () => {
 
     await taskLogger.setStatus('success');
     taskLogger.stopHealthCheck();
+    await taskLogger.awaitLogsFlushed();
+    console.log('finished');
     // await taskLogger.clearSteps();
     // await taskLogger.delete();
     // taskLogger.finish();

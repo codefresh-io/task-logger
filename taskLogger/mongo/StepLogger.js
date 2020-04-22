@@ -6,8 +6,8 @@ const EventEmitter                      = require('events');
 
 
 class MongoStepLogger extends BaseStepLogger {
-    constructor(step, opts) {
-        super(step, opts);
+    constructor(step, opts, taskLogger) {
+        super(step, opts, taskLogger);
         this.db = MongoTaskLogger.getConnection(opts);
         this.emitter = new EventEmitter();
     }

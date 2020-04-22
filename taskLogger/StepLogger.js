@@ -1,12 +1,15 @@
+/* eslint-disable no-plusplus */
 const _ = require('lodash');
+const Q = require('q');
 const CFError = require('cf-errors');
 const EventEmitter = require('events');
 const { STATUS } = require('./enums');
 const request = require('request');
 
 class StepLogger extends EventEmitter {
-    constructor({ accountId, jobId, name }, opts) {
+    constructor({ accountId, jobId, name }, opts, taskLogger) {
         super();
+        this.taskLogger = taskLogger;
         this.opts = opts;
 
         if (!accountId && !opts.skipAccountValidation) {
@@ -63,8 +66,23 @@ class StepLogger extends EventEmitter {
     }
 
     write(message) {
-        this._reportLog(message);
+        const writePromise = this._reportLog(message);
         this.updateLastUpdate();
+        this.emit('writeCalls');
+        if (writePromise) {
+            return writePromise
+                .then(() => {
+                    this.taskLogger._updateCurrentLogSize(Buffer.byteLength(message));
+                    this.emit('flush');
+                })
+                .catch((err) => {
+                    this.emit('flush', err);
+                });
+        } else {
+            this.emit('flush');
+        }
+
+        return Q.resolve();
     }
 
     writeStream() {

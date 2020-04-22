@@ -4,6 +4,7 @@ const _            = require('lodash');
 const CFError      = require('cf-errors');
 const EventEmitter = require('events');
 const { STATUS, VISIBILITY } = require('./enums');
+const Q = require('q');
 
 /**
  * TaskLogger - logging for build/launch/promote jobs
@@ -31,18 +32,25 @@ class TaskLogger extends EventEmitter {
         this.fatal    = false;
         this.finished = false;
         this.steps    = {};
+        this._curLogSize = 0;
+        this.logsStatus = {
+            writeCalls: 0,
+            resolvedCalls: 0,
+            rejectedCalls: 0,
+            kbps: 0.0,
+        };
+        setInterval(this._updateLogsRate.bind(this), 1000).unref(); // to update the logs rate every second
     }
 
     create(name, resetStatus, runCreationLogic) {
-
         let step = this.steps[name];
         if (!step) {
-
             step = this.createStepLogger(name, this.opts);
+            step.on('writeCalls', this._handleWriteCallsEvent.bind(this));
+            step.on('flush', this._handleFlushEvent.bind(this));
             step.on('error', (err) => {
                 this.emit('error', err);
             });
-
             this.steps[name]      = step;
             step.on('finished', () => {
                 delete this.steps[name];
@@ -167,6 +175,46 @@ class TaskLogger extends EventEmitter {
                 ...this.opts
             }
         };
+    }
+
+    // only call this when you know there will be no more write calls
+    awaitLogsFlushed() {
+        const deferred = Q.defer();
+        this._checkAllFlushed(deferred);
+        this.on('flush', this._checkAllFlushed.bind(this, deferred));
+        return deferred.promise;
+    }
+
+    getStatus() {
+        return this.logsStatus;
+    }
+
+    _checkAllFlushed(deferred) {
+        if (this.logsStatus.resolvedCalls + this.logsStatus.rejectedCalls === this.logsStatus.writeCalls) {
+            deferred.resolve();
+        }
+    }
+
+    _handleWriteCallsEvent() {
+        this.logsStatus.writeCalls += 1;
+    }
+
+    _handleFlushEvent(err) {
+        if (err) {
+            this.logsStatus.rejectedCalls += 1;
+        } else {
+            this.logsStatus.resolvedCalls += 1;
+        }
+        this.emit('flush', err);
+    }
+
+    _updateCurrentLogSize(size) {
+        this._curLogSize += size;
+    }
+
+    _updateLogsRate() {
+        this.logsStatus.kbps = this._curLogSize / 1000;
+        this._curLogSize = 0.0;
     }
 
     syncStepsByWorkflowContextRevision(contextRevision) {
