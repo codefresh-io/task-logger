@@ -378,9 +378,9 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 
     _startHealthCheck() {
         debug('init health check status');
-        const interval = _.get(this.opts, 'healthCheckConfig.interval', 15 * 1000);
+        const interval = _.get(this.opts, 'healthCheckConfig.interval', 30 * 1000);
         const retries =  _.get(this.opts, 'healthCheckConfig.retries', 2);
-        const errorAfterTimeout = _.get(this.opts, 'healthCheckConfig.errorAfterTimeout', 5 * 1000);
+        const errorAfterTimeout = _.get(this.opts, 'healthCheckConfig.errorAfterTimeout', 15 * 1000);
         const callOnce = _.get(this.opts, 'healthCheckConfig.callOnce', false);
         this.healthCheckCounter = 0;
         const func = callOnce ? setTimeout : setInterval;
