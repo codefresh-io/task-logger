@@ -98,12 +98,12 @@ class TaskLogger extends EventEmitter {
                 if (Buffer.isBuffer(chunk)) {
                     chunk = Buffer.toString(encoding);
                 }
-                callback(null, taskLogger._maskSecrets(chunk));
+                callback(null, Buffer.from(taskLogger._maskBlacklistedWords(chunk)));
             }
         });
     }
 
-    _maskSecrets(data) {
+    _maskBlacklistedWords(data) {
         let maskedData;
         this.blacklistMasks.forEach((mask) => {
             maskedData = data.replace(mask.regex, mask.replacer.bind(mask));
