@@ -106,7 +106,7 @@ class TaskLogger extends EventEmitter {
     _maskSecrets(data) {
         let maskedData;
         this.blacklistMasks.forEach((mask) => {
-            maskedData = data.replace(mask.regex, mask.replacement);
+            maskedData = data.replace(mask.regex, mask.replacer.bind(mask));
         });
         return maskedData;
     }
@@ -277,11 +277,16 @@ class TaskLogger extends EventEmitter {
     }
 
     _prepareBlacklistMasks() {
-        const blacklist = this.opts.blackList || [];
-        return blacklist.map(blacklistedWord => ({
-            word: blacklistedWord,
-            regex: new RegExp(blacklistedWord, 'g'),
-            replacement: Buffer.alloc(blacklistedWord.length, '*')
+        const blacklist = this.opts.blackList || {};
+        return _.map(blacklist, (value, key) => ({
+            name: key,
+            word: value,
+            regex: new RegExp(value, 'g'),
+            replacement: Buffer.alloc(value.length, '*').toString('utf8'),
+            replacer() {
+                debug(`masked secret: ${this.name}`);
+                return this.replacement;
+            }
         }));
     }
 }
