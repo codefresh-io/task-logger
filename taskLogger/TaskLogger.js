@@ -3,6 +3,7 @@ const debug        = require('debug')('codefresh:taskLogger');
 const _            = require('lodash');
 const CFError      = require('cf-errors');
 const EventEmitter = require('events');
+const { Transform } = require('stream');
 const { STATUS, VISIBILITY } = require('./enums');
 const Q = require('q');
 
@@ -28,7 +29,7 @@ class TaskLogger extends EventEmitter {
             throw new CFError('failed to create taskLogger because jobId must be provided');
         }
         this.jobId = jobId;
-
+        this.blacklistMasks = this._prepareBlacklistMasks();
         this.fatal    = false;
         this.finished = false;
         this.steps    = {};
@@ -88,6 +89,26 @@ class TaskLogger extends EventEmitter {
             ...opts
         }, this);
         return step;
+    }
+
+    createMaskingStream() {
+        const taskLogger = this;
+        return new Transform({
+            transform(chunk, encoding, callback) {
+                if (Buffer.isBuffer(chunk)) {
+                    chunk = Buffer.toString(encoding);
+                }
+                callback(null, taskLogger._maskSecrets(chunk));
+            }
+        });
+    }
+
+    _maskSecrets(data) {
+        let maskedData;
+        this.blacklistMasks.forEach((mask) => {
+            maskedData = data.replace(mask.regex, mask.replacement);
+        });
+        return maskedData;
     }
 
     finish() { // jshint ignore:line
@@ -253,6 +274,15 @@ class TaskLogger extends EventEmitter {
             };
         }
         return stepDataFromContextRevision;
+    }
+
+    _prepareBlacklistMasks() {
+        const blacklist = this.opts.blackList || [];
+        return blacklist.map(blacklistedWord => ({
+            word: blacklistedWord,
+            regex: new RegExp(blacklistedWord, 'g'),
+            replacement: Buffer.alloc(blacklistedWord.length, '*')
+        }));
     }
 }
 
