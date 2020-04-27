@@ -96,7 +96,7 @@ class TaskLogger extends EventEmitter {
         return new Transform({
             transform(chunk, encoding, callback) {
                 if (Buffer.isBuffer(chunk)) {
-                    chunk = Buffer.toString(encoding);
+                    chunk = chunk.toString('utf8');
                 }
                 callback(null, Buffer.from(taskLogger._maskBlacklistedWords(chunk)));
             }
@@ -104,9 +104,9 @@ class TaskLogger extends EventEmitter {
     }
 
     _maskBlacklistedWords(data) {
-        let maskedData;
+        let maskedData = data;
         this.blacklistMasks.forEach((mask) => {
-            maskedData = data.replace(mask.regex, mask.replacer.bind(mask));
+            maskedData = maskedData.replace(mask.regex, mask.replacer.bind(mask));
         });
         return maskedData;
     }
@@ -277,7 +277,7 @@ class TaskLogger extends EventEmitter {
     }
 
     _prepareBlacklistMasks() {
-        const blacklist = this.opts.blackList || {};
+        const blacklist = this.opts.blacklist || {};
         return _.map(blacklist, (value, key) => ({
             name: key,
             word: value,

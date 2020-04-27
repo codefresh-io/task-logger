@@ -1,9 +1,11 @@
 const proxyquire = require('proxyquire').noCallThru();
 const chai       = require('chai');
+const Q = require('q');
 
 const expect     = chai.expect;
 const sinon      = require('sinon');
 const sinonChai  = require('sinon-chai');
+const { Readable, Writable } = require('stream');
 
 chai.use(sinonChai);
 const { TYPES, STATUS, VISIBILITY } = require('../enums');
@@ -240,6 +242,52 @@ describe('Base TaskLogger tests', () => {
                   () => { throw Error('unexpectedly rejected'); }
                   )
             ]);
+        });
+    });
+
+    describe('maskingStream', () => {
+        it.only('should mask blacklisted words from the input stream', () => {
+            const blacklist = {
+                SOME_SECRET: 'ABCD',
+                PASSWORD: 'xyz123'
+            };
+            const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
+            const maskingStream = taskLogger.createMaskingStream();
+
+            const containerOutput = [
+                { sent: 'Hello world', expected: 'Hello world' },
+                { sent: 'Something something ABCD something', expected: 'Something something **** something' },
+                { sent: 'ABCDABCDHHK', expected: '********HHK' },
+                { sent: 'something XYZ123 xyz123', expected: 'something XYZ123 ******' },
+            ];
+            let i = 0;
+            const containerOutputStream = new Readable({
+                read() {
+                    if (!containerOutput[i]) {
+                        this.push(null); // end stream
+                    } else {
+                        this.push(containerOutput[i].sent);
+                        i += 1;
+                    }
+                }
+            });
+
+            let j = 0;
+            const finalOutputStream = new Writable({
+                write(chunk, encoding, done) {
+                    const data = chunk.toString('utf8');
+                    expect(data).to.be.equal(containerOutput[j].expected);
+                    j += 1;
+                    done();
+                }
+            });
+
+            const deferred = Q.defer();
+            finalOutputStream.on('finish', deferred.resolve.bind(deferred));
+
+            containerOutputStream.pipe(maskingStream).pipe(finalOutputStream);
+
+            return deferred.promise;
         });
     });
 
