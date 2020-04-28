@@ -302,7 +302,7 @@ class TaskLogger extends EventEmitter {
             name: word.key,
             word: word.value,
             regex: new RegExp(word.value, 'g'),
-            replacement: '*'.repeat(this.word.length),
+            replacement: '*'.repeat(word.length),
             replacer() {
                 debug(`masked secret: ${this.name}`);
                 return this.replacement;
