@@ -90,7 +90,7 @@ class RedisTaskLogger extends TaskLogger {
                     name: current,
                     jobId: this.jobId,
                     accountId: this.accountId
-                }, this.opts);
+                }, this.opts, this);
                 acc[current].pendingApproval = keyToStatus[current] === STATUS.PENDING_APPROVAL;
                 acc[current].status = keyToStatus[current];
                 return acc;

@@ -75,7 +75,7 @@ class MongoTaskLogger extends TaskLogger {
                     name: current.name,
                     jobId: this.jobId,
                     accountId: this.accountId
-                }, this.opts);
+                }, this.opts, this);
                 acc[name].pendingApproval = current.status === STATUS.PENDING_APPROVAL;
                 acc[name].status = current.status;
                 return acc;

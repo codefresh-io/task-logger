@@ -250,7 +250,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                         name: key
                     }, {
                         ...this.opts
-                    });
+                    }, this);
                     step.on('error', (err) => {
                         this.emit('error', err);
                     });
