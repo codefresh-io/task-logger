@@ -246,7 +246,7 @@ describe('Base TaskLogger tests', () => {
     });
 
     describe('maskingStream', () => {
-        it.only('should mask blacklisted words from the input stream', () => {
+        it('should mask blacklisted words from the input stream', () => {
             const blacklist = {
                 SOME_SECRET: 'ABCD',
                 PASSWORD: 'xyz123'
@@ -288,6 +288,63 @@ describe('Base TaskLogger tests', () => {
             containerOutputStream.pipe(maskingStream).pipe(finalOutputStream);
 
             return deferred.promise;
+        });
+
+        it('should mask the longer secret first', () => {
+            const blacklist = {
+                SHORT_SECRET: 'xyz',
+                LONG_SECRET: 'xyz123'
+            };
+            const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
+            const maskingStream = taskLogger.createMaskingStream();
+
+            const containerOutput = [
+                { sent: 'Hello, xyz123', expected: 'Hello, ******' },
+            ];
+            let i = 0;
+            const containerOutputStream = new Readable({
+                read() {
+                    if (!containerOutput[i]) {
+                        this.push(null); // end stream
+                    } else {
+                        this.push(containerOutput[i].sent);
+                        i += 1;
+                    }
+                }
+            });
+
+            let j = 0;
+            const finalOutputStream = new Writable({
+                write(chunk, encoding, done) {
+                    const data = chunk.toString('utf8');
+                    expect(data).to.be.equal(containerOutput[j].expected);
+                    j += 1;
+                    done();
+                }
+            });
+
+            const deferred = Q.defer();
+            finalOutputStream.on('finish', deferred.resolve.bind(deferred));
+
+            containerOutputStream.pipe(maskingStream).pipe(finalOutputStream);
+
+            return deferred.promise;
+        });
+
+        it('should keep masks sorted by length when adding new masks', () => {
+            const blacklist = {
+                SHORT_SECRET: 'xyz',
+                LONG_SECRET: 'xyz123'
+            };
+            const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
+            taskLogger.addNewMask({ key: 'SOME_SECRET', value: 'x' });
+            taskLogger.addNewMask({ key: 'SOME_SECRET2', value: 'xy' });
+            taskLogger.addNewMask({ key: 'SOME_SECRET3', value: 'xyz1234' });
+
+            const expectedMasksValues = ['xyz1234', 'xyz123', 'xyz', 'xy', 'x'];
+            const actualMasksValues = taskLogger.blacklistMasks.map(mask => mask.word);
+
+            expect(actualMasksValues).to.be.deep.equal(expectedMasksValues);
         });
     });
 

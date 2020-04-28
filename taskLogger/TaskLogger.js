@@ -91,6 +91,10 @@ class TaskLogger extends EventEmitter {
         return step;
     }
 
+    /**
+     * returns a new transform stream that filters words included in the blacklist of this task-logger
+     * @returns {Transform}
+     */
     createMaskingStream() {
         const taskLogger = this;
         return new Transform({
@@ -98,12 +102,29 @@ class TaskLogger extends EventEmitter {
                 if (Buffer.isBuffer(chunk)) {
                     chunk = chunk.toString('utf8');
                 }
-                callback(null, Buffer.from(taskLogger._maskBlacklistedWords(chunk)));
+                callback(null, Buffer.from(taskLogger._maskBlacklistWords(chunk)));
             }
         });
     }
 
-    _maskBlacklistedWords(data) {
+    /**
+     * adds a new mask to this task-logger
+     * @param { key: string, value: string } word
+     */
+    addNewMask(word) {
+        const newMask = this._newMask(word);
+        let sortedIndex = 0;
+        for (let i = 0; i < this.blacklistMasks.length; i += 1) {
+            if (this.blacklistMasks[i].word.length <= newMask.word.length) {
+                break;
+            }
+            sortedIndex += 1;
+        }
+        // inserts the mask in the right place (based on mask length)
+        this.blacklistMasks.splice(sortedIndex, 0, newMask);
+    }
+
+    _maskBlacklistWords(data) {
         let maskedData = data;
         this.blacklistMasks.forEach((mask) => {
             maskedData = maskedData.replace(mask.regex, mask.replacer.bind(mask));
@@ -276,18 +297,25 @@ class TaskLogger extends EventEmitter {
         return stepDataFromContextRevision;
     }
 
-    _prepareBlacklistMasks() {
-        const blacklist = this.opts.blacklist || {};
-        return _.map(blacklist, (value, key) => ({
-            name: key,
-            word: value,
-            regex: new RegExp(value, 'g'),
-            replacement: Buffer.alloc(value.length, '*').toString('utf8'),
+    _newMask(word) {
+        return {
+            name: word.key,
+            word: word.value,
+            regex: new RegExp(word.value, 'g'),
+            replacement: Buffer.alloc(word.value.length, '*').toString('utf8'),
             replacer() {
                 debug(`masked secret: ${this.name}`);
                 return this.replacement;
             }
-        }));
+        };
+    }
+
+    _prepareBlacklistMasks() {
+        const blacklist = this.opts.blacklist || {};
+        return _.chain(blacklist)
+            .orderBy(['length'], 'desc')
+            .map((value, key) => this._newMask({ key, value }))
+            .value();
     }
 }
 
