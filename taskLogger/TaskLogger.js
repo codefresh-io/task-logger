@@ -302,7 +302,7 @@ class TaskLogger extends EventEmitter {
             name: word.key,
             word: word.value,
             regex: new RegExp(word.value, 'g'),
-            replacement: '*'.repeat(word.length),
+            replacement: '*'.repeat(word.value.length),
             replacer() {
                 debug(`masked secret: ${this.name}`);
                 return this.replacement;
@@ -313,8 +313,8 @@ class TaskLogger extends EventEmitter {
     _prepareBlacklistMasks() {
         const blacklist = this.opts.blacklist || {};
         return _.chain(blacklist)
-            .orderBy(['length'], 'desc')
             .map((value, key) => this._newMask({ key, value }))
+            .orderBy(['word.length'], 'desc')
             .value();
     }
 }

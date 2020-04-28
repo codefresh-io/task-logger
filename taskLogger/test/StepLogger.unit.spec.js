@@ -190,7 +190,7 @@ describe('Base StepLogger tests', () => {
                 expect(stepLogger.taskLogger._maskBlacklistWords).to.have.been.calledWith(message);
             });
 
-            it.only('should mask blacklist words of task-logger', () => {
+            it('should mask blacklist words of task-logger', () => {
                 const stepLogger = getStepLoggerInstance();
                 stepLogger.taskLogger._maskBlacklistWords = () => 'masked';
                 const message = 'message';
