@@ -190,6 +190,14 @@ describe('Base StepLogger tests', () => {
                 expect(stepLogger.taskLogger._maskBlacklistWords).to.have.been.calledWith(message);
             });
 
+            it.only('should mask blacklist words of task-logger', () => {
+                const stepLogger = getStepLoggerInstance();
+                stepLogger.taskLogger._maskBlacklistWords = () => 'masked';
+                const message = 'message';
+                stepLogger.write(message);
+                expect(stepLogger._reportLog).to.have.been.calledWith('masked');
+            });
+
             it('should emit a flush event with error if writePromise rejected ', () => {
                 const stepLogger = getStepLoggerInstance();
                 const err = new Error('err');

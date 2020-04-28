@@ -302,7 +302,7 @@ class TaskLogger extends EventEmitter {
             name: word.key,
             word: word.value,
             regex: new RegExp(word.value, 'g'),
-            replacement: Buffer.alloc(word.value.length, '*').toString('utf8'),
+            replacement: '*'.repeat(this.word.length),
             replacer() {
                 debug(`masked secret: ${this.name}`);
                 return this.replacement;
