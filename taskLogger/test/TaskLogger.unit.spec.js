@@ -10,6 +10,8 @@ const { Readable, Writable } = require('stream');
 chai.use(sinonChai);
 const { TYPES, STATUS, VISIBILITY } = require('../enums');
 
+const SECRET_REPLACEMENT = '****';
+
 const createMockedStepClass = () => {
     const StepClass = sinon.spy(() => {
         let onErrorHandler;
@@ -256,9 +258,9 @@ describe('Base TaskLogger tests', () => {
 
             const containerOutput = [
                 { sent: 'Hello world', expected: 'Hello world' },
-                { sent: 'Something something ABCD something', expected: 'Something something **** something' },
-                { sent: 'ABCDABCDHHK', expected: '********HHK' },
-                { sent: 'something XYZ123 xyz123', expected: 'something XYZ123 ******' },
+                { sent: 'Something something ABCD something', expected: `Something something ${SECRET_REPLACEMENT} something` },
+                { sent: 'ABCDABCDHHK', expected: `${SECRET_REPLACEMENT}${SECRET_REPLACEMENT}HHK` },
+                { sent: 'something XYZ123 xyz123', expected: `something XYZ123 ${SECRET_REPLACEMENT}` },
             ];
             let i = 0;
             const containerOutputStream = new Readable({
@@ -299,7 +301,7 @@ describe('Base TaskLogger tests', () => {
             const maskingStream = taskLogger.createMaskingStream();
 
             const containerOutput = [
-                { sent: 'Hello, xyz123', expected: 'Hello, ******' },
+                { sent: 'Hello, xyz123', expected: `Hello, ${SECRET_REPLACEMENT}` },
             ];
             let i = 0;
             const containerOutputStream = new Readable({
