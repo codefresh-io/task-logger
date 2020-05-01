@@ -34,11 +34,14 @@ class TaskLogger extends EventEmitter {
         this.finished = false;
         this.steps    = {};
         this._curLogSize = 0;
+        this._nMeasurements = 0;
+        this._totalKbps = 0.0;
         this.logsStatus = {
             writeCalls: 0,
             resolvedCalls: 0,
             rejectedCalls: 0,
             kbps: 0.0,
+            avgKbps: 0.0,
         };
         setInterval(this._updateLogsRate.bind(this), 1000).unref(); // to update the logs rate every second
     }
@@ -256,7 +259,10 @@ class TaskLogger extends EventEmitter {
     }
 
     _updateLogsRate() {
+        this._nMeasurements += 1;
         this.logsStatus.kbps = this._curLogSize / 1000;
+        this._totalKbps += this.logsStatus.kbps;
+        this.logsStatus.avgKbps = this._totalKbps / this._nMeasurements;
         this._curLogSize = 0.0;
     }
 
