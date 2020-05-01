@@ -122,12 +122,13 @@ class TaskLogger extends EventEmitter {
         }
         // inserts the mask in the right place (based on mask length)
         this.blacklistMasks.splice(sortedIndex, 0, newMask);
+        debug(`added new mask for ${word.key}`);
     }
 
     _maskBlacklistWords(data) {
         let maskedData = data;
         this.blacklistMasks.forEach((mask) => {
-            maskedData = maskedData.replace(mask.regex, mask.replacer.bind(mask));
+            maskedData = mask.matchAndReplace(maskedData);
         });
         return maskedData;
     }
@@ -301,11 +302,15 @@ class TaskLogger extends EventEmitter {
         return {
             name: word.key,
             word: word.value,
-            regex: new RegExp(word.value, 'g'),
             replacement: '****',
-            replacer() {
-                debug(`masked secret: ${this.name}`);
-                return this.replacement;
+            matchAndReplace(str) {
+                const partitions = str.split(this.word);
+                if (partitions.length !== 1) {
+                    debug(`matched secret ${this.name} ${partitions.length - 1} times`);
+                    return partitions.join(this.replacement);
+                }
+
+                return partitions[0];
             }
         };
     }
