@@ -3,6 +3,7 @@ const debug        = require('debug')('codefresh:taskLogger');
 const _            = require('lodash');
 const CFError      = require('cf-errors');
 const EventEmitter = require('events');
+const { Transform } = require('stream');
 const { STATUS, VISIBILITY } = require('./enums');
 const Q = require('q');
 
@@ -28,16 +29,19 @@ class TaskLogger extends EventEmitter {
             throw new CFError('failed to create taskLogger because jobId must be provided');
         }
         this.jobId = jobId;
-
+        this.blacklistMasks = this._prepareBlacklistMasks();
         this.fatal    = false;
         this.finished = false;
         this.steps    = {};
         this._curLogSize = 0;
+        this._nMeasurements = 0;
+        this._totalKbps = 0.0;
         this.logsStatus = {
             writeCalls: 0,
             resolvedCalls: 0,
             rejectedCalls: 0,
             kbps: 0.0,
+            avgKbps: 0.0,
         };
         setInterval(this._updateLogsRate.bind(this), 1000).unref(); // to update the logs rate every second
     }
@@ -88,6 +92,48 @@ class TaskLogger extends EventEmitter {
             ...opts
         }, this);
         return step;
+    }
+
+    /**
+     * returns a new transform stream that filters words included in the blacklist of this task-logger
+     * @returns {Transform}
+     */
+    createMaskingStream() {
+        const taskLogger = this;
+        return new Transform({
+            transform(chunk, encoding, callback) {
+                if (Buffer.isBuffer(chunk)) {
+                    chunk = chunk.toString('utf8');
+                }
+                callback(null, Buffer.from(taskLogger._maskBlacklistWords(chunk)));
+            }
+        });
+    }
+
+    /**
+     * adds a new mask to this task-logger
+     * @param { key: string, value: string } word
+     */
+    addNewMask(word) {
+        const newMask = this._newMask(word);
+        let sortedIndex = 0;
+        for (let i = 0; i < this.blacklistMasks.length; i += 1) {
+            if (this.blacklistMasks[i].word.length <= newMask.word.length) {
+                break;
+            }
+            sortedIndex += 1;
+        }
+        // inserts the mask in the right place (based on mask length)
+        this.blacklistMasks.splice(sortedIndex, 0, newMask);
+        debug(`added new mask for ${word.key}`);
+    }
+
+    _maskBlacklistWords(data) {
+        let maskedData = data;
+        this.blacklistMasks.forEach((mask) => {
+            maskedData = mask.matchAndReplace(maskedData);
+        });
+        return maskedData;
     }
 
     finish() { // jshint ignore:line
@@ -213,7 +259,10 @@ class TaskLogger extends EventEmitter {
     }
 
     _updateLogsRate() {
+        this._nMeasurements += 1;
         this.logsStatus.kbps = this._curLogSize / 1000;
+        this._totalKbps += this.logsStatus.kbps;
+        this.logsStatus.avgKbps = this._totalKbps / this._nMeasurements;
         this._curLogSize = 0.0;
     }
 
@@ -253,6 +302,31 @@ class TaskLogger extends EventEmitter {
             };
         }
         return stepDataFromContextRevision;
+    }
+
+    _newMask(word) {
+        return {
+            name: word.key,
+            word: word.value,
+            replacement: '****',
+            matchAndReplace(str) {
+                const partitions = str.split(this.word);
+                if (partitions.length !== 1) {
+                    debug(`matched secret ${this.name} ${partitions.length - 1} times`);
+                    return partitions.join(this.replacement);
+                }
+
+                return partitions[0];
+            }
+        };
+    }
+
+    _prepareBlacklistMasks() {
+        const blacklist = this.opts.blacklist || {};
+        return _.chain(blacklist)
+            .map((value, key) => this._newMask({ key, value }))
+            .orderBy(['word.length'], 'desc')
+            .value();
     }
 }
 

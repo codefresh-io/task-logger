@@ -25,6 +25,11 @@ class StepLogger extends EventEmitter {
         if (!name) {
             throw new CFError('failed to create stepLogger because name must be provided');
         }
+
+        if (!taskLogger) {
+            throw new CFError('failed to create stepLogger because taskLogger must be provided');
+        }
+
         this.name = name;
 
         this.fatal = false;
@@ -65,7 +70,25 @@ class StepLogger extends EventEmitter {
         }
     }
 
+    /**
+     * returns a new transform stream that filters words included in the blacklist of
+     * the task-logger related to this step-logger
+     * @returns {TransformStream}
+     */
+    createMaskingStream() {
+        return this.taskLogger.createMaskingStream();
+    }
+
+    /**
+     * adds a new mask to the task-logger related to this step-logger
+     * @param { key: string, value: string } word
+     */
+    addNewMask(word) {
+        this.taskLogger.addNewMask(word);
+    }
+
     write(message) {
+        message = this.taskLogger._maskBlacklistWords(message);
         const writePromise = this._reportLog(message);
         this.updateLastUpdate();
         this.emit('writeCalls');
@@ -90,16 +113,19 @@ class StepLogger extends EventEmitter {
     }
 
     debug(message) {
+        message = this.taskLogger._maskBlacklistWords(message);
         this._reportLog(`${message}\r\n`);
         this.updateLastUpdate();
     }
 
     warn(message) {
+        message = this.taskLogger._maskBlacklistWords(message);
         this._reportLog(`\x1B[01;93m${message}\x1B[0m\r\n`);
         this.updateLastUpdate();
     }
 
     info(message) {
+        message = this.taskLogger._maskBlacklistWords(message);
         this._reportLog(`${message}\r\n`);
         this.updateLastUpdate();
     }
@@ -124,7 +150,8 @@ class StepLogger extends EventEmitter {
                 this.status = STATUS.SKIPPED;
             }
             if (err && err.toString() !== 'Error') {
-                this._reportLog(`\x1B[31m${err.toString()}\x1B[0m\r\n`);
+                const errMsg = this.taskLogger._maskBlacklistWords(err.toString());
+                this._reportLog(`\x1B[31m${errMsg}\x1B[0m\r\n`);
             }
 
             this._reportStatus();

@@ -33,7 +33,7 @@ const getStepLoggerInstance = async (step = { accountId: 'accountId', jobId: 'jo
         });
     }
 
-    const stepLogger = new StepLogger(step, opts);
+    const stepLogger = new StepLogger(step, opts, {});
     stepLogger.emit  = sinon.spy(stepLogger.emit);
 
     return stepLogger;
@@ -64,7 +64,7 @@ _.forEach(interfaces, (int) => {
                         firebaseSecret: 'secret'
                     }, int.opts);
 
-                    new StepLogger(task, opts); // eslint-disable-line
+                    new StepLogger(task, opts, {}); // eslint-disable-line
                 });
             });
 
@@ -83,7 +83,7 @@ _.forEach(interfaces, (int) => {
                     }, int.opts);
 
                     try {
-                        new StepLogger(task, opts); // eslint-disable-line
+                        new StepLogger(task, opts, {}); // eslint-disable-line
                         throw new Error('should have failed');
                     } catch (err) {
                         expect(err.toString()).to.equal('Error: failed to create stepLogger because baseFirebaseUrl must be provided');

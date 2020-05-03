@@ -1,5 +1,6 @@
 const proxyquire = require('proxyquire').noCallThru();
 const chai       = require('chai');
+const _ = require('lodash');
 
 const expect     = chai.expect;
 const sinon      = require('sinon');
@@ -18,7 +19,7 @@ const getStepLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId', 
         'request': requestStub,
     });
 
-    const stepLogger = new StepLogger(task, opts);
+    const stepLogger = new StepLogger(task, opts, { _maskBlacklistWords: sinon.spy(_.identity) });
     stepLogger.emit = sinon.spy();
     stepLogger.setFinishTimestamp = sinon.spy(stepLogger.setFinishTimestamp);
     stepLogger.updateLastUpdate = sinon.spy(stepLogger.updateLastUpdate);
@@ -180,6 +181,21 @@ describe('Base StepLogger tests', () => {
                     expect(stepLogger.emit).to.have.been.calledWith('flush');
                 });
 
+            });
+
+            it('should call _maskBlacklistWords', () => {
+                const stepLogger = getStepLoggerInstance();
+                const message = 'message';
+                stepLogger.write(message);
+                expect(stepLogger.taskLogger._maskBlacklistWords).to.have.been.calledWith(message);
+            });
+
+            it('should mask blacklist words of task-logger', () => {
+                const stepLogger = getStepLoggerInstance();
+                stepLogger.taskLogger._maskBlacklistWords = () => 'masked';
+                const message = 'message';
+                stepLogger.write(message);
+                expect(stepLogger._reportLog).to.have.been.calledWith('masked');
             });
 
             it('should emit a flush event with error if writePromise rejected ', () => {

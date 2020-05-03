@@ -53,7 +53,8 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                 baseFirebaseUrl: this.opts.baseFirebaseUrl,
                 firebaseSecret: skipTokenCreation ? this.firebaseSecret : this._provisionToken(userId, isAdmin),
                 ...(this.opts.logsRateLimitConfig && { logsRateLimitConfig: this.opts.logsRateLimitConfig }),
-                ...(this.opts.healthCheckConfig && { healthCheckConfig: this.opts.healthCheckConfig })
+                ...(this.opts.healthCheckConfig && { healthCheckConfig: this.opts.healthCheckConfig }),
+                ...(this.opts.blacklist && { blacklist: this.opts.blacklist }),
             }
         };
     }
@@ -250,7 +251,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                         name: key
                     }, {
                         ...this.opts
-                    });
+                    }, this);
                     step.on('error', (err) => {
                         this.emit('error', err);
                     });
