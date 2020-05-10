@@ -115,6 +115,10 @@ class TaskLogger extends EventEmitter {
      * @param { key: string, value: string } word
      */
     addNewMask(word) {
+        if (_.get(word, 'value.length', 0) === 0) {
+            debug(`ignored malformed secret: ${word.key}`);
+            return;
+        }
         const newMask = this._newMask(word);
         let sortedIndex = 0;
         for (let i = 0; i < this.blacklistMasks.length; i += 1) {
@@ -324,6 +328,7 @@ class TaskLogger extends EventEmitter {
     _prepareBlacklistMasks() {
         const blacklist = this.opts.blacklist || {};
         return _.chain(blacklist)
+            .omitBy(value => !value.length || value.length === 0) // ignore empty string secrets
             .map((value, key) => this._newMask({ key, value }))
             .orderBy(['word.length'], 'desc')
             .value();
