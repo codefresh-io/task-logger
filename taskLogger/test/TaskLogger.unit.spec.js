@@ -333,6 +333,50 @@ describe('Base TaskLogger tests', () => {
             return deferred.promise;
         });
 
+        it('should ignore masks with empty secret', () => {
+            const blacklist = {
+                EMPTY_SECRET: '',
+            };
+            const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
+            const maskingStream = taskLogger.createMaskingStream();
+
+            taskLogger.addNewMask({ key: 'EMPTY_SECRET2', value: '' });
+
+            expect(taskLogger.blacklistMasks).to.have.lengthOf(0);
+
+            const containerOutput = [
+                { sent: 'Hello, xyz123', expected: 'Hello, xyz123' },
+            ];
+            let i = 0;
+            const containerOutputStream = new Readable({
+                read() {
+                    if (!containerOutput[i]) {
+                        this.push(null); // end stream
+                    } else {
+                        this.push(containerOutput[i].sent);
+                        i += 1;
+                    }
+                }
+            });
+
+            let j = 0;
+            const finalOutputStream = new Writable({
+                write(chunk, encoding, done) {
+                    const data = chunk.toString('utf8');
+                    expect(data).to.be.equal(containerOutput[j].expected);
+                    j += 1;
+                    done();
+                }
+            });
+
+            const deferred = Q.defer();
+            finalOutputStream.on('finish', deferred.resolve.bind(deferred));
+
+            containerOutputStream.pipe(maskingStream).pipe(finalOutputStream);
+
+            return deferred.promise;
+        });
+
         it('should keep masks sorted by length when adding new masks', () => {
             const blacklist = {
                 SHORT_SECRET: 'xyz',
