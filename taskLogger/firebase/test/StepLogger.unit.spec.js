@@ -43,7 +43,7 @@ const interfaces = [
     { name: 'base class', opts: {} },
     { name: 'REST class', opts: { restInterface: true } }
 ];
-
+describe('all', () => {
 _.forEach(interfaces, (int) => {
     describe(`Firebase StepLogger '${int.name}' tests`, () => {
 
@@ -144,7 +144,7 @@ _.forEach(interfaces, (int) => {
                 }, int.opts);
                 const stepLogger = await getStepLoggerInstance(undefined, opts);
                 stepLogger.status = 'running';
-                stepLogger._reportStatus();
+                await stepLogger._reportStatus();
                 if (opts.restInterface) {
                     expect(stepLogger.restClient.set).to.have.been.calledWith(`${stepLogger.stepRef.ref()}/status`, stepLogger.status);
                 } else {
@@ -159,7 +159,7 @@ _.forEach(interfaces, (int) => {
                 }, int.opts);
                 const stepLogger = await getStepLoggerInstance(undefined, opts);
                 stepLogger.finishTimeStamp = new Date();
-                stepLogger._reportFinishTimestamp();
+                await stepLogger._reportFinishTimestamp();
                 if (opts.restInterface) {
                     expect(stepLogger.restClient.set).to.have.been.calledWith(`${stepLogger.stepRef.ref()}/finishTimeStamp`, stepLogger.finishTimeStamp);
                 } else {
@@ -259,4 +259,5 @@ _.forEach(interfaces, (int) => {
             });
         });
     });
+});
 });
