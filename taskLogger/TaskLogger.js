@@ -270,42 +270,20 @@ class TaskLogger extends EventEmitter {
         this._curLogSize = 0.0;
     }
 
-    syncStepsByWorkflowContextRevision(contextRevision) {
-        _.forEach(contextRevision, (step, stepName) => {
-            if (_.get(step, 'status') !== STATUS.PENDING) {
-                const stepLogger = this.create(stepName, false, false);
-                if (stepLogger) {
-                    const { status, finishTime } = this._validateStepDataFromContextRevision({
-                        status: _.get(step, 'status'),
-                        finishTime: _.get(step, 'finishTimestamp'),
-                    });
-                    if (status) {
-                        stepLogger.setStatus(status);
-                    }
-                    if (finishTime) {
-                        const finishTimestamp = parseInt(((finishTime instanceof Date ? finishTime : new Date(finishTime)).getTime()
-                            / 1000).toFixed(), 10);
-                        stepLogger.setFinishTimestamp(finishTimestamp);
-                    }
-                }
+    async writeStepsFixes(stepsFixes) {
+        const waitForUpdate = [];
+        _.forEach(stepsFixes, (stepFix, stepName) => {
+            const stepLogger = this.create(stepName, false, false);
+            if (!stepLogger) {
+                return;
             }
+            const finishTime = stepFix.finishTimestamp;
+            const finishTimestamp = parseInt(((finishTime instanceof Date ? finishTime : new Date(finishTime)).getTime()
+                / 1000).toFixed(), 10);
+            waitForUpdate.push(stepLogger.setStatus(stepFix.status));
+            waitForUpdate.push(stepLogger.setFinishTimestamp(finishTimestamp));
         });
-    }
-
-    _validateStepDataFromContextRevision(stepDataFromContextRevision) {
-        const { status, finishTime } = stepDataFromContextRevision;
-        if (_.includes([STATUS.RUNNING, STATUS.ELECTED, STATUS.TERMINATING], status)) {
-            return {
-                status: STATUS.TERMINATED,
-                finishTime: new Date(),
-            };
-        } else if (status === STATUS.FAILURE) {
-            return {
-                status: STATUS.ERROR,
-                finishTime,
-            };
-        }
-        return stepDataFromContextRevision;
+        await Promise.all(waitForUpdate);
     }
 
     _newMask(word) {

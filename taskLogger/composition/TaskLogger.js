@@ -75,7 +75,7 @@ class CompositionTaskLogger extends TaskLogger {
         });
     }
 
-    _reportStatus() {
+    async _reportStatus() {
         return _.map(this.loggers, (logger) => {
             logger.status = this.status;
             return logger._reportStatus();

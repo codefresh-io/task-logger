@@ -70,9 +70,9 @@ class MongoStepLogger extends BaseStepLogger {
         });
     }
 
-    _reportStatus() {
+    async _reportStatus() {
         const key = `steps.${this.name}.status`;
-        this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
+        return this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
         { $set: { [key]: this.status } }, { upsert: true }, (err) => {
             if (err) {
                 this.emitter.emit('ERROR', err);
@@ -80,9 +80,9 @@ class MongoStepLogger extends BaseStepLogger {
         });
     }
 
-    _reportFinishTimestamp() {
+    async _reportFinishTimestamp() {
         const key = `steps.${this.name}.finishTimeStamp`;
-        this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
+        return this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
         { $set: { [key]: this.finishTimeStamp } }, { upsert: true }, (err) => {
             if (err) {
                 this.emitter.emit('ERROR', err);
