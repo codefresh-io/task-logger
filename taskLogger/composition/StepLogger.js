@@ -1,3 +1,4 @@
+const _                                 = require('lodash');
 const BaseStepLogger                   = require('../StepLogger');
 
 class CompositionStepLogger extends BaseStepLogger {
@@ -44,20 +45,18 @@ class CompositionStepLogger extends BaseStepLogger {
 
     }
 
-    _reportStatus() {
-        this.loggers.forEach((logger) => {
+    async _reportStatus() {
+        return _.map(this.loggers, (logger) => {
             logger.status = this.status;
-            logger._reportStatus(this.status);
+            return logger._reportStatus();
         });
-
     }
 
-    _reportFinishTimestamp() {
-        this.loggers.forEach((logger) => {
+    async _reportFinishTimestamp() {
+        return _.map(this.loggers, (logger) => {
             logger.finishTimeStamp = this.finishTimeStamp;
-            logger._reportFinishTimestamp(this.finishTimeStamp);
+            return logger._reportFinishTimestamp(this.finishTimeStamp);
         });
-
     }
 
     _reportCreationTimestamp() {

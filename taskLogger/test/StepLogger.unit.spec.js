@@ -348,10 +348,10 @@ describe('Base StepLogger tests', () => {
 
     describe('setFinishTimestamp', () => {
 
-        it('should update finish timestamp', () => {
+        it('should update finish timestamp', async () => {
             const stepLogger = getStepLoggerInstance();
             const date = new Date();
-            stepLogger.setFinishTimestamp(date);
+            await stepLogger.setFinishTimestamp(date);
             expect(stepLogger._reportFinishTimestamp).to.have.been.calledWith();
             expect(stepLogger.finishTimeStamp).to.equal(date);
         });

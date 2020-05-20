@@ -525,160 +525,29 @@ describe('Base TaskLogger tests', () => {
 
     });
 
-    describe('syncStepsByWorkflowContextRevision', () => {
+    describe('writeStepsFixes', () => {
 
-        describe('_validateStepDataFromContextRevision', () => {
-            it('should return terminated when passing elected status from context revision ', () => {
-                const stepDataFromContextRevision = {
-                    status: 'elected',
-                };
-                const taskLogger = getTaskLoggerInstance();
-                const { status, finishTime } = taskLogger._validateStepDataFromContextRevision(stepDataFromContextRevision);
-                expect(status).to.equal('terminated');
-                expect(finishTime).to.be.an('Date');
-            });
-
-            it('should return terminated when passing running status from context revision ', () => {
-                const stepDataFromContextRevision = {
-                    status: 'running',
-                };
-                const taskLogger = getTaskLoggerInstance();
-                const { status, finishTime } = taskLogger._validateStepDataFromContextRevision(stepDataFromContextRevision);
-                expect(status).to.equal('terminated');
-                expect(finishTime).to.be.an('Date');
-            });
-
-            it('should return terminated when passing terminating status from context revision ', () => {
-                const stepDataFromContextRevision = {
-                    status: 'terminating',
-                };
-                const taskLogger = getTaskLoggerInstance();
-                const { status, finishTime } = taskLogger._validateStepDataFromContextRevision(stepDataFromContextRevision);
-                expect(status).to.equal('terminated');
-                expect(finishTime).to.be.an('Date');
-            });
-
-            it('should return error when passing failure status from context revision ', () => {
-                const stepDataFromContextRevision = {
-                    status: 'failure',
-                    finishTime: new Date()
-                };
-                const taskLogger = getTaskLoggerInstance();
-                const { status, finishTime } = taskLogger._validateStepDataFromContextRevision(stepDataFromContextRevision);
-                expect(status).to.equal('error');
-                expect(finishTime).to.equal(stepDataFromContextRevision.finishTime);
-            });
-
-
-            it('should return the same status when passing a valid status ', () => {
-                const stepDataFromContextRevision = {
-                    status: 'success',
-                    finishTime: new Date(),
-                };
-                const taskLogger = getTaskLoggerInstance();
-                const { status, finishTime } = taskLogger._validateStepDataFromContextRevision(stepDataFromContextRevision);
-                expect(status).to.equal('success');
-                expect(finishTime).to.equal(stepDataFromContextRevision.finishTime);
-            });
-        });
-
-        it('should sync steps status according to the context revision', () => {
+        it('writeStepsFixes ', async () => {
             const date = new Date();
-            const contextRevision = {
+            const stepsFixes = {
                 step1: {
-                    status: 'success',
+                    status: 'terminated',
                     finishTimestamp: date,
                 },
                 step2: {
-                    status: 'success',
+                    status: 'terminated',
                     finishTimestamp: date,
                 }
             };
             const taskLogger = getTaskLoggerInstance();
-            taskLogger.syncStepsByWorkflowContextRevision(contextRevision);
-            expect(taskLogger.steps.step1.setStatus).to.have.been.calledWith('success');
-            expect(taskLogger.steps.step2.setStatus).to.have.been.calledWith('success');
-            expect(taskLogger.steps.step1.setFinishTimestamp).to.have.been.calledWith(parseInt((date.getTime() / 1000).toFixed(), 10));
-            expect(taskLogger.steps.step1.setFinishTimestamp).to.have.been.calledWith(parseInt((date.getTime() / 1000).toFixed(), 10));
-            expect(taskLogger.create.callCount).to.equal(2);
-            expect(taskLogger.create.getCall(0)).to.have.been.calledWith('step1', false, false);
-            expect(taskLogger.create.getCall(1)).to.have.been.calledWith('step2', false, false);
-        });
-
-        it('should sync steps status according to the context revision - and convert failure to error', () => {
-            const date = new Date();
-            const contextRevision = {
-                step1: {
-                    status: 'failure',
-                    finishTimestamp: date,
-                },
-                step2: {
-                    status: 'success',
-                    finishTimestamp: date,
-                }
-            };
-            const taskLogger = getTaskLoggerInstance();
-            taskLogger.syncStepsByWorkflowContextRevision(contextRevision);
-            expect(taskLogger.steps.step1.setStatus).to.have.been.calledWith('error');
-            expect(taskLogger.steps.step2.setStatus).to.have.been.calledWith('success');
-            expect(taskLogger.steps.step1.setFinishTimestamp).to.have.been.calledWith(parseInt((date.getTime() / 1000).toFixed(), 10));
-            expect(taskLogger.steps.step2.setFinishTimestamp).to.have.been.calledWith(parseInt((date.getTime() / 1000).toFixed(), 10));
-            expect(taskLogger.create.callCount).to.equal(2);
-            expect(taskLogger.create.getCall(0)).to.have.been.calledWith('step1', false, false);
-            expect(taskLogger.create.getCall(1)).to.have.been.calledWith('step2', false, false);
-        });
-
-        it('should sync steps status according to the context revision - and update elected status to terminated and add finishTimeStamp', () => {
-            const date = new Date();
-            const contextRevision = {
-                step1: {
-                    status: 'running',
-                },
-                step2: {
-                    status: 'success',
-                    finishTimestamp: date,
-                }
-            };
-            const taskLogger = getTaskLoggerInstance();
-            taskLogger.syncStepsByWorkflowContextRevision(contextRevision);
+            await taskLogger.writeStepsFixes(stepsFixes);
             expect(taskLogger.steps.step1.setStatus).to.have.been.calledWith('terminated');
-            expect(taskLogger.steps.step2.setStatus).to.have.been.calledWith('success');
+            expect(taskLogger.steps.step2.setStatus).to.have.been.calledWith('terminated');
             expect(taskLogger.steps.step2.setFinishTimestamp).to.have.been.calledWith(parseInt((date.getTime() / 1000).toFixed(), 10));
             expect(taskLogger.create.callCount).to.equal(2);
             expect(taskLogger.create.getCall(0)).to.have.been.calledWith('step1', false, false);
             expect(taskLogger.create.getCall(1)).to.have.been.calledWith('step2', false, false);
         });
-
-        it('should not update status and finishTimeStamp in case it not exists in the context revision', () => {
-            const contextRevision = {
-                step1: {},
-                step2: {}
-            };
-            const taskLogger = getTaskLoggerInstance();
-            taskLogger.syncStepsByWorkflowContextRevision(contextRevision);
-            expect(taskLogger.steps.step1.setStatus.callCount).to.equal(0);
-            expect(taskLogger.steps.step2.setStatus.callCount).to.equal(0);
-            expect(taskLogger.steps.step1.setFinishTimestamp.callCount).to.equal(0);
-            expect(taskLogger.steps.step2.setFinishTimestamp.callCount).to.equal(0);
-            expect(taskLogger.create.callCount).to.equal(2);
-            expect(taskLogger.create.getCall(0)).to.have.been.calledWith('step1', false, false);
-            expect(taskLogger.create.getCall(1)).to.have.been.calledWith('step2', false, false);
-        });
-
-        it('should not update call to logger if the status is pending ', () => {
-            const contextRevision = {
-                step1: {
-                    status: 'pending',
-                },
-                step2: {
-                    status: 'pending',
-                }
-            };
-            const taskLogger = getTaskLoggerInstance();
-            taskLogger.syncStepsByWorkflowContextRevision(contextRevision);
-            expect(taskLogger.create.callCount).to.equal(0);
-        });
-
     });
 
 });

@@ -35,12 +35,12 @@ class RedisStepLogger extends BaseStepLogger {
         this.writter.child('previouslyExecuted').set(this.previouslyExecuted);
     }
 
-    _reportStatus() {
-        this.writter.child('status').set(this.status);
+    async _reportStatus() {
+        return this.writter.child('status').set(this.status);
     }
 
-    _reportFinishTimestamp() {
-        this.writter.child('finishTimeStamp').set(this.finishTimeStamp);
+    async _reportFinishTimestamp() {
+        return this.writter.child('finishTimeStamp').set(this.finishTimeStamp);
     }
 
     _reportCreationTimestamp() {

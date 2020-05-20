@@ -66,12 +66,12 @@ class FirebaseStepLogger extends BaseStepLogger {
         this.stepRef.child('previouslyExecuted').set(this.previouslyExecuted);
     }
 
-    _reportStatus() {
-        this.stepRef.child('status').set(this.status);
+    async _reportStatus() {
+        return this.stepRef.child('status').set(this.status);
     }
 
-    _reportFinishTimestamp() {
-        this.stepRef.child('finishTimeStamp').set(this.finishTimeStamp);
+    async _reportFinishTimestamp() {
+        return this.stepRef.child('finishTimeStamp').set(this.finishTimeStamp);
     }
 
     _reportCreationTimestamp() {

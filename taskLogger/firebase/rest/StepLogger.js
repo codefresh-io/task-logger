@@ -53,15 +53,15 @@ class FirebaseRestStepLogger extends FirebaseStepLogger {
             });
     }
 
-    _reportStatus() {
-        this.restClient.set(`${this.stepRef.ref().toString()}/status`, this.status)
+    async _reportStatus() {
+        return this.restClient.set(`${this.stepRef.ref().toString()}/status`, this.status)
             .catch((err) => {
                 this.emit('error', err);
             });
     }
 
-    _reportFinishTimestamp() {
-        this.restClient.set(`${this.stepRef.ref().toString()}/finishTimeStamp`, this.finishTimeStamp)
+    async _reportFinishTimestamp() {
+        return this.restClient.set(`${this.stepRef.ref().toString()}/finishTimeStamp`, this.finishTimeStamp)
             .catch((err) => {
                 this.emit('error', err);
             });

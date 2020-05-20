@@ -178,9 +178,9 @@ class StepLogger extends EventEmitter {
         });
     }
 
-    setFinishTimestamp(date) {
+    async setFinishTimestamp(date) {
         this.finishTimeStamp = date;
-        this._reportFinishTimestamp();
+        return this._reportFinishTimestamp();
     }
 
     setCreationTimestamp(date) {
@@ -239,9 +239,9 @@ class StepLogger extends EventEmitter {
         }
     }
 
-    setStatus(status) {
+    async setStatus(status) {
         this.status = status;
-        this._reportStatus();
+        return this._reportStatus();
     }
 }
 
