@@ -290,7 +290,7 @@ class TaskLogger extends EventEmitter {
         return {
             name: word.key,
             word: word.value,
-            replacement: '**** 1 ****',
+            replacement: '****',
             matchAndReplace(str) {
                 let partitions = str.split(this.word);
                 if (partitions.length !== 1) {
@@ -298,7 +298,7 @@ class TaskLogger extends EventEmitter {
                     return partitions.join(this.replacement);
                 }
 
-                const escapedWord = this.word.replace(' ', '\\ ');
+                const escapedWord = this.word.replace(/\s/g, '\\ ');
                 partitions = str.split(escapedWord);
                 if (partitions.length !== 1) {
                     debug(`matched escaped secret ${this.name} ${partitions.length - 1} times`);

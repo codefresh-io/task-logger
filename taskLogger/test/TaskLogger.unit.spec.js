@@ -377,6 +377,50 @@ describe('Base TaskLogger tests', () => {
             return deferred.promise;
         });
 
+        it('should correct add masks with escaped spaces', () => {
+            const blacklist = {
+                EMPTY_SECRET: '',
+            };
+            const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
+            const maskingStream = taskLogger.createMaskingStream();
+
+            taskLogger.addNewMask({ key: 'SECRET1', value: 'some secret value' });
+
+            expect(taskLogger.blacklistMasks).to.have.lengthOf(1);
+
+            const containerOutput = [
+                { sent: 'sdsdsd some\\ secret\\ value', expected: `sdsdsd ${SECRET_REPLACEMENT}` },
+            ];
+            let i = 0;
+            const containerOutputStream = new Readable({
+                read() {
+                    if (!containerOutput[i]) {
+                        this.push(null); // end stream
+                    } else {
+                        this.push(containerOutput[i].sent);
+                        i += 1;
+                    }
+                }
+            });
+
+            let j = 0;
+            const finalOutputStream = new Writable({
+                write(chunk, encoding, done) {
+                    const data = chunk.toString('utf8');
+                    expect(data).to.be.equal(containerOutput[j].expected);
+                    j += 1;
+                    done();
+                }
+            });
+
+            const deferred = Q.defer();
+            finalOutputStream.on('finish', deferred.resolve.bind(deferred));
+
+            containerOutputStream.pipe(maskingStream).pipe(finalOutputStream);
+
+            return deferred.promise;
+        });
+
         it('should keep masks sorted by length when adding new masks', () => {
             const blacklist = {
                 SHORT_SECRET: 'xyz',
