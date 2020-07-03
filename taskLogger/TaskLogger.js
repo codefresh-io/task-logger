@@ -290,15 +290,22 @@ class TaskLogger extends EventEmitter {
         return {
             name: word.key,
             word: word.value,
-            replacement: '****||||',
+            replacement: '****||||****',
             matchAndReplace(str) {
-                const partitions = str.split(this.word);
+                let partitions = str.split(this.word);
                 if (partitions.length !== 1) {
                     debug(`matched secret ${this.name} ${partitions.length - 1} times`);
                     return partitions.join(this.replacement);
                 }
 
-                return partitions[0];
+                const escapedWord = this.word.replace(' ', '\\ ');
+                partitions = str.split(escapedWord);
+                if (partitions.length !== 1) {
+                    debug(`matched escaped secret ${this.name} ${partitions.length - 1} times`);
+                    return partitions.join(this.replacement);
+                }
+
+                return str;
             }
         };
     }
