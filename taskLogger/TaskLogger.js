@@ -290,7 +290,7 @@ class TaskLogger extends EventEmitter {
         return {
             name: word.key,
             word: word.value,
-            replacement: '****||||****',
+            replacement: '**** 1 ****',
             matchAndReplace(str) {
                 let partitions = str.split(this.word);
                 if (partitions.length !== 1) {
