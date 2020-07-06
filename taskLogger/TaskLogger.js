@@ -120,16 +120,27 @@ class TaskLogger extends EventEmitter {
             return;
         }
         const newMask = this._newMask(word);
+        // inserts the mask in the right place (based on mask length)
+        this.blacklistMasks.splice(this._getMaskedWordSortedIndex(newMask), 0, newMask);
+        debug(`added new mask for ${word.key}`);
+
+        if (_.get(word, 'value', '').includes(' ')) {
+            const newEscapedMask = this._newMask({ key: `${word.key}_ESCAPED`, value: word.value.replace(/\s/g, '\\ ') });
+            this.blacklistMasks.splice(this._getMaskedWordSortedIndex(newEscapedMask), 0, newEscapedMask);
+            debug(`added new mask for ${word.key}_ESCAPED`);
+        }
+
+    }
+
+    _getMaskedWordSortedIndex({ word = '' }) {
         let sortedIndex = 0;
         for (let i = 0; i < this.blacklistMasks.length; i += 1) {
-            if (this.blacklistMasks[i].word.length <= newMask.word.length) {
+            if (this.blacklistMasks[i].word.length <= word.length) {
                 break;
             }
             sortedIndex += 1;
         }
-        // inserts the mask in the right place (based on mask length)
-        this.blacklistMasks.splice(sortedIndex, 0, newMask);
-        debug(`added new mask for ${word.key}`);
+        return sortedIndex;
     }
 
     _maskBlacklistWords(data) {
@@ -297,7 +308,6 @@ class TaskLogger extends EventEmitter {
                     debug(`matched secret ${this.name} ${partitions.length - 1} times`);
                     return partitions.join(this.replacement);
                 }
-
                 return partitions[0];
             }
         };
@@ -307,7 +317,14 @@ class TaskLogger extends EventEmitter {
         const blacklist = this.opts.blacklist || {};
         return _.chain(blacklist)
             .omitBy(value => !value.length || value.length === 0) // ignore empty string secrets
-            .map((value, key) => this._newMask({ key, value }))
+            .map((value, key) => {
+                const masks = [this._newMask({ key, value })];
+                if (value.includes && value.includes(' ')) {
+                    masks.push(this._newMask({ key: `${key}_ESCAPED`, value: value.replace(/\s/g, '\\ ') }));
+                }
+                return masks;
+            })
+            .flatten()
             .orderBy(['word.length'], 'desc')
             .value();
     }
