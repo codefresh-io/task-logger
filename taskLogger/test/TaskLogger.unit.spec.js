@@ -377,50 +377,6 @@ describe('Base TaskLogger tests', () => {
             return deferred.promise;
         });
 
-        it('should correct add masks with escaped spaces', () => {
-            const blacklist = {
-                EMPTY_SECRET: '',
-            };
-            const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
-            const maskingStream = taskLogger.createMaskingStream();
-
-            taskLogger.addNewMask({ key: 'SECRET1', value: 'some secret value' });
-
-            expect(taskLogger.blacklistMasks).to.have.lengthOf(1);
-
-            const containerOutput = [
-                { sent: 'sdsdsd some\\ secret\\ value', expected: `sdsdsd ${SECRET_REPLACEMENT}` },
-            ];
-            let i = 0;
-            const containerOutputStream = new Readable({
-                read() {
-                    if (!containerOutput[i]) {
-                        this.push(null); // end stream
-                    } else {
-                        this.push(containerOutput[i].sent);
-                        i += 1;
-                    }
-                }
-            });
-
-            let j = 0;
-            const finalOutputStream = new Writable({
-                write(chunk, encoding, done) {
-                    const data = chunk.toString('utf8');
-                    expect(data).to.be.equal(containerOutput[j].expected);
-                    j += 1;
-                    done();
-                }
-            });
-
-            const deferred = Q.defer();
-            finalOutputStream.on('finish', deferred.resolve.bind(deferred));
-
-            containerOutputStream.pipe(maskingStream).pipe(finalOutputStream);
-
-            return deferred.promise;
-        });
-
         it('should keep masks sorted by length when adding new masks', () => {
             const blacklist = {
                 SHORT_SECRET: 'xyz',
@@ -432,6 +388,30 @@ describe('Base TaskLogger tests', () => {
             taskLogger.addNewMask({ key: 'SOME_SECRET3', value: 'xyz1234' });
 
             const expectedMasksValues = ['xyz1234', 'xyz123', 'xyz', 'xy', 'x'];
+            const actualMasksValues = taskLogger.blacklistMasks.map(mask => mask.word);
+
+            expect(actualMasksValues).to.be.deep.equal(expectedMasksValues);
+        });
+
+        it('should keep masks sorted by length when adding new masks1', () => {
+            const blacklist = {
+                SHORT_SECRET: 'xyz',
+                LONG_SECRET: 'xyz123'
+            };
+            const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
+            taskLogger.addNewMask({ key: 'SOME_SECRET', value: 'a b' });
+            taskLogger.addNewMask({ key: 'SOME_SECRET2', value: 'a b c' });
+            taskLogger.addNewMask({ key: 'SOME_SECRET3', value: 'abcd' });
+
+            const expectedMasksValues = [
+                'a\\ b\\ c',
+                'xyz123',
+                'a b c',
+                'abcd',
+                'a\\ b',
+                'a b',
+                'xyz'
+            ];
             const actualMasksValues = taskLogger.blacklistMasks.map(mask => mask.word);
 
             expect(actualMasksValues).to.be.deep.equal(expectedMasksValues);
