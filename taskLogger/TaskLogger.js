@@ -303,7 +303,7 @@ class TaskLogger extends EventEmitter {
             word: word.value,
             replacement: '****',
             matchAndReplace(str) {
-                const partitions = str.split(this.word);
+                const partitions =  String(str).split(this.word);
                 if (partitions.length !== 1) {
                     debug(`matched secret ${this.name} ${partitions.length - 1} times`);
                     return partitions.join(this.replacement);
