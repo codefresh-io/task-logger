@@ -125,7 +125,7 @@ class RedisTaskLogger extends TaskLogger {
     }
 
     _reportMemoryLimit() {
-        this.writter.child('metrics.limits.memory').push(this.memoryLimit);
+        this.writter.child('metrics.limits.memory').push({ 'value': this.memoryLimit });
     }
 
     async _reportVisibility() {
