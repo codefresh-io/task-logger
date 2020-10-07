@@ -81,6 +81,62 @@ class CompositionTaskLogger extends TaskLogger {
             return logger._reportStatus();
         });
     }
+    async getRaw() {
+
+        const promises = [];
+
+        this.loggers.forEach((logger) => {
+            promises.push(logger.getRaw());
+        });
+        const arr = await Promise.all(promises);
+
+        // return the first logger that return data
+
+        return arr.find(steps => !!steps);
+
+
+        // Merge by time :
+
+        // // 1. Get all steps name :
+        // const stepsName = arr.reduce((acc, steps) => {
+        //     if (steps) {
+        //         Object.keys(steps.steps).forEach((name) => {
+        //             if (!acc[name]) {
+        //                 acc[name] = {};
+        //             }
+        //         });
+
+        //     }
+        //     return acc;
+        // }, {});
+
+        // // 2. Merge by time
+        // Object.keys(stepsName).forEach((name) => {
+        //     let stepsCounter = 0;
+        //     const stepsWithTime = arr.reduce((acc, current) => {
+        //         if (current && current.steps && current.steps[name] && current.steps[name].logs) {
+        //             acc[name] = {
+        //                 logs: current.steps[name].logs,
+        //                 idx: 0
+        //             };
+        //             stepsCounter += (current.steps[name].logs || []).length;
+        //         }
+        //         return acc;
+        //     }, {});
+        //     // merge by time . iterate over the steps
+        //     const currentIdx = 0;
+        //     while (stepsCounter > currentIdx) {
+
+        //     }
+        // });
+        // return arr;
+
+    }
+    // Return array of strings
+    // getMergedLogsForStep(source, stepName) {
+
+    // }
+
     _reportLogSize() {
         this.loggers.forEach((logger) => {
             logger.logSize = this.logSize;

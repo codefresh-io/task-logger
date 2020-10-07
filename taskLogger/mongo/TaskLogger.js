@@ -51,20 +51,23 @@ class MongoTaskLogger extends TaskLogger {
         this.emit('step-pushed', step.name);
     }
 
-    async restore() {
+    async getStepsFromMeta() {
         const key = 'name';
-        const dbSteps = await new Promise((resolve, reject) => {
-            this.db.collection(this.getCollection(key)).find(
-                Object.assign({ 'name': { $exists: true } }, this.getFilter()))
-                    .toArray((err, docs) => {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            resolve(docs);
-                        }
-                    });
-        });
+        return new Promise((resolve, reject) => {
+            this.db.collection(this.getCollection(key)).findOne(
+                this.getFilter(), (err, doc) => {
+                    if (err) {
+                        reject(err);
+                    } else {
 
+                        resolve(doc);
+                    }
+                });
+        });
+    }
+
+    async restore() {
+        const dbSteps = await this.getStepsFromMeta();
         if (dbSteps) {
             // const stepFromRedis = Object.keys(keyToStatus);
             const StepLogger = require('./StepLogger'); // eslint-disable-line
@@ -197,6 +200,40 @@ class MongoTaskLogger extends TaskLogger {
                 this.emitter.emit('ERROR', err);
             }
         });
+    }
+
+    // eslint-disable-next-line consistent-return
+    async getRaw() {
+
+        const dbSteps = await this.getStepsFromMeta();
+        if (dbSteps) {
+            // const stepFromRedis = Object.keys(keyToStatus);
+            const StepLogger = require('./StepLogger'); // eslint-disable-line
+            const steps = await Promise.all(Object.keys(dbSteps.steps).reduce((acc, name) => {
+                const logger = new StepLogger({
+                    name,
+                    jobId: this.jobId,
+                    accountId: this.accountId
+                }, this.opts, this);
+                acc.push(logger.getRaw());
+                return acc;
+            }, []));
+
+            const stepWithLogs = Object.keys(dbSteps.steps).reduce((acc, cur, idx) => {
+                const step = steps[idx];
+                acc[cur] = { 'logs': step.map((record) => {
+                    return {
+                        log: record.payload,
+               //         time: record.time,
+                    };
+                }) };
+                return acc;
+            }, {});
+            return {
+                steps: stepWithLogs
+            };
+        }
+
     }
 
     getFilter() {

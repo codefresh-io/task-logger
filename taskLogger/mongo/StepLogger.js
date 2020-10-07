@@ -30,6 +30,23 @@ class MongoStepLogger extends BaseStepLogger {
         }
     }
 
+    async getRaw() {
+        const where = Object.assign({ 'slot': `steps.${this.name}.logs` }, this.getFilter());
+        const sort = { 'time': 1 };
+        return new Promise((resolve, reject) => {
+            this.db.collection(MongoHelper.getCollection('logs')).find(
+                where, { sort })
+                    .toArray((err, docs) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(docs);
+                        }
+                    });
+        });
+
+    }
+
     _reportLog(message, syncId) {
         const key = 'logs';
         this.db.collection(MongoHelper.getCollection(key)).insertOne(
