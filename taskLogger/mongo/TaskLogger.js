@@ -221,16 +221,14 @@ class MongoTaskLogger extends TaskLogger {
 
             const stepWithLogs = Object.keys(dbSteps.steps).reduce((acc, cur, idx) => {
                 const step = steps[idx];
-                acc[cur] = { 'logs': step.map((record) => {
-                    return {
-                        log: record.payload,
-               //         time: record.time,
-                    };
-                }) };
+                acc[cur] = {
+                    'name': cur,
+                    'logs': step.map(record => record.payload) };
                 return acc;
             }, {});
             return {
-                steps: stepWithLogs
+                steps: stepWithLogs,
+                id: this.jobId,
             };
         }
 
