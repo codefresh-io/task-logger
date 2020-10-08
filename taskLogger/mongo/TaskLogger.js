@@ -199,6 +199,53 @@ class MongoTaskLogger extends TaskLogger {
         });
     }
 
+    async getStepsName() {
+        const key = 'name';
+        return new Promise((resolve, reject) => {
+            this.db.collection(this.getCollection(key)).findOne(
+                this.getFilter(), (err, doc) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+
+                        resolve(doc);
+                    }
+                });
+        });
+    }
+
+    // eslint-disable-next-line consistent-return
+    async getRaw() {
+
+        const dbSteps = await this.getStepsName();
+        if (dbSteps) {
+            // const stepFromRedis = Object.keys(keyToStatus);
+            const StepLogger = require('./StepLogger'); // eslint-disable-line
+            const steps = await Promise.all(Object.keys(dbSteps.steps).reduce((acc, name) => {
+                const logger = new StepLogger({
+                    name,
+                    jobId: this.jobId,
+                    accountId: this.accountId
+                }, this.opts, this);
+                acc.push(logger.getRaw());
+                return acc;
+            }, []));
+
+            const stepWithLogs = Object.keys(dbSteps.steps).reduce((acc, name, idx) => {
+                const step = steps[idx] || [];
+                acc[name] = {
+                    name,
+                    'logs': step.map(record => record.payload) };
+                return acc;
+            }, {});
+            return {
+                steps: stepWithLogs,
+                id: this.jobId,
+            };
+        }
+
+    }
+
     getFilter() {
         return {
             accountId: this.accountId,

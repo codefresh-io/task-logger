@@ -81,6 +81,21 @@ class CompositionTaskLogger extends TaskLogger {
             return logger._reportStatus();
         });
     }
+    async getRaw() {
+
+        const promises = [];
+
+        this.loggers.forEach((logger) => {
+            promises.push(logger.getRaw());
+        });
+        const arr = await Promise.all(promises);
+
+        // return the first logger that return data
+
+        return arr.find(steps => !!steps);
+
+    }
+
     _reportLogSize() {
         this.loggers.forEach((logger) => {
             logger.logSize = this.logSize;
