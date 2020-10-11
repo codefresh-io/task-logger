@@ -142,9 +142,6 @@ class RedisTaskLogger extends TaskLogger {
     _reportLogSize() {
         this.writter.child('metrics.logs.total').set(this.logSize);
     }
-    // eslint-disable-next-line no-empty-function
-    async getRaw() {
-    }
 }
 RedisTaskLogger.TYPE = TYPES.REDIS;
 

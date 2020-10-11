@@ -39,9 +39,8 @@ class MongoStepLogger extends BaseStepLogger {
                     .toArray((err, docs) => {
                         if (err) {
                             reject(err);
-                        } else {
-                            resolve(docs);
                         }
+                        resolve(docs);
                     });
         });
 

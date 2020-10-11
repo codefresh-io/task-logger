@@ -297,6 +297,10 @@ class TaskLogger extends EventEmitter {
         await Promise.all(waitForUpdate);
     }
 
+      // eslint-disable-next-line no-empty-function
+    async getRaw() {
+    }
+
     _newMask(word) {
         return {
             name: word.key,

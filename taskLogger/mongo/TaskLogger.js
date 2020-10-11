@@ -199,7 +199,7 @@ class MongoTaskLogger extends TaskLogger {
         });
     }
 
-    async getStepsName() {
+    async _getStepsName() {
         const key = 'name';
         return new Promise((resolve, reject) => {
             this.db.collection(this.getCollection(key)).findOne(
@@ -217,32 +217,33 @@ class MongoTaskLogger extends TaskLogger {
     // eslint-disable-next-line consistent-return
     async getRaw() {
 
-        const dbSteps = await this.getStepsName();
-        if (dbSteps) {
-            // const stepFromRedis = Object.keys(keyToStatus);
-            const StepLogger = require('./StepLogger'); // eslint-disable-line
-            const steps = await Promise.all(Object.keys(dbSteps.steps).reduce((acc, name) => {
-                const logger = new StepLogger({
-                    name,
-                    jobId: this.jobId,
-                    accountId: this.accountId
-                }, this.opts, this);
-                acc.push(logger.getRaw());
-                return acc;
-            }, []));
-
-            const stepWithLogs = Object.keys(dbSteps.steps).reduce((acc, name, idx) => {
-                const step = steps[idx] || [];
-                acc[name] = {
-                    name,
-                    'logs': step.map(record => record.payload) };
-                return acc;
-            }, {});
-            return {
-                steps: stepWithLogs,
-                id: this.jobId,
-            };
+        const dbSteps = await this._getStepsName();
+        if (!dbSteps) {
+            return;
         }
+            // const stepFromRedis = Object.keys(keyToStatus);
+        const StepLogger = require('./StepLogger'); // eslint-disable-line
+        const steps = await Promise.all(Object.keys(dbSteps.steps).map((name) => {
+            const logger = new StepLogger({
+                name,
+                jobId: this.jobId,
+                accountId: this.accountId
+            }, this.opts, this);
+            return logger.getRaw();
+        }, []));
+
+        const stepWithLogs = Object.keys(dbSteps.steps).map((name, idx) => {
+            const step = steps[idx] || [];
+            return {
+                name,
+                logs: step.map(record => record.payload) };
+        }, {});
+        // eslint-disable-next-line consistent-return
+        return {
+            steps: stepWithLogs,
+            id: this.jobId,
+        };
+
 
     }
 
