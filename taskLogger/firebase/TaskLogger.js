@@ -114,7 +114,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             // establishing connection is only rqeuired in case of stream interface
             try {
                 if (!FirebaseTaskLogger.authenticated) {
-                    await Q.all([
+                    await Promise.race([
                         Q.ninvoke(taskLogger.baseRef, 'authWithCustomToken', firebaseSecret),
                         Q.delay(firebaseTimeout || defaultFirebaseTimeout).then(() => {
                             throw new Error(`authtication to firebase timed out after ${firebaseTimeout || defaultFirebaseTimeout}`);
