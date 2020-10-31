@@ -12,6 +12,8 @@ const RestClient                       = require('./rest/Client');
 const FirebaseTokenGenerator           = require('firebase-token-generator');
 const FirebaseWritableStream = require('./step-streams/FirebaseWritableStream');
 
+const defaultFirebaseTimeout = 60000;
+
 class FirebaseTaskLogger extends BaseTaskLogger {
     constructor(task, opts) {
         super(task, opts);
@@ -70,7 +72,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             taskLogger = new FirebaseTaskLogger(task, opts);
         }
 
-        const { baseFirebaseUrl, firebaseSecret, logsRateLimitConfig } = opts;
+        const { baseFirebaseUrl, firebaseSecret, logsRateLimitConfig, firebaseTimeout } = opts;
 
         if (!baseFirebaseUrl) {
             throw new CFError('failed to create taskLogger because baseFirebaseUrl must be provided');
@@ -112,7 +114,12 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             // establishing connection is only rqeuired in case of stream interface
             try {
                 if (!FirebaseTaskLogger.authenticated) {
-                    await Q.ninvoke(taskLogger.baseRef, 'authWithCustomToken', firebaseSecret);
+                    await Q.all([
+                        Q.ninvoke(taskLogger.baseRef, 'authWithCustomToken', firebaseSecret),
+                        Q.delay(firebaseTimeout || defaultFirebaseTimeout).then(() => {
+                            throw new Error(`authtication to firebase timed out after ${firebaseTimeout || defaultFirebaseTimeout}`);
+                        })]);
+
                     debug(`TaskLogger created and authenticated to firebase url: ${taskLogger.baseUrl}`);
 
                     // workaround to not authenticate each time
