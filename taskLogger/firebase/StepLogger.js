@@ -62,6 +62,14 @@ class FirebaseStepLogger extends BaseStepLogger {
         this.stepRef.child('data').child('outputUrl').set(this.outputUrl);
     }
 
+    _reportEnvironmentId() {
+        this.stepRef.child('data').child('environmentId').set(this.environmentId);
+    }
+
+    _reportActivityId() {
+        this.stepRef.child('data').child('activityId').set(this.activityId);
+    }
+
     _reportPrevioulyExecuted() {
         this.stepRef.child('previouslyExecuted').set(this.previouslyExecuted);
     }

@@ -27,6 +27,14 @@ class RedisStepLogger extends BaseStepLogger {
         this.writter.child('data').child('outputUrl').set(this.outputUrl);
     }
 
+    _reportEnvironmentId() {
+        this.writter.child('data').child('environmentId').set(this.environmentId);
+    }
+
+    _reportActivityId() {
+        this.writter.child('data').child('activityId').set(this.activityId);
+    }
+
     _reportLastUpdate() {
         this.writter.child('lastUpdate').set(this.lastUpdate);
     }

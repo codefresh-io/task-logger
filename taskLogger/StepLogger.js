@@ -216,6 +216,16 @@ class StepLogger extends EventEmitter {
         this._reportOutputUrl();
     }
 
+    updateEnvironmentId(environmentId) {
+        this.environmentId = environmentId;
+        this._reportEnvironmentId();
+    }
+
+    updateActivityId(activityId) {
+        this.activityId = activityId;
+        this._reportActivityId();
+    }
+
     updateMemoryUsage(time, memoryUsage) {
         this._reportMemoryUsage(time, memoryUsage);
     }
