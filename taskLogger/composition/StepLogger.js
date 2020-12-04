@@ -23,6 +23,20 @@ class CompositionStepLogger extends BaseStepLogger {
 
     }
 
+    _reportEnvironmentId() {
+        this.loggers.forEach((logger) =>  {
+            logger.environmentId = this.environmentId;
+            logger._reportEnvironmentId(this.environmentId);
+        });
+    }
+
+    _reportActivityId() {
+        this.loggers.forEach((logger) =>  {
+            logger.activityId = this.activityId;
+            logger._reportActivityId(this.activityId);
+        });
+    }
+
     _reportLog(message) {
         const syncId = Date.now();
         this.loggers.forEach(logger => logger._reportLog(message, syncId));
