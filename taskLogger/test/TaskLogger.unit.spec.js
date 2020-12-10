@@ -333,6 +333,48 @@ describe('Base TaskLogger tests', () => {
             return deferred.promise;
         });
 
+        it.only('should mask secret that was split between to chunks', () => {
+            const blacklist = {
+                SECRET: 'xyz123'
+            };
+            const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
+            const maskingStream = taskLogger.createMaskingStream();
+            const calcLength = (relativeChunk, fullChunk, maskedChunk) => ((relativeChunk.length / fullChunk.length) * maskedChunk.length).toFixed();
+            const relativeLength = calcLength('Hello, xyz', 'Hello, xyz123 world', 'Hello, **** world');
+            const containerOutput = [
+                { sent: 'Hello, xyz', expected: `Hello, ${SECRET_REPLACEMENT}`.slice(0, relativeLength) },
+                { sent: '123 world', expected: `${SECRET_REPLACEMENT} world`.slice(relativeLength) },
+            ];
+            let i = 0;
+            const containerOutputStream = new Readable({
+                read() {
+                    if (!containerOutput[i]) {
+                        this.push(null); // end stream
+                    } else {
+                        this.push(containerOutput[i].sent);
+                        i += 1;
+                    }
+                }
+            });
+
+            let j = 0;
+            const finalOutputStream = new Writable({
+                write(chunk, encoding, done) {
+                    const data = chunk.toString('utf8');
+                    expect(data).to.be.equal(containerOutput[j].expected);
+                    j += 1;
+                    done();
+                }
+            });
+
+            const deferred = Q.defer();
+            finalOutputStream.on('finish', deferred.resolve.bind(deferred));
+
+            containerOutputStream.pipe(maskingStream).pipe(finalOutputStream);
+
+            return deferred.promise;
+        });
+
         it('should ignore masks with empty secret', () => {
             const blacklist = {
                 EMPTY_SECRET: '',

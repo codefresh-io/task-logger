@@ -100,12 +100,34 @@ class TaskLogger extends EventEmitter {
      */
     createMaskingStream() {
         const taskLogger = this;
+        let prevChunk = '';
         return new Transform({
             transform(chunk, encoding, callback) {
                 if (Buffer.isBuffer(chunk)) {
                     chunk = chunk.toString('utf8');
                 }
-                callback(null, Buffer.from(taskLogger._maskBlacklistWords(chunk)));
+                
+                if (!prevChunk) {
+                    // don't send anything for now, wait for next chunk or flush()
+                    prevChunk = chunk;
+                    callback(null);
+                    return;
+                }
+
+                const fullChunk = `${prevChunk}${chunk}`;
+                const maskedFullChunk = taskLogger._maskBlacklistWords(fullChunk);
+                // need to calc prev and current chunk ratio to cut the relative part back (the length can be different now)
+                const ratio = (prevChunk.length / fullChunk.length);
+                const newPrevChunkRelativeLen = (maskedFullChunk.length * ratio).toFixed();
+                prevChunk = maskedFullChunk.slice(0, newPrevChunkRelativeLen);
+                chunk = maskedFullChunk.slice(newPrevChunkRelativeLen);
+                
+                this.push(prevChunk); // send the masked prevChunk
+                prevChunk = chunk;
+                callback(null);
+            },
+            flush(callback) {
+                callback(null, taskLogger._maskBlacklistWords(prevChunk)); // flush last chunk
             }
         });
     }
