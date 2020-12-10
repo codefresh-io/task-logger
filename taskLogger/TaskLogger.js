@@ -106,7 +106,7 @@ class TaskLogger extends EventEmitter {
                 if (Buffer.isBuffer(chunk)) {
                     chunk = chunk.toString('utf8');
                 }
-                
+
                 if (!prevChunk) {
                     // don't send anything for now, wait for next chunk or flush()
                     prevChunk = chunk;
@@ -121,7 +121,7 @@ class TaskLogger extends EventEmitter {
                 const newPrevChunkRelativeLen = _.ceil(maskedFullChunk.length * ratio);
                 prevChunk = maskedFullChunk.slice(0, newPrevChunkRelativeLen);
                 chunk = maskedFullChunk.slice(newPrevChunkRelativeLen);
-                
+
                 this.push(prevChunk); // send the masked prevChunk
                 prevChunk = chunk;
                 callback(null);
