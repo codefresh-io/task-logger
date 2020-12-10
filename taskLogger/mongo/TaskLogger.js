@@ -30,7 +30,8 @@ class MongoTaskLogger extends TaskLogger {
         const key = `${config.mongoURI}.${config.mongoDBName}`;
         if (!mongoCacheMap.has(key)) {
             const mongodbOptions = {
-                useNewUrlParser: true
+                useNewUrlParser: true,
+                ...opts.mongodbOptions,
             };
             const client = await MongoClient.connect(config.mongoURI, mongodbOptions);
             mongoCacheMap.set(key, client.db(config.mongoDBName));
