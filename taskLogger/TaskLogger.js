@@ -118,7 +118,7 @@ class TaskLogger extends EventEmitter {
                 const maskedFullChunk = taskLogger._maskBlacklistWords(fullChunk);
                 // need to calc prev and current chunk ratio to cut the relative part back (the length can be different now)
                 const ratio = (prevChunk.length / fullChunk.length);
-                const newPrevChunkRelativeLen = (maskedFullChunk.length * ratio).toFixed();
+                const newPrevChunkRelativeLen = _.ceil(maskedFullChunk.length * ratio);
                 prevChunk = maskedFullChunk.slice(0, newPrevChunkRelativeLen);
                 chunk = maskedFullChunk.slice(newPrevChunkRelativeLen);
                 

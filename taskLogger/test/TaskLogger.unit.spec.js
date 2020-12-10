@@ -333,17 +333,25 @@ describe('Base TaskLogger tests', () => {
             return deferred.promise;
         });
 
-        it.only('should mask secret that was split between to chunks', () => {
+        it('should mask secret that was split between to chunks', () => {
             const blacklist = {
-                SECRET: 'xyz123'
+                SECRET: '1234567890'
             };
             const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
             const maskingStream = taskLogger.createMaskingStream();
-            const calcLength = (relativeChunk, fullChunk, maskedChunk) => ((relativeChunk.length / fullChunk.length) * maskedChunk.length).toFixed();
-            const relativeLength = calcLength('Hello, xyz', 'Hello, xyz123 world', 'Hello, **** world');
+            const calcLength = (relativeChunk, fullChunk, maskedChunk) => Math.ceil((relativeChunk.length / fullChunk.length) * maskedChunk.length);
+            const message1 = 'Hello, 12345';
+            const message2 = '67890 world';
+            const expectedMask1 = 'Hello, **** world';
+            const relativeLength1 = calcLength(message1, `${message1}${message2}`, expectedMask1);
+            const message3 = 'Hello, 12';
+            const message4 = '34567890 world';
+            const relativeLength2 = calcLength(message3, `${message3}${message4}`, expectedMask1);
             const containerOutput = [
-                { sent: 'Hello, xyz', expected: `Hello, ${SECRET_REPLACEMENT}`.slice(0, relativeLength) },
-                { sent: '123 world', expected: `${SECRET_REPLACEMENT} world`.slice(relativeLength) },
+                { sent: message1, expected: expectedMask1.slice(0, relativeLength1) },
+                { sent: message2, expected: expectedMask1.slice(relativeLength1) },
+                { sent: message3, expected: expectedMask1.slice(0, relativeLength2) },
+                { sent: message4, expected: expectedMask1.slice(relativeLength2) },
             ];
             let i = 0;
             const containerOutputStream = new Readable({
