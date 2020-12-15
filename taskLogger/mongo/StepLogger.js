@@ -66,6 +66,16 @@ class MongoStepLogger extends BaseStepLogger {
             });
     }
 
+    _reportEnvironmentName() {
+        const key = `steps.${this.name}.data.environmentName`;
+        this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
+            { $set: { [key]: this.environmentName } }, { upsert: true }, (err) => {
+                if (err) {
+                    this.emitter.emit('ERROR', err);
+                }
+            });
+    }
+
     _reportEnvironmentId() {
         const key = `steps.${this.name}.data.environmentId`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),

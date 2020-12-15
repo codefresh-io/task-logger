@@ -23,6 +23,13 @@ class CompositionStepLogger extends BaseStepLogger {
 
     }
 
+    _reportEnvironmentName() {
+        this.loggers.forEach((logger) =>  {
+            logger.environmentName = this.environmentName;
+            logger._reportEnvironmentName(this.environmentName);
+        });
+    }
+
     _reportEnvironmentId() {
         this.loggers.forEach((logger) =>  {
             logger.environmentId = this.environmentId;

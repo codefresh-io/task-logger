@@ -46,6 +46,13 @@ class FirebaseRestStepLogger extends FirebaseStepLogger {
             });
     }
 
+    _reportEnvironmentName() {
+        this.restClient.set(`${this.stepRef.ref().toString()}/data/environmentName`, this.environmentName)
+            .catch((err) => {
+                this.emit('error', err);
+            });
+    }
+
     _reportEnvironmentId() {
         this.restClient.set(`${this.stepRef.ref().toString()}/data/environmentId`, this.environmentId)
             .catch((err) => {
