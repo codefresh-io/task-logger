@@ -216,6 +216,11 @@ class StepLogger extends EventEmitter {
         this._reportOutputUrl();
     }
 
+    updateEnvironmentName(environmentName) {
+        this.environmentName = environmentName;
+        this._reportEnvironmentName();
+    }
+
     updateEnvironmentId(environmentId) {
         this.environmentId = environmentId;
         this._reportEnvironmentId();
