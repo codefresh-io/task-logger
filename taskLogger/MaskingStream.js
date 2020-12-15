@@ -1,4 +1,5 @@
 const { Transform } = require('stream');
+// eslint-disable-next-line no-unused-vars
 const TaskLogger = require('./TaskLogger');
 
 class Chunk {
@@ -44,11 +45,11 @@ class MaskingStream extends Transform {
         }
 
         this._updateChunks(keepPart);
-        callback(null);
+        return callback(null);
     }
 
     _flush(callback) {
-        this.chunks.forEach(c => c.sent = true);
+        this.chunks.forEach((c) => { c.sent = true; });
         callback(null, this.taskLogger._maskBlacklistWords(this._getFullChunk()));
     }
 
@@ -57,7 +58,7 @@ class MaskingStream extends Transform {
         this.chunks.push(chunk);
         setTimeout(() => {
             if (chunk.sent) return; // do nothing
-            
+
             // if the chunk wasn't sent by now, send the chunk and remove
             // this chunk from the buffer (it is the first chunk, for sure).
             this.chunks.shift();
@@ -67,7 +68,7 @@ class MaskingStream extends Transform {
     }
 
     _getFullChunk() {
-        return this.chunks.reduce((str, chunk) => str += chunk.data, '');
+        return this.chunks.reduce((str, chunk) => { str += chunk.data; return str; }, '');
     }
 
     _updateChunks(newFullChunk) {
@@ -76,7 +77,7 @@ class MaskingStream extends Transform {
         let from = 0;
         let to = partSize;
         // expire old chunks
-        for (let i = 0; i < n; i++) {
+        for (let i = 0; i < n; i += 1) {
             const chunk = this.chunks[i];
             chunk.data = newFullChunk.slice(from, to);
             from = to;

@@ -6,7 +6,6 @@ const expect     = chai.expect;
 const sinon      = require('sinon');
 const sinonChai  = require('sinon-chai');
 const { Readable, Writable } = require('stream');
-const MaskingStream = require('../MaskingStream');
 
 chai.use(sinonChai);
 const { TYPES, STATUS, VISIBILITY } = require('../enums');
@@ -353,7 +352,8 @@ describe('Base TaskLogger tests', () => {
             let i = 0;
             const containerOutputStream = new Readable({
                 read() {
-                    const output = containerOutput[i++];
+                    const output = containerOutput[i];
+                    i += 1;
                     if (!output) {
                         this.push(null); // end stream
                         return;
@@ -399,7 +399,8 @@ describe('Base TaskLogger tests', () => {
             let i = 0;
             const containerOutputStream = new Readable({
                 read() {
-                    const output = containerOutput[i++];
+                    const output = containerOutput[i];
+                    i += 1;
                     if (!output) {
                         this.push(null); // end stream
                         return;

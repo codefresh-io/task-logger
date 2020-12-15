@@ -3,7 +3,6 @@ const debug        = require('debug')('codefresh:taskLogger');
 const _            = require('lodash');
 const CFError      = require('cf-errors');
 const EventEmitter = require('events');
-const { Transform } = require('stream');
 const { STATUS, VISIBILITY } = require('./enums');
 const Q = require('q');
 const MaskingStream = require('./MaskingStream');
@@ -137,7 +136,7 @@ class TaskLogger extends EventEmitter {
     }
 
     _getLongestMaskLength() {
-        if (this.blacklistMasks.length == 0) return 0;
+        if (this.blacklistMasks.length === 0) return 0;
         return this.blacklistMasks[0].word.length; // the first mask is always the longest
     }
 
