@@ -6,6 +6,7 @@ const EventEmitter = require('events');
 const { Transform } = require('stream');
 const { STATUS, VISIBILITY } = require('./enums');
 const Q = require('q');
+const MaskingStream = require('./MaskingStream');
 
 /**
  * TaskLogger - logging for build/launch/promote jobs
@@ -98,38 +99,8 @@ class TaskLogger extends EventEmitter {
      * returns a new transform stream that filters words included in the blacklist of this task-logger
      * @returns {Transform}
      */
-    createMaskingStream() {
-        const taskLogger = this;
-        let prevChunk = '';
-        return new Transform({
-            transform(chunk, encoding, callback) {
-                if (Buffer.isBuffer(chunk)) {
-                    chunk = chunk.toString('utf8');
-                }
-
-                if (!prevChunk) {
-                    // don't send anything for now, wait for next chunk or flush()
-                    prevChunk = chunk;
-                    callback(null);
-                    return;
-                }
-
-                const fullChunk = `${prevChunk}${chunk}`;
-                const maskedFullChunk = taskLogger._maskBlacklistWords(fullChunk);
-                // need to calc prev and current chunk ratio to cut the relative part back (the length can be different now)
-                const ratio = (prevChunk.length / fullChunk.length);
-                const newPrevChunkRelativeLen = _.ceil(maskedFullChunk.length * ratio);
-                prevChunk = maskedFullChunk.slice(0, newPrevChunkRelativeLen);
-                chunk = maskedFullChunk.slice(newPrevChunkRelativeLen);
-
-                this.push(prevChunk); // send the masked prevChunk
-                prevChunk = chunk;
-                callback(null);
-            },
-            flush(callback) {
-                callback(null, taskLogger._maskBlacklistWords(prevChunk)); // flush last chunk
-            }
-        });
+    createMaskingStream(opts) {
+        return new MaskingStream(this, opts);
     }
 
     /**
@@ -163,6 +134,11 @@ class TaskLogger extends EventEmitter {
             sortedIndex += 1;
         }
         return sortedIndex;
+    }
+
+    _getLongestMaskLength() {
+        if (this.blacklistMasks.length == 0) return 0;
+        return this.blacklistMasks[0].word.length; // the first mask is always the longest
     }
 
     _maskBlacklistWords(data) {
