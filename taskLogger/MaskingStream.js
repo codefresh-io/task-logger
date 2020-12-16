@@ -14,11 +14,12 @@ class MaskingStream extends Transform {
      * @param {TaskLogger} taskLogger TaskLogger
      * @param {any} {chunkFlushTimeout}=DEFAULTS
      */
-    constructor(taskLogger, { chunkFlushTimeout } = MaskingStream.DEFAULTS) {
+    constructor(taskLogger, { chunkFlushTimeout, defaultChunkSize } = MaskingStream.DEFAULTS) {
         super();
         this.taskLogger = taskLogger;
         this.chunks = [];
         this.chunkFlushTimeout = chunkFlushTimeout || MaskingStream.DEFAULTS.chunkFlushTimeout;
+        this.defaultChunkSize = defaultChunkSize || MaskingStream.DEFAULTS.defaultChunkSize;
     }
 
     _transform(chunk, encoding, callback) {
@@ -71,23 +72,35 @@ class MaskingStream extends Transform {
         return this.chunks.reduce((str, chunk) => { str += chunk.data; return str; }, '');
     }
 
+    // This reorganizes the chunks after a part of the full chunk was sent
     _updateChunks(newFullChunk) {
         const n = this.chunks.length;
-        const partSize = Math.ceil(newFullChunk.length / n);
+        const chunkSize = Math.max(Math.ceil(newFullChunk.length / n), this.defaultChunkSize);
         let from = 0;
-        let to = partSize;
-        // expire old chunks
-        for (let i = 0; i < n; i += 1) {
+        let to = chunkSize;
+        let i = 0;
+
+        // spread the new full chunk into equal size chunks and replace the
+        // existing chunks data to keep their respective flush timeouts
+        while (from < newFullChunk.length) {
             const chunk = this.chunks[i];
             chunk.data = newFullChunk.slice(from, to);
             from = to;
-            to += partSize;
+            to += chunkSize;
+            i += 1;
+        }
+
+        // remove empty chunks from the end of the chunks array
+        for (; i < n; i += 1) {
+            const chunk = this.chunks.pop();
+            chunk.sent = true; // mark as handled to prevent it from being sent
         }
     }
 }
 
 MaskingStream.DEFAULTS = Object.freeze({
     chunkFlushTimeout: 200, // ms
+    defaultChunkSize: 100, // bytes
 });
 
 module.exports = MaskingStream;
