@@ -477,6 +477,53 @@ describe('Base TaskLogger tests', () => {
             expect(receivedBuffer.toString('utf-8')).to.be.equal(expectedResult);
         });
 
+        it('should send a masked chunk if no new chunk arrives before the timeout', async () => {
+            const blacklist = {
+                SECRET: '1234567890ABCD',
+                SHORTER_SECRET: 'abcd',
+            };
+
+            const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
+            const maskingStream = taskLogger.createMaskingStream({ chunkFlushTimeout: 50 });
+
+            const containerOutput = [
+                { sent: 'hello: abcd', delay: 0 },
+                { sent: ' end', delay: 200 },
+            ];
+            const expectedResult = `hello: ${SECRET_REPLACEMENT} end`;
+
+            let i = 0;
+            const containerOutputStream = new Readable({
+                read() {
+                    const output = containerOutput[i];
+                    i += 1;
+                    if (!output) {
+                        this.push(null); // end stream
+                        return;
+                    }
+                    setTimeout(() => {
+                        this.push(output.sent);
+                    }, output.delay);
+                }
+            });
+
+            let receivedBuffer = Buffer.from('');
+            const finalOutputStream = new Writable({
+                write(chunk, encoding, done) {
+                    receivedBuffer = Buffer.concat([receivedBuffer, chunk]);
+                    done();
+                }
+            });
+
+            const deferred = Q.defer();
+            finalOutputStream.on('finish', deferred.resolve.bind(deferred));
+
+            containerOutputStream.pipe(maskingStream).pipe(finalOutputStream);
+
+            await deferred.promise;
+            expect(receivedBuffer.toString('utf-8')).to.be.equal(expectedResult);
+        });
+
         it('should ignore masks with empty secret', () => {
             const blacklist = {
                 EMPTY_SECRET: '',

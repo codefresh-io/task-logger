@@ -64,7 +64,7 @@ class MaskingStream extends Transform {
             // this chunk from the buffer (it is the first chunk, for sure).
             this.chunks.shift();
             chunk.sent = true;
-            this.push(chunk.data);
+            this.push(this.taskLogger._maskBlacklistWords(chunk.data));
         }, this.chunkFlushTimeout);
     }
 
