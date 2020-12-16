@@ -3,9 +3,9 @@ const debug        = require('debug')('codefresh:taskLogger');
 const _            = require('lodash');
 const CFError      = require('cf-errors');
 const EventEmitter = require('events');
-const { Transform } = require('stream');
 const { STATUS, VISIBILITY } = require('./enums');
 const Q = require('q');
+const MaskingStream = require('./MaskingStream');
 
 /**
  * TaskLogger - logging for build/launch/promote jobs
@@ -98,16 +98,8 @@ class TaskLogger extends EventEmitter {
      * returns a new transform stream that filters words included in the blacklist of this task-logger
      * @returns {Transform}
      */
-    createMaskingStream() {
-        const taskLogger = this;
-        return new Transform({
-            transform(chunk, encoding, callback) {
-                if (Buffer.isBuffer(chunk)) {
-                    chunk = chunk.toString('utf8');
-                }
-                callback(null, Buffer.from(taskLogger._maskBlacklistWords(chunk)));
-            }
-        });
+    createMaskingStream(opts) {
+        return new MaskingStream(this, opts);
     }
 
     /**
@@ -141,6 +133,11 @@ class TaskLogger extends EventEmitter {
             sortedIndex += 1;
         }
         return sortedIndex;
+    }
+
+    _getLongestMaskLength() {
+        if (this.blacklistMasks.length === 0) return 0;
+        return this.blacklistMasks[0].word.length; // the first mask is always the longest
     }
 
     _maskBlacklistWords(data) {

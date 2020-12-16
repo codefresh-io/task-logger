@@ -248,7 +248,7 @@ describe('Base TaskLogger tests', () => {
     });
 
     describe('maskingStream', () => {
-        it('should mask blacklisted words from the input stream', () => {
+        it('should mask blacklisted words from the input stream', async () => {
             const blacklist = {
                 SOME_SECRET: 'ABCD',
                 PASSWORD: 'xyz123'
@@ -257,11 +257,12 @@ describe('Base TaskLogger tests', () => {
             const maskingStream = taskLogger.createMaskingStream();
 
             const containerOutput = [
-                { sent: 'Hello world', expected: 'Hello world' },
-                { sent: 'Something something ABCD something', expected: `Something something ${SECRET_REPLACEMENT} something` },
-                { sent: 'ABCDABCDHHK', expected: `${SECRET_REPLACEMENT}${SECRET_REPLACEMENT}HHK` },
-                { sent: 'something XYZ123 xyz123', expected: `something XYZ123 ${SECRET_REPLACEMENT}` },
+                { sent: 'Hello world\n', expected: 'Hello world\n' },
+                { sent: 'Something something ABCD something\n', expected: `Something something ${SECRET_REPLACEMENT} something\n` },
+                { sent: 'ABCDABCDHHK\n', expected: `${SECRET_REPLACEMENT}${SECRET_REPLACEMENT}HHK\n` },
+                { sent: 'something XYZ123 xyz123\n', expected: `something XYZ123 ${SECRET_REPLACEMENT}\n` },
             ];
+            const expectedResult = containerOutput.reduce((acc, cur) => acc + cur.expected, '');
             let i = 0;
             const containerOutputStream = new Readable({
                 read() {
@@ -274,12 +275,10 @@ describe('Base TaskLogger tests', () => {
                 }
             });
 
-            let j = 0;
+            let receivedBuffer = Buffer.from('');
             const finalOutputStream = new Writable({
                 write(chunk, encoding, done) {
-                    const data = chunk.toString('utf8');
-                    expect(data).to.be.equal(containerOutput[j].expected);
-                    j += 1;
+                    receivedBuffer = Buffer.concat([receivedBuffer, chunk]);
                     done();
                 }
             });
@@ -289,10 +288,11 @@ describe('Base TaskLogger tests', () => {
 
             containerOutputStream.pipe(maskingStream).pipe(finalOutputStream);
 
-            return deferred.promise;
+            await deferred.promise;
+            expect(receivedBuffer.toString('utf-8')).to.be.equal(expectedResult);
         });
 
-        it('should mask the longer secret first', () => {
+        it('should mask the longer secret first', async () => {
             const blacklist = {
                 SHORT_SECRET: 'xyz',
                 LONG_SECRET: 'xyz123'
@@ -303,6 +303,8 @@ describe('Base TaskLogger tests', () => {
             const containerOutput = [
                 { sent: 'Hello, xyz123', expected: `Hello, ${SECRET_REPLACEMENT}` },
             ];
+            const expectedResult = containerOutput.reduce((acc, cur) => acc + cur.expected, '');
+
             let i = 0;
             const containerOutputStream = new Readable({
                 read() {
@@ -315,12 +317,10 @@ describe('Base TaskLogger tests', () => {
                 }
             });
 
-            let j = 0;
+            let receivedBuffer = Buffer.from('');
             const finalOutputStream = new Writable({
                 write(chunk, encoding, done) {
-                    const data = chunk.toString('utf8');
-                    expect(data).to.be.equal(containerOutput[j].expected);
-                    j += 1;
+                    receivedBuffer = Buffer.concat([receivedBuffer, chunk]);
                     done();
                 }
             });
@@ -330,7 +330,151 @@ describe('Base TaskLogger tests', () => {
 
             containerOutputStream.pipe(maskingStream).pipe(finalOutputStream);
 
-            return deferred.promise;
+            await deferred.promise;
+            expect(receivedBuffer.toString('utf-8')).to.be.equal(expectedResult);
+        });
+
+        it('should mask secret that was split between to chunks', async () => {
+            const blacklist = {
+                SECRET: '1234567890'
+            };
+
+            const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
+            const maskingStream = taskLogger.createMaskingStream();
+
+            const containerOutput = [
+                { sent: 'Hello, 123', delay: 0 },
+                { sent: '456', delay: 50 },
+                { sent: '7890 world', delay: 50 },
+            ];
+            const expectedResult = 'Hello, **** world';
+
+            let i = 0;
+            const containerOutputStream = new Readable({
+                read() {
+                    const output = containerOutput[i];
+                    i += 1;
+                    if (!output) {
+                        this.push(null); // end stream
+                        return;
+                    }
+                    setTimeout(() => {
+                        this.push(output.sent);
+                    }, output.delay);
+                }
+            });
+
+            let receivedBuffer = Buffer.from('');
+            const finalOutputStream = new Writable({
+                write(chunk, encoding, done) {
+                    receivedBuffer = Buffer.concat([receivedBuffer, chunk]);
+                    done();
+                }
+            });
+
+            const deferred = Q.defer();
+            finalOutputStream.on('finish', deferred.resolve.bind(deferred));
+
+            containerOutputStream.pipe(maskingStream).pipe(finalOutputStream);
+
+            await deferred.promise;
+            expect(receivedBuffer.toString('utf-8')).to.be.equal(expectedResult);
+        });
+
+        it('should mask a long secret that is spread over multiple chunks', async () => {
+            const blacklist = {
+                SECRET: Buffer.alloc(1000, 'a').toString('utf8') + Buffer.alloc(1000, 'b').toString('utf8') + Buffer.alloc(1000, 'c').toString('utf8')
+            };
+
+            const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
+            const maskingStream = taskLogger.createMaskingStream();
+
+            const totalOutputArr = `Hello, ${blacklist.SECRET} world!`.split('');
+            let from = 0;
+            const chunks = [];
+            while (from < totalOutputArr.length) {
+                const sliceSize = Math.floor(Math.random() * 100);
+                const chunk = totalOutputArr.slice(from, from + sliceSize);
+                from += sliceSize;
+                chunks.push(chunk.join(''));
+            }
+            const expectedResult = 'Hello, **** world!';
+
+            let i = 0;
+            const containerOutputStream = new Readable({
+                read() {
+                    const output = chunks[i];
+                    i += 1;
+                    if (output === undefined) {
+                        this.push(null); // end stream
+                        return;
+                    }
+                    this.push(output);
+                }
+            });
+
+            let receivedBuffer = Buffer.from('');
+            const finalOutputStream = new Writable({
+                write(chunk, encoding, done) {
+                    receivedBuffer = Buffer.concat([receivedBuffer, chunk]);
+                    done();
+                }
+            });
+
+            const deferred = Q.defer();
+            finalOutputStream.on('finish', deferred.resolve.bind(deferred));
+
+            containerOutputStream.pipe(maskingStream).pipe(finalOutputStream);
+
+            await deferred.promise;
+            expect(receivedBuffer.toString('utf-8')).to.be.equal(expectedResult);
+        });
+
+        it('should send buffered chunks if no new chunks arrive until the set timeout', async () => {
+            const blacklist = {
+                SECRET: '1234567890'
+            };
+
+            const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
+            const maskingStream = taskLogger.createMaskingStream({ chunkFlushTimeout: 50 });
+
+            const containerOutput = [
+                { sent: 'Hello, 123', delay: 0 },
+                { sent: '456', delay: 50 },
+                { sent: '7890 world', delay: 100 },
+            ];
+            const expectedResult = 'Hello, 1234567890 world';
+
+            let i = 0;
+            const containerOutputStream = new Readable({
+                read() {
+                    const output = containerOutput[i];
+                    i += 1;
+                    if (!output) {
+                        this.push(null); // end stream
+                        return;
+                    }
+                    setTimeout(() => {
+                        this.push(output.sent);
+                    }, output.delay);
+                }
+            });
+
+            let receivedBuffer = Buffer.from('');
+            const finalOutputStream = new Writable({
+                write(chunk, encoding, done) {
+                    receivedBuffer = Buffer.concat([receivedBuffer, chunk]);
+                    done();
+                }
+            });
+
+            const deferred = Q.defer();
+            finalOutputStream.on('finish', deferred.resolve.bind(deferred));
+
+            containerOutputStream.pipe(maskingStream).pipe(finalOutputStream);
+
+            await deferred.promise;
+            expect(receivedBuffer.toString('utf-8')).to.be.equal(expectedResult);
         });
 
         it('should ignore masks with empty secret', () => {
@@ -391,6 +535,19 @@ describe('Base TaskLogger tests', () => {
             const actualMasksValues = taskLogger.blacklistMasks.map(mask => mask.word);
 
             expect(actualMasksValues).to.be.deep.equal(expectedMasksValues);
+        });
+
+        it('should return the longest mask length', () => {
+            const blacklist = {
+                SHORT_SECRET: 'xyz',
+                LONG_SECRET: 'xyz123'
+            };
+            const taskLogger = getTaskLoggerInstance(undefined, { blacklist });
+            expect(taskLogger._getLongestMaskLength()).to.be.equal(6);
+            taskLogger.addNewMask({ key: 'SOME_SECRET', value: 'x' });
+            expect(taskLogger._getLongestMaskLength()).to.be.equal(6);
+            taskLogger.addNewMask({ key: 'SOME_SECRET3', value: 'xyz1234' });
+            expect(taskLogger._getLongestMaskLength()).to.be.equal(7);
         });
 
         it('should keep masks sorted by length when adding new masks1', () => {
