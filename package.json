@@ -1,6 +1,6 @@
 {
   "name": "@codefresh-io/task-logger",
-  "version": "1.8.12",
+  "version": "1.8.13",
   "description": "Codefresh utilities for working with build logs",
   "main": "index.js",
   "scripts": {
@@ -25,6 +25,9 @@
     "proxyquire": "^1.7.4",
     "sinon": "^7.2.4",
     "sinon-chai": "^3.3.0"
+  },
+  "resolutions": {
+    "websocket-extensions": "0.1.4"
   },
   "dependencies": {
     "cf-errors": "^0.1.15",
