@@ -1,6 +1,6 @@
 {
   "name": "@codefresh-io/task-logger",
-  "version": "1.8.13",
+  "version": "1.8.14",
   "description": "Codefresh utilities for working with build logs",
   "main": "index.js",
   "scripts": {
@@ -30,18 +30,17 @@
     "websocket-extensions": "0.1.4"
   },
   "dependencies": {
-    "cf-errors": "^0.1.15",
-    "crypto": "0.0.3",
+    "cf-errors": "^0.1.16",
     "debug": "^4.1.1",
     "firebase": "git+https://github.com/codefresh-io/firebase.git#80b2ed883ff281cd67b53bd0f6a0bbd6f330fed5",
     "firebase-token-generator": "^2.0.0",
     "jsonwebtoken": "^8.4.0",
-    "lodash": "4.17.20",
+    "lodash": "^4.17.21",
     "mongodb": "^3.1.13",
     "node-redis-pubsub": "^4.0.0",
     "q": "^1.4.1",
     "redis": "^2.8.0",
-    "request": "2.88.2",
+    "request": "^2.88.2",
     "requestretry": "^4.1.2",
     "retry": "^0.12.0"
   },
