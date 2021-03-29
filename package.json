@@ -1,11 +1,11 @@
 {
   "name": "@codefresh-io/task-logger",
-  "version": "1.8.14",
+  "version": "1.8.15",
   "description": "Codefresh utilities for working with build logs",
   "main": "index.js",
   "scripts": {
     "eslint": "eslint . --ext .js",
-    "test": "RETRY_DELAY=1 mocha './{,!(node_modules)/**/}*.spec.js'"
+    "test": "RETRY_DELAY=1 mocha './{,!(node_modules)/**/}*.spec.js' --exit"
   },
   "author": "Codefresh",
   "license": "ISC",

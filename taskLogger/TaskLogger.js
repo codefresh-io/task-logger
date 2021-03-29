@@ -34,16 +34,23 @@ class TaskLogger extends EventEmitter {
         this.finished = false;
         this.steps    = {};
         this._curLogSize = 0;
-        this._nMeasurements = 0;
-        this._totalKbps = 0.0;
+
         this.logsStatus = {
             writeCalls: 0,
             resolvedCalls: 0,
             rejectedCalls: 0,
-            kbps: 0.0,
-            avgKbps: 0.0,
         };
-        setInterval(this._updateLogsRate.bind(this), 1000).unref(); // to update the logs rate every second
+
+        if (opts.updateLogsRate) {
+            // to update the logs rate every second
+            this._nMeasurements = 0;
+            this._totalKbps = 0.0;
+
+            this.logsStatus.kbps = 0.0;
+            this.logsStatus.avgKbps = 0.0;
+
+            this._logRateTimer = setInterval(this._updateLogsRate.bind(this), 1000);
+        }
     }
 
     create(name, resetStatus, runCreationLogic) {
@@ -240,7 +247,11 @@ class TaskLogger extends EventEmitter {
         const deferred = Q.defer();
         this._checkAllFlushed(deferred);
         this.on('flush', this._checkAllFlushed.bind(this, deferred));
-        return deferred.promise;
+        return deferred.promise
+            .then(() => {
+                clearTimeout(this._logRateTimer); // ok to call on undefined
+                this._logRateTimer = false; // mark as stopped
+            });
     }
 
     getStatus() {

@@ -200,6 +200,15 @@ describe('Base TaskLogger tests', () => {
             expect(taskLogger.logsStatus.rejectedCalls).to.be.equals(0);
 
         });
+        it('should keep track of logs rate when updateLogsRate is specified', async () => {
+            const taskLogger = getTaskLoggerInstance(undefined, { updateLogsRate: true });
+            await taskLogger.awaitLogsFlushed();
+            expect(taskLogger.logsStatus.writeCalls).to.be.equals(0);
+            expect(taskLogger.logsStatus.resolvedCalls).to.be.equals(0);
+            expect(taskLogger.logsStatus.rejectedCalls).to.be.equals(0);
+            expect(taskLogger.logsStatus.kbps).to.be.equals(0.0);
+            expect(taskLogger.logsStatus.avgKbps).to.be.equals(0.0);
+        });
         it('flush calls from step loggers should be counted when resolved', () => {
 
             const taskLogger = getTaskLoggerInstance();
@@ -244,6 +253,21 @@ describe('Base TaskLogger tests', () => {
                   () => { throw Error('unexpectedly rejected'); }
                   )
             ]);
+        });
+        it('should call _updateLogsRate when updateLogsRate is true', async function () {
+            this.timeout(0);
+            const taskLogger = getTaskLoggerInstance(undefined, { updateLogsRate: true });
+            const stepLogger = taskLogger.create('new-step');
+            stepLogger.emit('writeCalls');
+            taskLogger._curLogSize = 10000; // 10kb
+
+            await Q.delay(2000);
+
+            expect(taskLogger._curLogSize).to.equal(0); // should be reset by interval
+
+            stepLogger.emit('flush');
+            await taskLogger.awaitLogsFlushed();
+            expect(taskLogger._logRateTimer).to.be.false;
         });
     });
 
