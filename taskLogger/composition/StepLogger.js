@@ -1,5 +1,6 @@
 const _                                 = require('lodash');
 const BaseStepLogger                   = require('../StepLogger');
+const { STATUS }                       = require('../enums');
 
 class CompositionStepLogger extends BaseStepLogger {
     constructor(step, opts, taskLogger) {
@@ -12,7 +13,9 @@ class CompositionStepLogger extends BaseStepLogger {
 
     async restore() {
         const restorePromises = this.loggers.map(logger => logger.restore());
-        return Promise.all(restorePromises);
+        await Promise.all(restorePromises);
+        this.status = this.loggers[0].status;
+        this.pendingApproval = this.status === STATUS.PENDING_APPROVAL;
     }
 
     _reportOutputUrl() {

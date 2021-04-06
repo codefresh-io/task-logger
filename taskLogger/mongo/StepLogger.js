@@ -1,3 +1,4 @@
+const _            = require('lodash');
 const BaseStepLogger                   = require('../StepLogger');
 const MongoTaskLogger                  = require('./TaskLogger');
 const { STATUS }                       = require('../enums');
@@ -24,8 +25,9 @@ class MongoStepLogger extends BaseStepLogger {
                         }
                     });
         });
-        if (doc) {
-            this.status = doc.status;
+        const stepFromDoc = _.get(doc, `steps[${this.name}]`);
+        if (stepFromDoc) {
+            this.status = stepFromDoc.status;
             this.pendingApproval = this.status === STATUS.PENDING_APPROVAL;
         }
     }
