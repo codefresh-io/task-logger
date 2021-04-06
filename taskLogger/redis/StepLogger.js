@@ -19,7 +19,7 @@ class RedisStepLogger extends BaseStepLogger {
         this.pendingApproval = this.status === STATUS.PENDING_APPROVAL;
     }
 
-    _reportLog(message, syncId) {
+    _reportLog(message, syncId = Date.now()) {
         this.writter.child('logs').push(message, syncId);
     }
 
@@ -59,11 +59,11 @@ class RedisStepLogger extends BaseStepLogger {
         this.writter.child('creationTimeStamp').set(this.creationTimeStamp);
     }
 
-    _reportMemoryUsage(time, memoryUsage, syncId) {
+    _reportMemoryUsage(time, memoryUsage, syncId = Date.now()) {
         this.writter.child('metrics').child('memory').push({ time, usage: memoryUsage }, syncId);
     }
 
-    _reportCpuUsage(time, cpuUsage, syncId) {
+    _reportCpuUsage(time, cpuUsage, syncId = Date.now()) {
         this.writter.child('metrics').child('cpu').push({ time, usage: cpuUsage }, syncId);
     }
 
