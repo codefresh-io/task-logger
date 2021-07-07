@@ -1,29 +1,26 @@
-const _            = require('lodash');
-const BaseStepLogger                   = require('../StepLogger');
-const MongoTaskLogger                  = require('./TaskLogger');
-const { STATUS }                       = require('../enums');
-const MongoHelper                       = require('./mongoHelper');
-const EventEmitter                      = require('events');
-
+const _ = require('lodash');
+const BaseStepLogger = require('../StepLogger');
+const MongoTaskLogger = require('./TaskLogger');
+const { STATUS } = require('../enums');
+const MongoHelper = require('./mongoHelper');
 
 class MongoStepLogger extends BaseStepLogger {
     constructor(step, opts, taskLogger) {
         super(step, opts, taskLogger);
         this.db = MongoTaskLogger.getConnection(opts);
-        this.emitter = new EventEmitter();
     }
 
     async restore() {
         const key = 'name';
         const doc = await new Promise((resolve, reject) => {
             this.db.collection(MongoHelper.getCollection(key)).find(this.getFilter())
-                    .toArray((err, docs) => {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            resolve(docs && docs[0]);
-                        }
-                    });
+                .toArray((err, docs) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(docs && docs[0]);
+                    }
+                });
         });
         const stepFromDoc = _.get(doc, `steps[${this.name}]`);
         if (stepFromDoc) {
@@ -38,12 +35,12 @@ class MongoStepLogger extends BaseStepLogger {
         return new Promise((resolve, reject) => {
             this.db.collection(MongoHelper.getCollection('logs')).find(
                 where, { sort })
-                    .toArray((err, docs) => {
-                        if (err) {
-                            reject(err);
-                        }
-                        resolve(docs);
-                    });
+                .toArray((err, docs) => {
+                    if (err) {
+                        reject(err);
+                    }
+                    resolve(docs);
+                });
         });
 
     }
@@ -53,7 +50,7 @@ class MongoStepLogger extends BaseStepLogger {
         this.db.collection(MongoHelper.getCollection(key)).insertOne(
             this.getObjectToPush(key, message, syncId), (err) => {
                 if (err) {
-                    this.emitter.emit('ERROR', err);
+                    this.emit('error', err);
                 }
             });
     }
@@ -63,7 +60,7 @@ class MongoStepLogger extends BaseStepLogger {
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
             { $set: { [key]: this.outputUrl } }, { upsert: true }, (err) => {
                 if (err) {
-                    this.emitter.emit('ERROR', err);
+                    this.emit('error', err);
                 }
             });
     }
@@ -73,7 +70,7 @@ class MongoStepLogger extends BaseStepLogger {
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
             { $set: { [key]: this.environmentName } }, { upsert: true }, (err) => {
                 if (err) {
-                    this.emitter.emit('ERROR', err);
+                    this.emit('error', err);
                 }
             });
     }
@@ -83,7 +80,7 @@ class MongoStepLogger extends BaseStepLogger {
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
             { $set: { [key]: this.environmentId } }, { upsert: true }, (err) => {
                 if (err) {
-                    this.emitter.emit('ERROR', err);
+                    this.emit('error', err);
                 }
             });
     }
@@ -93,7 +90,7 @@ class MongoStepLogger extends BaseStepLogger {
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
             { $set: { [key]: this.activityId } }, { upsert: true }, (err) => {
                 if (err) {
-                    this.emitter.emit('ERROR', err);
+                    this.emit('error', err);
                 }
             });
     }
@@ -101,51 +98,51 @@ class MongoStepLogger extends BaseStepLogger {
     _reportLastUpdate() {
         const key = `steps.${this.name}.lastUpdate`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
-        { $set: { [key]: this.lastUpdate } }, { upsert: true }, (err) => {
-            if (err) {
-                this.emitter.emit('ERROR', err);
-            }
-        });
+            { $set: { [key]: this.lastUpdate } }, { upsert: true }, (err) => {
+                if (err) {
+                    this.emit('error', err);
+                }
+            });
     }
 
     _reportPrevioulyExecuted() {
         const key = `steps.${this.name}.previouslyExecuted`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
-        { $set: { [key]: this.previouslyExecuted } }, { upsert: true }, (err) => {
-            if (err) {
-                this.emitter.emit('ERROR', err);
-            }
-        });
+            { $set: { [key]: this.previouslyExecuted } }, { upsert: true }, (err) => {
+                if (err) {
+                    this.emit('error', err);
+                }
+            });
     }
 
     async _reportStatus() {
         const key = `steps.${this.name}.status`;
         return this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
-        { $set: { [key]: this.status } }, { upsert: true }, (err) => {
-            if (err) {
-                this.emitter.emit('ERROR', err);
-            }
-        });
+            { $set: { [key]: this.status } }, { upsert: true }, (err) => {
+                if (err) {
+                    this.emit('error', err);
+                }
+            });
     }
 
     async _reportFinishTimestamp() {
         const key = `steps.${this.name}.finishTimeStamp`;
         return this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
-        { $set: { [key]: this.finishTimeStamp } }, { upsert: true }, (err) => {
-            if (err) {
-                this.emitter.emit('ERROR', err);
-            }
-        });
+            { $set: { [key]: this.finishTimeStamp } }, { upsert: true }, (err) => {
+                if (err) {
+                    this.emit('error', err);
+                }
+            });
     }
 
     _reportCreationTimestamp() {
         const key = `steps.${this.name}.creationTimeStamp`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
-        { $set: { [key]: this.creationTimeStamp } }, { upsert: true }, (err) => {
-            if (err) {
-                this.emitter.emit('ERROR', err);
-            }
-        });
+            { $set: { [key]: this.creationTimeStamp } }, { upsert: true }, (err) => {
+                if (err) {
+                    this.emit('error', err);
+                }
+            });
     }
 
     _reportMemoryUsage(time, memoryUsage, syncId) {
@@ -153,7 +150,7 @@ class MongoStepLogger extends BaseStepLogger {
         this.db.collection(MongoHelper.getCollection(key)).insertOne(
             this.getObjectToPush(key, { time, usage: memoryUsage }, syncId), (err) => {
                 if (err) {
-                    this.emitter.emit('ERROR', err);
+                    this.emit('error', err);
                 }
             });
     }
@@ -163,7 +160,7 @@ class MongoStepLogger extends BaseStepLogger {
         this.db.collection(MongoHelper.getCollection(key)).insertOne(
             this.getObjectToPush(key, { time, usage: cpuUsage }, syncId), (err) => {
                 if (err) {
-                    this.emitter.emit('ERROR', err);
+                    this.emit('error', err);
                 }
             });
     }
@@ -171,21 +168,21 @@ class MongoStepLogger extends BaseStepLogger {
     _reportLogSize() {
         const key = `steps.${this.name}.metrics.logs.total`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
-        { $set: { [key]: this.logSize } }, { upsert: true }, (err) => {
-            if (err) {
-                this.emitter.emit('ERROR', err);
-            }
-        });
+            { $set: { [key]: this.logSize } }, { upsert: true }, (err) => {
+                if (err) {
+                    this.emit('error', err);
+                }
+            });
     }
 
     reportName() {
         const key = `steps.${this.name}.name`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
-        { $set: { [key]: this.name } }, { upsert: true }, (err) => {
-            if (err) {
-                this.emitter.emit('ERROR', err);
-            }
-        });
+            { $set: { [key]: this.name } }, { upsert: true }, (err) => {
+                if (err) {
+                    this.emit('error', err);
+                }
+            });
     }
 
     clearLogs() {
@@ -212,7 +209,6 @@ class MongoStepLogger extends BaseStepLogger {
             jobId: this.jobId
         };
     }
-
 }
 
 module.exports = MongoStepLogger;
