@@ -31,6 +31,7 @@ class FirebaseStepLogger extends BaseStepLogger {
         return wrapWithRetry(async () => {
             const nameDeferred = Q.defer();
             const statusDeferred = Q.defer();
+            const titleDeferred = Q.defer();
             debug(`performing restore for step: ${this.name}`);
 
             debug(`firebase name reference: ${this.stepRef.child('name').ref()}`);
@@ -50,7 +51,17 @@ class FirebaseStepLogger extends BaseStepLogger {
                 statusDeferred.resolve();
             });
 
-            return Q.all([nameDeferred.promise, statusDeferred.promise]);
+            if (this.stepRef.child('title')) {
+                debug(`firebase title reference: ${this.stepRef.child('title').ref()}`);
+                this.stepRef.child('title').once('value', (snapshot) => {
+                    debug(`received title for step: ${this.name}`);
+                    this.title = snapshot.val();
+                    titleDeferred.resolve();
+                });
+            } else { // nothing to wait for
+                titleDeferred.resolve();
+            }
+            return Q.all([nameDeferred.promise, statusDeferred.promise, titleDeferred.promise]);
         }, undefined, extraPrintData);
     }
 
@@ -80,6 +91,10 @@ class FirebaseStepLogger extends BaseStepLogger {
 
     async _reportStatus() {
         return this.stepRef.child('status').set(this.status);
+    }
+
+    async _reportTitle() {
+        return this.stepRef.child('title').set(this.title);
     }
 
     async _reportFinishTimestamp() {

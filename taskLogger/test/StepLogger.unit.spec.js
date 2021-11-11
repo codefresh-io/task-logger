@@ -24,8 +24,10 @@ const getStepLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId', 
     stepLogger.setFinishTimestamp = sinon.spy(stepLogger.setFinishTimestamp);
     stepLogger.updateLastUpdate = sinon.spy(stepLogger.updateLastUpdate);
     stepLogger.setStatus = sinon.spy(stepLogger.setStatus);
+    stepLogger.setTitle = sinon.spy(stepLogger.setTitle);
     stepLogger.setCreationTimestamp = sinon.spy(stepLogger.setCreationTimestamp);
     stepLogger._reportStatus = sinon.spy();
+    stepLogger._reportTitle = sinon.spy();
     stepLogger._reportFinishTimestamp = sinon.spy();
     stepLogger._reportCreationTimestamp = sinon.spy();
     stepLogger._reportLog = sinon.spy();
@@ -39,6 +41,8 @@ const getStepLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId', 
     stepLogger.setStatus(STATUS.PENDING);
     stepLogger.setStatus.resetHistory();
     stepLogger._reportStatus.resetHistory();
+    stepLogger.setTitle.resetHistory();
+    stepLogger._reportTitle.resetHistory();
     return stepLogger;
 };
 

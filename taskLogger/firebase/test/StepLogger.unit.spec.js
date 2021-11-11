@@ -152,6 +152,21 @@ _.forEach(interfaces, (int) => {
                 }
             });
 
+            it('should report title', async () => {
+                const opts = _.merge({}, {
+                    baseFirebaseUrl: 'url',
+                    firebaseSecret: 'secret'
+                }, int.opts);
+                const stepLogger = await getStepLoggerInstance(undefined, opts);
+                stepLogger.title = 'title';
+                stepLogger._reportTitle();
+                if (opts.restInterface) {
+                    expect(stepLogger.restClient.set).to.have.been.calledWith(`${stepLogger.stepRef.ref()}/title`, stepLogger.title);
+                } else {
+                    expect(Firebase.prototype.set).to.have.been.calledWith(stepLogger.title);
+                }
+            });
+
             it('should report finish timestamp', async () => {
                 const opts = _.merge({}, {
                     baseFirebaseUrl: 'url',

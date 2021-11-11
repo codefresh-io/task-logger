@@ -17,6 +17,7 @@ class RedisStepLogger extends BaseStepLogger {
     async restore() {
         this.status = await this.writter.child('status').get();
         this.pendingApproval = this.status === STATUS.PENDING_APPROVAL;
+        this.title = await this.writter.child('title').get();
     }
 
     _reportLog(message, syncId = Date.now()) {
@@ -49,6 +50,10 @@ class RedisStepLogger extends BaseStepLogger {
 
     async _reportStatus() {
         return this.writter.child('status').set(this.status);
+    }
+
+    async _reportTitle() {
+        return this.writter.child('title').set(this.title);
     }
 
     async _reportFinishTimestamp() {

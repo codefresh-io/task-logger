@@ -15,6 +15,7 @@ class CompositionStepLogger extends BaseStepLogger {
         const restorePromises = this.loggers.map(logger => logger.restore());
         await Promise.all(restorePromises);
         this.status = this.loggers[0].status;
+        this.title = this.loggers[0].title;
         this.pendingApproval = this.status === STATUS.PENDING_APPROVAL;
     }
 
@@ -73,6 +74,13 @@ class CompositionStepLogger extends BaseStepLogger {
         return _.map(this.loggers, (logger) => {
             logger.status = this.status;
             return logger._reportStatus();
+        });
+    }
+
+    async _reportTitle() {
+        return _.map(this.loggers, (logger) => {
+            logger.title = this.title;
+            return logger._reportTitle();
         });
     }
 

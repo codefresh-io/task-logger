@@ -42,6 +42,7 @@ class StepLogger extends EventEmitter {
         if (this.status === STATUS.PENDING) {
             this.status = STATUS.RUNNING;
             this._reportStatus();
+            this._reportTitle();
             this.setFinishTimestamp('');
             this.setCreationTimestamp(+(new Date().getTime() / 1000).toFixed());
 
@@ -192,6 +193,10 @@ class StepLogger extends EventEmitter {
         return this.status;
     }
 
+    getTitle() {
+        return this.title;
+    }
+
     markPreviouslyExecuted() {
         if (this.fatal) {
             return;
@@ -257,6 +262,13 @@ class StepLogger extends EventEmitter {
     async setStatus(status) {
         this.status = status;
         return this._reportStatus();
+    }
+
+    async setTitle(title) {
+        if (title) {
+            this.title = title;
+            await this._reportTitle();
+        }
     }
 }
 

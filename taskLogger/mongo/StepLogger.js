@@ -28,6 +28,7 @@ class MongoStepLogger extends BaseStepLogger {
         const stepFromDoc = _.get(doc, `steps[${this.name}]`);
         if (stepFromDoc) {
             this.status = stepFromDoc.status;
+            this.title = stepFromDoc.title;
             this.pendingApproval = this.status === STATUS.PENDING_APPROVAL;
         }
     }
@@ -126,6 +127,17 @@ class MongoStepLogger extends BaseStepLogger {
                 this.emitter.emit('ERROR', err);
             }
         });
+    }
+
+    async _reportTitle() {
+        const key = `steps.${this.name}.title`;
+        const setFields = { [key]: this.title };
+        return this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
+            { $set: setFields }, { upsert: true }, (err) => {
+                if (err) {
+                    this.emitter.emit('ERROR', err);
+                }
+            });
     }
 
     async _reportFinishTimestamp() {

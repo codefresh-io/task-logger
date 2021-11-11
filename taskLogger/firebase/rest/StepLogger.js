@@ -30,6 +30,12 @@ class FirebaseRestStepLogger extends FirebaseStepLogger {
         if (this.status === STATUS.PENDING_APPROVAL) {
             this.pendingApproval = true;
         }
+        if (this.stepRef.child('title')) {
+            debug(`firebase title reference: ${this.stepRef.child('title')
+                .ref()}`);
+            this.title = await this.restClient.get(`${this.stepRef.ref()
+                .toString()}/title`);
+        }
     }
 
     _reportLog(message) {
@@ -76,6 +82,13 @@ class FirebaseRestStepLogger extends FirebaseStepLogger {
 
     async _reportStatus() {
         return this.restClient.set(`${this.stepRef.ref().toString()}/status`, this.status)
+            .catch((err) => {
+                this.emit('error', err);
+            });
+    }
+
+    async _reportTitle() {
+        return this.restClient.set(`${this.stepRef.ref().toString()}/title`, this.title)
             .catch((err) => {
                 this.emit('error', err);
             });
