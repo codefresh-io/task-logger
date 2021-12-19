@@ -11,12 +11,13 @@ class FirebaseStepLogger extends BaseStepLogger {
 
     constructor(step, opts, taskLogger) {
         super(step, opts, taskLogger);
-        const { baseFirebaseUrl, firebaseWritableStream } = opts;
+        const { baseFirebaseUrl, firebaseWritableStream, hasTimestamps = false } = opts;
 
         if (!baseFirebaseUrl) {
             throw new CFError('failed to create stepLogger because baseFirebaseUrl must be provided');
         }
         this.baseFirebaseUrl = baseFirebaseUrl;
+        this.hasTimestamps = hasTimestamps;
 
         this.baseUrl = `${this.baseFirebaseUrl}/${this.jobId}`;
 
@@ -55,10 +56,14 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     _reportLog(message) {
-        return this.stepRef.child('logs').push({
-            message,
-            timestamp: Date.now()
-        });
+        if (this.hasTimestamps) {
+            return this.stepRef.child('logs').push({
+                message,
+                timestamp: Date.now()
+            });
+        } else {
+            return this.stepRef.child('logs').push(message);
+        }
     }
 
     _reportOutputUrl() {

@@ -19,7 +19,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         super(task, opts);
         this.type = TYPES.FIREBASE;
         this.pauseTimeout = 10 * 60 * 1000; // 10 min
-        this.hasTimestamps = true;
+        this.hasTimestamps = opts.hasTimestamps || false;
     }
 
     // TODO once everyone is moving to new model for token per progress, this should also contain the build id and restrict only access to this specific job
@@ -293,17 +293,22 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         this.baseRef.child(FirebaseTaskLogger.STEPS_REFERENCES_KEY).set(stepsReferences);
     }
 
-    async addErrorMessageToEndOfSteps(message) {
+    async addErrorMessageToEndOfSteps(rawMessage) {
         const deferred = Q.defer();
 
         this.stepsRef.limitToLast(1).once('value', (snapshot) => {
             try {
                 _.forEach(snapshot.val(), (step, stepKey) => {
                     const stepRef = new Firebase(`${this.stepsUrl}/${stepKey}`);
-                    stepRef.child('logs').push({
-                        message: `\x1B[31m${message}\x1B[0m\r\n`,
-                        timestamp: Date.now()
-                    });
+                    const message = `\x1B[31m${rawMessage}\x1B[0m\r\n`;
+                    if (this.hasTimestamps) {
+                        stepRef.child('logs').push({
+                            message,
+                            timestamp: Date.now()
+                        });
+                    } else {
+                        stepRef.child('logs').push(message);
+                    }
                 });
                 deferred.resolve();
             } catch (err) {
