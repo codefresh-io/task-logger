@@ -1,10 +1,10 @@
-const Q                  = require('q');
-const debug              = require('debug')('codefresh:firebase:stepLogger');
-const Firebase           = require('firebase');
-const CFError            = require('cf-errors');
-const { STATUS }         = require('../enums');
-const BaseStepLogger     = require('../StepLogger');
-const { wrapWithRetry }  = require('../helpers');
+const Q = require('q');
+const debug = require('debug')('codefresh:firebase:stepLogger');
+const Firebase = require('firebase');
+const CFError = require('cf-errors');
+const { STATUS } = require('../enums');
+const BaseStepLogger = require('../StepLogger');
+const { wrapWithRetry } = require('../helpers');
 const StepNameTransformStream = require('./step-streams/StepNameTransformStream');
 
 class FirebaseStepLogger extends BaseStepLogger {
@@ -55,7 +55,10 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     _reportLog(message) {
-        return this.stepRef.child('logs').push(message);
+        return this.stepRef.child('logs').push({
+            message,
+            timestamp: Date.now()
+        });
     }
 
     _reportOutputUrl() {
@@ -127,7 +130,7 @@ class FirebaseStepLogger extends BaseStepLogger {
         const deferred = Q.defer();
 
         this.stepRef.once('value', (snapshot) => {
-            const data     = snapshot.val();
+            const data = snapshot.val();
             deferred.resolve(data);
         }, function (errorObject) {
             deferred.reject(new CFError({

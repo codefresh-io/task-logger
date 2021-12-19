@@ -1,15 +1,15 @@
-const _                                = require('lodash');
-const Firebase                         = require('firebase');
-const debug                            = require('debug')('codefresh:firebase:taskLogger');
-const Q                                = require('q');
-const CFError                          = require('cf-errors');
-const BaseTaskLogger                   = require('../TaskLogger');
-const StepLogger                       = require('./StepLogger');
-const DebuggerStreamFactory            = require('./DebuggerStreamFactory');
-const { TYPES }                        = require('../enums');
-const { wrapWithRetry }                = require('../helpers');
-const RestClient                       = require('./rest/Client');
-const FirebaseTokenGenerator           = require('firebase-token-generator');
+const _ = require('lodash');
+const Firebase = require('firebase');
+const debug = require('debug')('codefresh:firebase:taskLogger');
+const Q = require('q');
+const CFError = require('cf-errors');
+const BaseTaskLogger = require('../TaskLogger');
+const StepLogger = require('./StepLogger');
+const DebuggerStreamFactory = require('./DebuggerStreamFactory');
+const { TYPES } = require('../enums');
+const { wrapWithRetry } = require('../helpers');
+const RestClient = require('./rest/Client');
+const FirebaseTokenGenerator = require('firebase-token-generator');
 const FirebaseWritableStream = require('./step-streams/FirebaseWritableStream');
 
 const defaultFirebaseTimeout = 60000;
@@ -19,6 +19,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         super(task, opts);
         this.type = TYPES.FIREBASE;
         this.pauseTimeout = 10 * 60 * 1000; // 10 min
+        this.hasTimestamps = true;
     }
 
     // TODO once everyone is moving to new model for token per progress, this should also contain the build id and restrict only access to this specific job
@@ -93,6 +94,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         taskLogger.stepsUrl = `${taskLogger.baseUrl}/steps`;
         const stepRef = new Firebase(taskLogger.stepsUrl);
         taskLogger.stepsRef = stepRef;
+        taskLogger._reportHasTimestamps();
         if (logsRateLimitConfig) {
             const fbStream = new FirebaseWritableStream(stepRef, logsRateLimitConfig);
             // override default taskLogger behavior because fbStream can flush n writeCalls at once
@@ -278,7 +280,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                     .done();
             });
             return deferred.promise;
-        }, {  errorAfterTimeout: 120000, retries: 3  }, extraPrintData);
+        }, { errorAfterTimeout: 120000, retries: 3 }, extraPrintData);
     }
 
     // TODO change this to push new step as it occurs, currently it does not work well in sync worfklows
@@ -298,7 +300,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             try {
                 _.forEach(snapshot.val(), (step, stepKey) => {
                     const stepRef = new Firebase(`${this.stepsUrl}/${stepKey}`);
-                    stepRef.child('logs').push(`\x1B[31m${message}\x1B[0m\r\n`);
+                    stepRef.child('logs').push({
+                        message: `\x1B[31m${message}\x1B[0m\r\n`,
+                        timestamp: Date.now()
+                    });
                 });
                 deferred.resolve();
             } catch (err) {
@@ -319,6 +324,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 
     _reportLogSize() {
         this.baseRef.child('metrics').child('logs').child('total').set(this.logSize);
+    }
+
+    _reportHasTimestamps() {
+        return this.baseRef.child('hasTimestamps').set(this.hasTimestamps);
     }
 
     async _reportVisibility() {
@@ -373,7 +382,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         const deferred = Q.defer();
 
         this.baseRef.once('value', (snapshot) => {
-            const data     = snapshot.val();
+            const data = snapshot.val();
             deferred.resolve(data);
         }, function (errorObject) {
             deferred.reject(new CFError({
@@ -388,7 +397,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     _startHealthCheck() {
         debug('init health check status');
         const interval = _.get(this.opts, 'healthCheckConfig.interval', 30 * 1000);
-        const retries =  _.get(this.opts, 'healthCheckConfig.retries', 2);
+        const retries = _.get(this.opts, 'healthCheckConfig.retries', 2);
         const errorAfterTimeout = _.get(this.opts, 'healthCheckConfig.errorAfterTimeout', 15 * 1000);
         const callOnce = _.get(this.opts, 'healthCheckConfig.callOnce', false);
         this.healthCheckCounter = 0;
@@ -400,12 +409,14 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             debug(`running health check number ${counter}`);
             try {
                 await wrapWithRetry(this.healthCheck,
-                    { retries,
+                    {
+                        retries,
                         errorAfterTimeout,
                         invocationParams: {
                             number: counter,
                             baseRef: this.baseRef,
-                        } });
+                        }
+                    });
                 this.emit('healthCheckStatus', { status: 'succeed', id: counter, duration: Date.now() - startTime, startTime: new Date(startTime) });
 
             } catch (error) {
@@ -443,7 +454,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         });
     }
 }
-FirebaseTaskLogger.TYPE          = TYPES.FIREBASE;
+FirebaseTaskLogger.TYPE = TYPES.FIREBASE;
 FirebaseTaskLogger.authenticated = false;
 FirebaseTaskLogger.STEPS_REFERENCES_KEY = 'stepsReferences';
 
