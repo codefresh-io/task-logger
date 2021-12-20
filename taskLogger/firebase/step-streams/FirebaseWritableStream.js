@@ -26,7 +26,8 @@ class FirebaseWritableStream extends Writable {
         // Extract step name headers
         const stepNameLength = chunk.readUInt8(0);
         const stepName = chunk.slice(1, stepNameLength + 1);
-        const message = chunk.slice(stepNameLength + 1);
+        const ts = `\u001b[36m[${new Date().toISOString()}]\u001b[0m`;
+        const message = `${ts} ${chunk.slice(stepNameLength + 1)}`;
 
         const newLogKey = `${stepName}/logs/${this._firebaseClient.child('logs').push().key()}`;
         const currentMessageSize = Buffer.byteLength(message);
