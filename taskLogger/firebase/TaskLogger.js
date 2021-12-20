@@ -58,6 +58,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                 ...(this.opts.logsRateLimitConfig && { logsRateLimitConfig: this.opts.logsRateLimitConfig }),
                 ...(this.opts.healthCheckConfig && { healthCheckConfig: this.opts.healthCheckConfig }),
                 ...(this.opts.blacklist && { blacklist: this.opts.blacklist }),
+                ...(this.opts.useLogsTimestamps && { useLogsTimestamps: this.opts.useLogsTimestamps })
             }
         };
     }
