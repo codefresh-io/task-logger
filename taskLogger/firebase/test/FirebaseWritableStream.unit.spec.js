@@ -37,6 +37,7 @@ describe('Firebase Writable Stream Tests', () => {
 
     it('should successfully write message to logs batch', () => {
         const message = 'some fake str';
+        const ts = `\u001b[36m[${new Date().toISOString()}]\u001b[0m`;
         const stepName = 'stepName';
         const stepNameSizeHeader = Buffer.alloc(1);
         const stepNameLengthHex = `0x${stepName.length.toString(16)}`;
@@ -45,7 +46,7 @@ describe('Firebase Writable Stream Tests', () => {
         const chunk = Buffer.concat([stepNameSizeHeader, Buffer.from(stepName), Buffer.from(message, 'utf8')]);
         fireBaseWritableStream._write(chunk, 'utf8', () => {});
         expect(Object.keys(fireBaseWritableStream._logsBatch).length).to.be.equal(1);
-        expect(fireBaseWritableStream._currentLogByteSize).to.be.equal(Buffer.byteLength(message));
+        expect(fireBaseWritableStream._currentLogByteSize).to.be.equal(Buffer.byteLength(`${ts} ${message}`));
     });
 
     it('should successfully write messages to logs batch and flush to firebase', () => {
