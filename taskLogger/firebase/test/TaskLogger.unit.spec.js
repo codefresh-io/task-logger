@@ -1,11 +1,11 @@
 const _ = require('lodash');
 const Q = require('q');
 const proxyquire = require('proxyquire').noCallThru();
-const chai       = require('chai');
+const chai = require('chai');
 
-const expect     = chai.expect;
-const sinon      = require('sinon');
-const sinonChai  = require('sinon-chai');
+const expect = chai.expect;
+const sinon = require('sinon');
+const sinonChai = require('sinon-chai');
 
 chai.use(sinonChai);
 const { createFirebaseStub, createFirebaseStubWithDebugger, createFirebaseStubWithHealthCheck } = require('./FirebaseStub');
@@ -38,7 +38,7 @@ const getTaskLoggerInstance = async (task = { accountId: 'accountId', jobId: 'jo
     });
 
     const taskLogger = await TaskLogger.factory(task, opts);
-    taskLogger.emit  = sinon.spy(taskLogger.emit);
+    taskLogger.emit = sinon.spy(taskLogger.emit);
 
     return taskLogger;
 };
@@ -58,7 +58,7 @@ const getTaskLoggerInstanceWithHealthCheck = async (task = { accountId: 'account
         }
     });
     const taskLogger = await TaskLogger.factory(task, opts);
-    taskLogger.emit  = sinon.spy(taskLogger.emit);
+    taskLogger.emit = sinon.spy(taskLogger.emit);
 
     return taskLogger;
 };
@@ -74,7 +74,7 @@ const getTaskLoggerInstanceWithDebugger = async (task = { accountId: 'accountId'
     });
 
     const taskLogger = await TaskLogger.factory(task, opts);
-    taskLogger.emit  = sinon.spy(taskLogger.emit);
+    taskLogger.emit = sinon.spy(taskLogger.emit);
 
     taskLogger.outputPromise = deferred.promise;
 
@@ -246,8 +246,8 @@ _.forEach(interfaces, (int) => {
                     let onValueHandler;
                     taskLogger.debugRef = {
                         child: () => ({
-                            set: () => {},
-                            off: () => {},
+                            set: () => { },
+                            off: () => { },
                             on: (name, handler) => {
                                 onValueHandler = handler;
                             }
@@ -273,8 +273,8 @@ _.forEach(interfaces, (int) => {
                                     stepTitle: 'stepTitle',
                                 });
                             },
-                            off: () => {},
-                            on: () => {}
+                            off: () => { },
+                            on: () => { }
                         }),
                     };
 
@@ -291,8 +291,8 @@ _.forEach(interfaces, (int) => {
                     taskLogger.pauseTimeout = 1000;
                     taskLogger.debugRef = {
                         child: () => ({
-                            set: () => {},
-                            off: () => {},
+                            set: () => { },
+                            off: () => { },
                             on: (name, handler) => {
                                 handler({ val: () => ({ pause: true }) });
                             }
@@ -491,7 +491,7 @@ _.forEach(interfaces, (int) => {
                             baseFirebaseUrl: 'url',
                             firebaseSecret: 'secret',
                         }, int.opts);
-                        const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts, true);
+                        const taskLogger = await getTaskLoggerInstanceWithHealthCheck(task, opts, true);
                         taskLogger.startHealthCheck();
                         expect(taskLogger.emit).to.have.been.calledWith('healthCheckStatus', { status: 'started' });
                         taskLogger.stopHealthCheck();
@@ -511,7 +511,7 @@ _.forEach(interfaces, (int) => {
                                 }
 
                             }, int.opts);
-                            const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts);
+                            const taskLogger = await getTaskLoggerInstanceWithHealthCheck(task, opts);
                             taskLogger.startHealthCheck();
                             setTimeout(() => {
 
@@ -541,7 +541,7 @@ _.forEach(interfaces, (int) => {
                                 }
 
                             }, int.opts);
-                            const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts);
+                            const taskLogger = await getTaskLoggerInstanceWithHealthCheck(task, opts);
                             taskLogger.startHealthCheck();
                             setTimeout(() => {
 
@@ -574,7 +574,7 @@ _.forEach(interfaces, (int) => {
 
                             }, int.opts);
                             const testingOpts = { timeout: 2000 }; //  won't be called
-                            const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts, testingOpts);
+                            const taskLogger = await getTaskLoggerInstanceWithHealthCheck(task, opts, testingOpts);
                             taskLogger.startHealthCheck();
                             setTimeout(() => {
 
@@ -606,7 +606,7 @@ _.forEach(interfaces, (int) => {
 
                             }, int.opts);
                             const testingOpts = { setCallbackValue: new Error('firebase_error') };
-                            const taskLogger =  await getTaskLoggerInstanceWithHealthCheck(task, opts, testingOpts);
+                            const taskLogger = await getTaskLoggerInstanceWithHealthCheck(task, opts, testingOpts);
                             taskLogger.startHealthCheck();
                             setTimeout(() => {
 

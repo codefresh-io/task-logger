@@ -45,15 +45,16 @@ const createFirebaseStubWithHealthCheck = ({ timeout = 10, setCallbackValue }) =
     Firebase.prototype.count = 0;
     Firebase.prototype.set = sinon.spy((key, func) => {
         const timerId = setTimeout(() => {
-                // eslint-disable-next-line no-plusplus
+            // eslint-disable-next-line no-plusplus
             Firebase.prototype.count++;
             clearTimeout(timerId);
-            func(setCallbackValue);
+            if (typeof func === 'function') {
+                func(setCallbackValue);
+            }
         }, timeout); // ticking
 
     });
     return Firebase;
-
 };
 
 module.exports = {

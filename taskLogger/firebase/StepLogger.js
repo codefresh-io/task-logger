@@ -1,22 +1,23 @@
-const Q                  = require('q');
-const debug              = require('debug')('codefresh:firebase:stepLogger');
-const Firebase           = require('firebase');
-const CFError            = require('cf-errors');
-const { STATUS }         = require('../enums');
-const BaseStepLogger     = require('../StepLogger');
-const { wrapWithRetry }  = require('../helpers');
+const Q = require('q');
+const debug = require('debug')('codefresh:firebase:stepLogger');
+const Firebase = require('firebase');
+const CFError = require('cf-errors');
+const { STATUS } = require('../enums');
+const BaseStepLogger = require('../StepLogger');
+const { wrapWithRetry } = require('../helpers');
 const StepNameTransformStream = require('./step-streams/StepNameTransformStream');
 
 class FirebaseStepLogger extends BaseStepLogger {
 
     constructor(step, opts, taskLogger) {
         super(step, opts, taskLogger);
-        const { baseFirebaseUrl, firebaseWritableStream } = opts;
+        const { baseFirebaseUrl, firebaseWritableStream, hasTimestamps = false } = opts;
 
         if (!baseFirebaseUrl) {
             throw new CFError('failed to create stepLogger because baseFirebaseUrl must be provided');
         }
         this.baseFirebaseUrl = baseFirebaseUrl;
+        this.hasTimestamps = hasTimestamps;
 
         this.baseUrl = `${this.baseFirebaseUrl}/${this.jobId}`;
 
@@ -55,7 +56,14 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     _reportLog(message) {
-        return this.stepRef.child('logs').push(message);
+        if (this.hasTimestamps) {
+            return this.stepRef.child('logs').push({
+                message,
+                timestamp: Date.now()
+            });
+        } else {
+            return this.stepRef.child('logs').push(message);
+        }
     }
 
     _reportOutputUrl() {
@@ -127,7 +135,7 @@ class FirebaseStepLogger extends BaseStepLogger {
         const deferred = Q.defer();
 
         this.stepRef.once('value', (snapshot) => {
-            const data     = snapshot.val();
+            const data = snapshot.val();
             deferred.resolve(data);
         }, function (errorObject) {
             deferred.reject(new CFError({
