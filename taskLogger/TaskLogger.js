@@ -1,11 +1,12 @@
 
-const debug        = require('debug')('codefresh:taskLogger');
-const _            = require('lodash');
-const CFError      = require('cf-errors');
+const debug = require('debug')('codefresh:taskLogger');
+const _ = require('lodash');
+const CFError = require('cf-errors');
 const EventEmitter = require('events');
 const { STATUS, VISIBILITY } = require('./enums');
 const Q = require('q');
 const MaskingStream = require('./MaskingStream');
+const PrependTimestampsStream = require('./PrependTimestampsStream');
 
 /**
  * TaskLogger - logging for build/launch/promote jobs
@@ -30,9 +31,9 @@ class TaskLogger extends EventEmitter {
         }
         this.jobId = jobId;
         this.blacklistMasks = this._prepareBlacklistMasks();
-        this.fatal    = false;
+        this.fatal = false;
         this.finished = false;
-        this.steps    = {};
+        this.steps = {};
         this._curLogSize = 0;
 
         this.logsStatus = {
@@ -62,7 +63,7 @@ class TaskLogger extends EventEmitter {
             step.on('error', (err) => {
                 this.emit('error', err);
             });
-            this.steps[name]      = step;
+            this.steps[name] = step;
             step.on('finished', () => {
                 delete this.steps[name];
             });
@@ -107,6 +108,10 @@ class TaskLogger extends EventEmitter {
      */
     createMaskingStream(opts) {
         return new MaskingStream(this, opts);
+    }
+
+    createPrependTimestampsStream(opts) {
+        return new PrependTimestampsStream(opts);
     }
 
     /**
@@ -179,7 +184,7 @@ class TaskLogger extends EventEmitter {
             _.forEach(this.steps, (step) => {
                 step.finish(new Error('Unknown error occurred'));
             });
-        }        else {
+        } else {
             const errorStep = this.create('Something went wrong');
             errorStep.finish(err);
         }
@@ -224,10 +229,10 @@ class TaskLogger extends EventEmitter {
     }
 
     startHealthCheck() {
-        this._startHealthCheck &&  this._startHealthCheck();
+        this._startHealthCheck && this._startHealthCheck();
     }
     stopHealthCheck() {
-        this._stopHealthCheck &&  this._stopHealthCheck();
+        this._stopHealthCheck && this._stopHealthCheck();
     }
 
     getConfiguration() {
@@ -305,7 +310,7 @@ class TaskLogger extends EventEmitter {
         await Promise.all(waitForUpdate);
     }
 
-      // eslint-disable-next-line no-empty-function
+    // eslint-disable-next-line no-empty-function
     async getRaw() {
     }
 
@@ -315,7 +320,7 @@ class TaskLogger extends EventEmitter {
             word: word.value,
             replacement: '****',
             matchAndReplace(str) {
-                const partitions =  String(str).split(this.word);
+                const partitions = String(str).split(this.word);
                 if (partitions.length !== 1) {
                     debug(`matched secret ${this.name} ${partitions.length - 1} times`);
                     return partitions.join(this.replacement);

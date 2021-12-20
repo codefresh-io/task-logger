@@ -1,11 +1,12 @@
 const proxyquire = require('proxyquire').noCallThru();
-const chai       = require('chai');
+const chai = require('chai');
 const Q = require('q');
 
-const expect     = chai.expect;
-const sinon      = require('sinon');
-const sinonChai  = require('sinon-chai');
+const expect = chai.expect;
+const sinon = require('sinon');
+const sinonChai = require('sinon-chai');
 const { Readable, Writable } = require('stream');
+const PrependTimestampsStream = require('../PrependTimestampsStream');
 
 chai.use(sinonChai);
 const { TYPES, STATUS, VISIBILITY } = require('../enums');
@@ -249,9 +250,9 @@ describe('Base TaskLogger tests', () => {
             return Promise.race([
                 new Promise(resolve => setTimeout(resolve, 3000, 'timeout')),
                 taskLogger.awaitLogsFlushed().then(
-                  () => { throw Error('unexpectedly resolved'); },
-                  () => { throw Error('unexpectedly rejected'); }
-                  )
+                    () => { throw Error('unexpectedly resolved'); },
+                    () => { throw Error('unexpectedly rejected'); }
+                )
             ]);
         });
         it('should call _updateLogsRate when updateLogsRate is true', async function () {
@@ -268,6 +269,96 @@ describe('Base TaskLogger tests', () => {
             stepLogger.emit('flush');
             await taskLogger.awaitLogsFlushed();
             expect(taskLogger._logRateTimer).to.be.false;
+        });
+    });
+
+    describe('prependTimestampsStream', () => {
+        it.only('should add timestamps to each new line', async () => {
+            const prependTimestampsStream = new PrependTimestampsStream();
+            const ts = new Date().toISOString();
+            prependTimestampsStream._prependTimestamp = sinon.stub(logMessage => `${ts} ${logMessage}`);
+            const containerOutput = [
+                { sent: 'Hello world\n', expected: `${ts} Hello world\n` },
+                { sent: 'test\nbla', expected: `${ts} test\n` },
+                { sent: 'test1\n', expected: `${ts} blatest1\n` },
+                { sent: 'test1', expected: `${ts} test1` },
+                { sent: 'test2', expected: `test2` },
+                { sent: 'test3', expected: `test3\n` },
+                { sent: '\nfoo', expected: `${ts} foo` }
+            ];
+            const expectedResult = containerOutput.reduce((acc, cur) => acc + cur.expected, '');
+            let i = 0;
+            const containerOutputStream = new Readable({
+                read() {
+                    if (!containerOutput[i]) {
+                        this.push(null); // end stream
+                    } else {
+                        this.push(containerOutput[i].sent);
+                        i += 1;
+                    }
+                }
+            });
+
+            let receivedBuffer = Buffer.from('');
+            const finalOutputStream = new Writable({
+                write(chunk, encoding, done) {
+                    receivedBuffer = Buffer.concat([receivedBuffer, chunk]);
+                    done();
+                }
+            });
+
+            const deferred = Q.defer();
+            finalOutputStream.on('finish', deferred.resolve.bind(deferred));
+
+            containerOutputStream.pipe(prependTimestampsStream).pipe(finalOutputStream);
+
+            await deferred.promise;
+            expect(receivedBuffer.toString('utf-8')).to.be.equal(expectedResult);
+        });
+
+        it.only('should flush when timeout', async () => {
+            const prependTimestampsStream = new PrependTimestampsStream({ chunkFlushTimeout: 50 });
+            const ts = new Date().toISOString();
+            prependTimestampsStream._prependTimestamp = sinon.stub(logMessage => `${ts} ${logMessage}`);
+            const containerOutput = [
+                { sent: 'Hello1', delay: 0 },
+                { sent: 'Hello2', delay: 10 },
+                { sent: 'Hello3\nasd', delay: 60 },
+                { sent: 'Hello4\n', delay: 70 },
+                { sent: 'Hello5', delay: 80 }
+            ];
+            const expectedResult = `${ts} Hello1Hello2Hello3\n${ts} asdHello4\n${ts} Hello5`;
+
+            let i = 0;
+            const containerOutputStream = new Readable({
+                read() {
+                    const output = containerOutput[i];
+                    i += 1;
+                    if (!output) {
+                        this.push(null); // end stream
+                        return;
+                    }
+                    setTimeout(() => {
+                        this.push(output.sent);
+                    }, output.delay);
+                }
+            });
+
+            let receivedBuffer = Buffer.from('');
+            const finalOutputStream = new Writable({
+                write(chunk, encoding, done) {
+                    receivedBuffer = Buffer.concat([receivedBuffer, chunk]);
+                    done();
+                }
+            });
+
+            const deferred = Q.defer();
+
+            finalOutputStream.on('finish', deferred.resolve.bind(deferred));
+
+            containerOutputStream.pipe(prependTimestampsStream).pipe(finalOutputStream);
+            await deferred.promise;
+            expect(receivedBuffer.toString('utf-8')).to.be.equal(expectedResult);
         });
     });
 
@@ -801,5 +892,4 @@ describe('Base TaskLogger tests', () => {
             expect(taskLogger.create.getCall(1)).to.have.been.calledWith('step2', false, false);
         });
     });
-
 });
