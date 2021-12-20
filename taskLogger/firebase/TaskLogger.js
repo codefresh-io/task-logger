@@ -19,7 +19,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         super(task, opts);
         this.type = TYPES.FIREBASE;
         this.pauseTimeout = 10 * 60 * 1000; // 10 min
-        this.hasTimestamps = opts.hasTimestamps || false;
+        this.useLogsTimestamps = opts.useLogsTimestamps || false;
     }
 
     // TODO once everyone is moving to new model for token per progress, this should also contain the build id and restrict only access to this specific job
@@ -94,7 +94,6 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         taskLogger.stepsUrl = `${taskLogger.baseUrl}/steps`;
         const stepRef = new Firebase(taskLogger.stepsUrl);
         taskLogger.stepsRef = stepRef;
-        taskLogger._reportHasTimestamps();
         if (logsRateLimitConfig) {
             const fbStream = new FirebaseWritableStream(stepRef, logsRateLimitConfig);
             // override default taskLogger behavior because fbStream can flush n writeCalls at once
@@ -300,15 +299,11 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             try {
                 _.forEach(snapshot.val(), (step, stepKey) => {
                     const stepRef = new Firebase(`${this.stepsUrl}/${stepKey}`);
-                    const message = `\x1B[31m${rawMessage}\x1B[0m\r\n`;
-                    if (this.hasTimestamps) {
-                        stepRef.child('logs').push({
-                            message,
-                            timestamp: Date.now()
-                        });
-                    } else {
-                        stepRef.child('logs').push(message);
+                    let message = `\x1B[31m${rawMessage}\x1B[0m\r\n`;
+                    if (this.useLogsTimestamps) {
+                        message = `[${new Date().toISOString()}] ${message}`;
                     }
+                    stepRef.child('logs').push(message);
                 });
                 deferred.resolve();
             } catch (err) {
@@ -329,10 +324,6 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 
     _reportLogSize() {
         this.baseRef.child('metrics').child('logs').child('total').set(this.logSize);
-    }
-
-    _reportHasTimestamps() {
-        return this.baseRef.child('hasTimestamps').set(this.hasTimestamps);
     }
 
     async _reportVisibility() {
