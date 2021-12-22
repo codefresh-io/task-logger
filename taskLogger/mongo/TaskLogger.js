@@ -33,6 +33,12 @@ class MongoTaskLogger extends TaskLogger {
                 useNewUrlParser: true,
                 ...opts.mongodbOptions,
             };
+
+            if (typeof mongodbOptions.sslKey !== 'Buffer') {
+                mongodbOptions.sslKey = Buffer.from(mongodbOptions.sslKey)
+                mongodbOptions.sslCert = Buffer.from(mongodbOptions.sslCert)
+            }
+
             const client = await MongoClient.connect(config.mongoURI, mongodbOptions);
             mongoCacheMap.set(key, client.db(config.mongoDBName));
         }
