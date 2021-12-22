@@ -79,6 +79,10 @@ class StepLogger extends EventEmitter {
         return this.taskLogger.createMaskingStream();
     }
 
+    createPrependTimestampsStream() {
+        return this.taskLogger.createPrependTimestampsStream();
+    }
+
     /**
      * adds a new mask to the task-logger related to this step-logger
      * @param { key: string, value: string } word
@@ -248,7 +252,7 @@ class StepLogger extends EventEmitter {
         if (this.status === STATUS.RUNNING) {
             this.status = STATUS.TERMINATING;
             this._reportStatus();
-        }        else {
+        } else {
             this.emit('error',
                 new CFError(`markTerminating is only allowed to step in running state status , current status : ${this.status}`));
         }
