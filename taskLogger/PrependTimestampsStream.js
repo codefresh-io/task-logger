@@ -1,7 +1,6 @@
 const { Transform } = require('stream');
 // eslint-disable-next-line no-unused-vars
 const TaskLogger = require('./TaskLogger');
-const debug = require('debug')('codefresh:firebase:taskLogger');
 
 class Chunk {
     constructor(data) {
@@ -33,11 +32,9 @@ class PrependTimestampsStream extends Transform {
         const lines = curFullChunk.split('\n');
         const keepPart = lines.pop();
 
-        const linesWithTimestamps = lines.map((line, i) => {
+        const linesWithTimestamps = lines.map((line) => {
             let res = line;
-            // Do I really need the index check???
-            if ((i !== 0 || this.lastWasNewLine) && res.trim() !== '') {
-                debug(`line: ${line}`);
+            if (this.lastWasNewLine && res.trim() !== '') {
                 res = this._prependTimestamp(res);
             }
             return `${res}\n`;
@@ -45,7 +42,6 @@ class PrependTimestampsStream extends Transform {
         const sendPart = linesWithTimestamps.join('');
 
         if (sendPart) {
-            debug(`Sending: ${sendPart}`);
             this.push(sendPart);
             this.lastWasNewLine = true;
         }
@@ -58,7 +54,6 @@ class PrependTimestampsStream extends Transform {
         this.chunks.forEach((c) => { c.sent = true; });
         const chunk = this._getFullChunk();
         const toSend = this.lastWasNewLine && chunk.trim() !== '' ? this._prependTimestamp(chunk) : chunk;
-        debug(`flushing: ${toSend}`);
         callback(null, toSend);
     }
 
@@ -72,7 +67,6 @@ class PrependTimestampsStream extends Transform {
             // this chunk from the buffer (it is the first chunk, for sure).
             this.chunks.shift();
             chunk.sent = true;
-            debug(`chunkFlushTimeout has passed pushing: ${this.lastWasNewLine ? this._prependTimestamp(chunk.data) : chunk.data}`);
             this.push(this.lastWasNewLine && chunk.data.trim() !== '' ? this._prependTimestamp(chunk.data) : chunk.data);
             this.lastWasNewLine = false;
         }, this.chunkFlushTimeout);

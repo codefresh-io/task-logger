@@ -273,10 +273,12 @@ describe('Base TaskLogger tests', () => {
     });
 
     describe('prependTimestampsStream', () => {
-        it.only('should add timestamps to each new line', async () => {
+        it('should add timestamps to each new line', async () => {
             const prependTimestampsStream = new PrependTimestampsStream();
+
             const ts = new Date().toISOString();
             prependTimestampsStream._prependTimestamp = sinon.stub(logMessage => `${ts} ${logMessage}`);
+
             const containerOutput = [
                 { sent: 'Hello world\n', expected: `${ts} Hello world\n` },
                 { sent: 'test\nbla', expected: `${ts} test\n` },
@@ -316,10 +318,12 @@ describe('Base TaskLogger tests', () => {
             expect(receivedBuffer.toString('utf-8')).to.be.equal(expectedResult);
         });
 
-        it.only('should flush when timeout', async () => {
+        it('should flush when timeout, even if no new line was sent', async () => {
             const prependTimestampsStream = new PrependTimestampsStream({ chunkFlushTimeout: 50 });
+
             const ts = new Date().toISOString();
             prependTimestampsStream._prependTimestamp = sinon.stub(logMessage => `${ts} ${logMessage}`);
+
             const containerOutput = [
                 { sent: 'Hello1', delay: 0 },
                 { sent: 'Hello2', delay: 10 },
@@ -353,10 +357,10 @@ describe('Base TaskLogger tests', () => {
             });
 
             const deferred = Q.defer();
-
             finalOutputStream.on('finish', deferred.resolve.bind(deferred));
 
             containerOutputStream.pipe(prependTimestampsStream).pipe(finalOutputStream);
+
             await deferred.promise;
             expect(receivedBuffer.toString('utf-8')).to.be.equal(expectedResult);
         });
