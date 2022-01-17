@@ -22,19 +22,18 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         this.useLogsTimestamps = opts.useLogsTimestamps || false;
     }
 
-    // TODO once everyone is moving to new model for token per progress, this should also contain the build id and restrict only access to this specific job
-    _provisionToken(userId, isAdmin) {
+    static provisionToken(accountId, userId, firebaseSecret, sessionExpirationInSeconds, isAdmin) {
         try {
-            const tokenGenerator = new FirebaseTokenGenerator(this.firebaseSecret);
+            const tokenGenerator = new FirebaseTokenGenerator(firebaseSecret);
             const token = tokenGenerator.createToken(
                 {
                     uid: userId.toString(),
                     userId: userId.toString(),
-                    accountId: this.accountId,
+                    accountId,
                     admin: isAdmin
                 },
                 {
-                    expires: Math.floor((new Date()).getTime() / 1000) + _.get(this.opts, 'sessionExpirationInSeconds', 1680) // default is 1680 - one day
+                    expires: Math.floor((new Date()).getTime() / 1000) + (parseInt(sessionExpirationInSeconds, 10) || 1680) // default is 1680 - one day
                 });
             return token;
         } catch (err) {
@@ -46,6 +45,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     getConfiguration(userId, isAdmin, skipTokenCreation) {
+        const firebaseSecret = skipTokenCreation
+            ? this.firebaseSecret
+            : FirebaseTaskLogger.provisionToken(this.accountId, userId, this.firebaseSecret, this.opts.sessionExpirationInSeconds, isAdmin);
+
         return {
             task: {
                 accountId: this.accountId,
@@ -54,7 +57,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             opts: {
                 type: this.opts.type,
                 baseFirebaseUrl: this.opts.baseFirebaseUrl,
-                firebaseSecret: skipTokenCreation ? this.firebaseSecret : this._provisionToken(userId, isAdmin),
+                firebaseSecret,
                 ...(this.opts.logsRateLimitConfig && { logsRateLimitConfig: this.opts.logsRateLimitConfig }),
                 ...(this.opts.healthCheckConfig && { healthCheckConfig: this.opts.healthCheckConfig }),
                 ...(this.opts.blacklist && { blacklist: this.opts.blacklist }),
