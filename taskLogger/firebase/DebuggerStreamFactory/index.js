@@ -1,10 +1,10 @@
 // jshint ignore:start
 const CFError = require('cf-errors');
-const CommandsStream = require('./CommandsStream.js');
-const FilterLimitedStream = require('./FilterLimitedStream.js');
-const TransformCutResizeStream = require('./TransformCutResizeStream.js');
-const TransformOutputStream = require('./TransformOutputStream.js');
-const OutputStream = require('./OutputStream.js');
+const CommandsStream = require('./CommandsStream');
+const FilterLimitedStream = require('./FilterLimitedStream');
+const TransformCutResizeStream = require('./TransformCutResizeStream');
+const TransformOutputStream = require('./TransformOutputStream');
+const OutputStream = require('./OutputStream');
 
 class DebuggerStreamFactory {
     constructor(options = {}) {
