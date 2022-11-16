@@ -128,6 +128,14 @@ class RedisTaskLogger extends TaskLogger {
         this.writter.child('metrics.limits.memory').push({ 'value': this.memoryLimit });
     }
 
+    _reportDiskState(time, diskState, syncId) {
+        this.writter.child('metrics').child('disk').push({ time, ...diskState }, syncId);
+    }
+
+    _reportDiskSpaceUsageLimit() {
+        this.writter.child('metrics.limits.diskSpaceUsage').push({ 'value': this.diskSpaceUsageLimit });
+    }
+
     async _reportVisibility() {
         return this.writter.child('visibility').set(this.visibility);
     }

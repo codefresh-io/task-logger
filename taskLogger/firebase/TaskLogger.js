@@ -326,6 +326,14 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         this.baseRef.child('metrics').child('limits').child('memory').push(this.memoryLimit);
     }
 
+    _reportDiskState(time, diskState) {
+        this.baseRef.child('metrics').child('disk').push({ time, ...diskState });
+    }
+
+    _reportDiskSpaceUsageLimit() {
+        this.baseRef.child('metrics').child('limits').child('diskSpaceUsage').push(this.diskSpaceUsageLimit);
+    }
+
     _reportLogSize() {
         this.baseRef.child('metrics').child('logs').child('total').set(this.logSize);
     }
