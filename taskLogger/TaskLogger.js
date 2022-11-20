@@ -204,6 +204,15 @@ class TaskLogger extends EventEmitter {
         this._reportMemoryLimit();
     }
 
+    updateDiskState(time, diskState) {
+        this._reportDiskState(time, diskState);
+    }
+
+    setDiskSpaceUsageLimit(diskSpaceUsageLimit) {
+        this.diskSpaceUsageLimit = diskSpaceUsageLimit;
+        this._reportDiskSpaceUsageLimit();
+    }
+
     setLogSize(size) {
         this.logSize = size;
         this._reportLogSize();

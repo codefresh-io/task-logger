@@ -98,6 +98,20 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
             });
     }
 
+    _reportDiskState(time, diskState) {
+        this.restClient.push(`${this.baseRef.ref().toString()}/metrics/disk`, { time, ...diskState })
+            .catch((err) => {
+                this.emit('error', err);
+            });
+    }
+
+    _reportDiskSpaceUsageLimit() {
+        this.restClient.set(`${this.baseRef.ref().toString()}/metrics/limits/diskSpaceUsage`, this.diskSpaceUsageLimit)
+            .catch((err) => {
+                this.emit('error', err);
+            });
+    }
+
     _reportLogSize() {
         this.restClient.set(`${this.baseRef.ref().toString()}/metrics/logs/total`, this.logSize)
             .catch((err) => {

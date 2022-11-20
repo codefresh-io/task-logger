@@ -61,6 +61,18 @@ class CompositionTaskLogger extends TaskLogger {
 
     }
 
+    _reportDiskState(time, diskState) {
+        const syncId = Date.now();
+        this.loggers.forEach(logger => logger._reportDiskState(time, diskState, syncId));
+    }
+
+    _reportDiskSpaceUsageLimit() {
+        this.loggers.forEach((logger) =>  {
+            logger.diskSpaceUsageLimit = this.diskSpaceUsageLimit;
+            logger._reportDiskSpaceUsageLimit();
+        });
+    }
+
     async _reportVisibility() {
         return _.map(this.loggers, (logger) => {
             logger.visibility = this.visibility;

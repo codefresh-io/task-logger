@@ -64,6 +64,8 @@ const getTaskLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId' }
     taskLogger.fatalError = sinon.spy(taskLogger.fatalError);
     taskLogger.updateMemoryUsage = sinon.spy(taskLogger.updateMemoryUsage);
     taskLogger.setMemoryLimit = sinon.spy(taskLogger.setMemoryLimit);
+    taskLogger.updateDiskState = sinon.spy(taskLogger.updateDiskState);
+    taskLogger.setDiskSpaceUsageLimit = sinon.spy(taskLogger.setDiskSpaceUsageLimit);
     taskLogger.setLogSize = sinon.spy(taskLogger.setLogSize);
     taskLogger.setVisibility = sinon.spy(taskLogger.setVisibility);
     taskLogger.setData = sinon.spy(taskLogger.setData);
@@ -72,6 +74,8 @@ const getTaskLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId' }
     taskLogger.newStepAdded = sinon.spy();
     taskLogger._reportMemoryUsage = sinon.spy();
     taskLogger._reportMemoryLimit = sinon.spy();
+    taskLogger._reportDiskState = sinon.spy();
+    taskLogger._reportDiskSpaceUsageLimit = sinon.spy();
     taskLogger._reportLogSize = sinon.spy();
     taskLogger._reportVisibility = sinon.spy();
     taskLogger._reportData = sinon.spy();

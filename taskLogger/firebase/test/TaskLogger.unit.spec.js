@@ -403,6 +403,31 @@ _.forEach(interfaces, (int) => {
                 }
             });
 
+            it('should report disk state', async () => {
+                const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                const taskLogger = await getTaskLoggerInstance(undefined, opts);
+                const time = new Date();
+                const diskState = { used: 100, available: 100 };
+                taskLogger._reportDiskState(time, diskState);
+                if (opts.restInterface) {
+                    expect(taskLogger.restClient.push).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/metrics/disk`, { time, ...diskState });
+                } else {
+                    expect(Firebase.prototype.push).to.have.been.calledWith({ time, ...diskState });
+                }
+            });
+
+            it('should report disk space usage limit', async () => {
+                const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
+                const taskLogger = await getTaskLoggerInstance(undefined, opts);
+                taskLogger.diskSpaceUsageLimit = 'limit';
+                taskLogger._reportDiskSpaceUsageLimit();
+                if (opts.restInterface) {
+                    expect(taskLogger.restClient.set).to.have.been.calledWith(`${taskLogger.baseRef.ref()}/metrics/limits/diskSpaceUsage`, taskLogger.diskSpaceUsageLimit);
+                } else {
+                    expect(Firebase.prototype.push).to.have.been.calledWith(taskLogger.diskSpaceUsageLimit);
+                }
+            });
+
             it('should report log size', async () => {
                 const opts = _.merge({}, { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }, int.opts);
                 const taskLogger = await getTaskLoggerInstance(undefined, opts);

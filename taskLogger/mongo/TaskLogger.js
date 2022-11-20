@@ -170,6 +170,27 @@ class MongoTaskLogger extends TaskLogger {
 
     }
 
+    _reportDiskState(time, diskState) {
+        const key = 'metrics.disk';
+        const filter = this.getFilter();
+        this.db.collection(this.getCollection(key)).insertOne(
+            Object.assign({ 'slot': 'metrics.diskSpace', 'payload': { time, ...diskState } }, filter), { upsert: true }, (err) => {
+                if (err) {
+                    this.emitter.emit('ERROR', err);
+                }
+            });
+    }
+
+    _reportDiskSpaceUsageLimit() {
+        const key = 'metrics.limits.diskSpaceUsage';
+        this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
+            { $set: { 'metrics.limits.diskSpaceUsage': { 'value': this.diskSpaceUsageLimit } } }, { upsert: true }, (err) => {
+                if (err) {
+                    this.emitter.emit('ERROR', err);
+                }
+            });
+    }
+
     async _reportVisibility() {
         const key = 'visibility';
         return this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),

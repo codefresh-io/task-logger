@@ -70,6 +70,8 @@ const getTaskLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId' }
     taskLogger.fatalError = sinon.spy(taskLogger.fatalError);
     taskLogger.updateMemoryUsage = sinon.spy(taskLogger.updateMemoryUsage);
     taskLogger.setMemoryLimit = sinon.spy(taskLogger.setMemoryLimit);
+    taskLogger.updateDiskState = sinon.spy(taskLogger.updateDiskState);
+    taskLogger.setDiskSpaceUsageLimit = sinon.spy(taskLogger.setDiskSpaceUsageLimit);
     taskLogger.setLogSize = sinon.spy(taskLogger.setLogSize);
     taskLogger.setVisibility = sinon.spy(taskLogger.setVisibility);
     taskLogger.setData = sinon.spy(taskLogger.setData);
@@ -78,6 +80,8 @@ const getTaskLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId' }
     taskLogger.newStepAdded = sinon.spy();
     taskLogger._reportMemoryUsage = sinon.spy();
     taskLogger._reportMemoryLimit = sinon.spy();
+    taskLogger._reportDiskState = sinon.spy();
+    taskLogger._reportDiskSpaceUsageLimit = sinon.spy();
     taskLogger._reportLogSize = sinon.spy();
     taskLogger._reportVisibility = sinon.spy();
     taskLogger._reportData = sinon.spy();
@@ -800,6 +804,30 @@ describe('Base TaskLogger tests', () => {
             taskLogger.setMemoryLimit(memoryLimit);
             expect(taskLogger.memoryLimit).to.equal(memoryLimit);
             expect(taskLogger._reportMemoryLimit).to.have.been.calledWith();
+        });
+
+    });
+
+    describe('updateDiskState', () => {
+
+        it('should report disk state', () => {
+            const taskLogger = getTaskLoggerInstance();
+            const time = new Date();
+            const diskState = { used: 100, available: 100 };
+            taskLogger.updateDiskState(time, diskState);
+            expect(taskLogger._reportDiskState).to.have.been.calledWith(time, diskState);
+        });
+
+    });
+
+    describe('setDiskSpaceUsageLimit', () => {
+
+        it('should set disk space usage limit', () => {
+            const taskLogger = getTaskLoggerInstance();
+            const diskSpaceUsageLimit = 'limit';
+            taskLogger.setDiskSpaceUsageLimit(diskSpaceUsageLimit);
+            expect(taskLogger.diskSpaceUsageLimit).to.equal(diskSpaceUsageLimit);
+            expect(taskLogger._reportDiskSpaceUsageLimit).to.have.been.calledWith();
         });
 
     });
