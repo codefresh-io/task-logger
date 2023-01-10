@@ -230,6 +230,16 @@ class MongoTaskLogger extends TaskLogger {
             });
     }
 
+    _reportLogProcess() {
+        const key = 'process';
+        this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
+            { $set: { 'process': this.processLog } }, { upsert: true }, (err) => {
+                if (err) {
+                    this.emitter.emit('ERROR', err);
+                }
+            });
+    }
+
     async _getStepsName() {
         const key = 'name';
         return new Promise((resolve, reject) => {

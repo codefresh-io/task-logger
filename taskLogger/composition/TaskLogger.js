@@ -114,6 +114,13 @@ class CompositionTaskLogger extends TaskLogger {
             logger._reportLogSize();
         });
     }
+
+    _reportLogProcess() {
+        this.loggers.forEach((logger) => {
+            logger.processLog = this.processLog;
+            logger._reportLogProcess();
+        });
+    }
 }
 CompositionTaskLogger.TYPE = TYPES.COMPOSE;
 module.exports = CompositionTaskLogger;

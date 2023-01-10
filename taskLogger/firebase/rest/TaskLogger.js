@@ -119,6 +119,13 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
             });
     }
 
+    _reportLogProcess() {
+        this.restClient.set(`${this.baseRef.ref().toString()}/process`, this.logProcess)
+            .catch((err) => {
+                this.emit('error', err);
+            });
+    }
+
     async _reportVisibility() {
         return this.restClient.set(`${this.baseRef.ref().toString()}/visibility`, this.visibility, { inOrder: false });
     }
