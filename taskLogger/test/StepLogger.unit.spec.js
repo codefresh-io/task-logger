@@ -471,7 +471,7 @@ describe('Base StepLogger tests', () => {
             const logMsg = 'Second log';
             stepLogger.setStepProgress(logMsg);
             expect(stepLogger._reportStepProgress).to.have.been.calledWith();
-            expect(stepLogger.outputUrl).to.equal(logMsg);
+            expect(stepLogger.stepProgress).to.equal(logMsg);
 
         });
 
