@@ -262,6 +262,11 @@ class StepLogger extends EventEmitter {
         this.status = status;
         return this._reportStatus();
     }
+
+    setLogProcess(log) {
+        this.processLog = log;
+        this._reportLogProcess();
+    }
 }
 
 module.exports = StepLogger;

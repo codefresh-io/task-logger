@@ -111,6 +111,10 @@ class CompositionStepLogger extends BaseStepLogger {
 
     }
 
+    _reportLogProcess() {
+        this.stepRef.child('process').set(this.processLog);
+    }
+
     reportName() {
         this.loggers.forEach(logger => logger.reportName());
 

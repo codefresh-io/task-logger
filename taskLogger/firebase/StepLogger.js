@@ -107,6 +107,10 @@ class FirebaseStepLogger extends BaseStepLogger {
         this.stepRef.child('metrics').child('logs').child('total').set(this.logSize);
     }
 
+    _reportLogProcess() {
+        this.stepRef.child('process').set(this.processLog);
+    }
+
     reportName() {
         this.stepRef.child('name').set(this.name);
     }
