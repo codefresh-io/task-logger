@@ -338,10 +338,6 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         this.baseRef.child('metrics').child('logs').child('total').set(this.logSize);
     }
 
-    _reportLogProcess() {
-        this.baseRef.child('process').set(this.processLog);
-    }
-
     async _reportVisibility() {
         return this.baseRef.child('visibility').set(this.visibility);
     }

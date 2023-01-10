@@ -35,6 +35,7 @@ const getStepLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId', 
     stepLogger._reportMemoryUsage = sinon.spy();
     stepLogger._reportCpuUsage = sinon.spy();
     stepLogger._reportLogSize = sinon.spy();
+    stepLogger._reportLogProcess = sinon.spy();
 
     stepLogger.setStatus(STATUS.PENDING);
     stepLogger.setStatus.resetHistory();
