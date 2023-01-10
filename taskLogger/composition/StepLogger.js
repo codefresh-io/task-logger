@@ -111,10 +111,10 @@ class CompositionStepLogger extends BaseStepLogger {
 
     }
 
-    _reportLogProcess() {
+    _reportStepProgress() {
         this.loggers.forEach((logger) => {
-            logger.processLog = this.processLog;
-            logger._reportLogProcess();
+            logger.stepProgress = this.stepProgress;
+            logger._reportStepProgress();
         });
     }
 
