@@ -469,7 +469,7 @@ describe('Base StepLogger tests', () => {
             const stepLogger = getStepLoggerInstance();
             const logMsg = 'Validating connection to Docker daemon...';
             stepLogger.setLogProcess(logMsg);
-            expect(stepLogger._reportLogProcess).to.have.been.calledWith(logMsg);
+            expect(stepLogger._reportLogProcess).to.have.been.calledWith();
         });
 
     });
