@@ -179,7 +179,7 @@ class MongoStepLogger extends BaseStepLogger {
     }
 
     _reportStepProgress() {
-        const key = `steps.${this.name}.process`;
+        const key = `steps.${this.name}.progress`;
         this.db.collection(MongoHelper.getCollection(key)).updateOne(this.getFilter(),
         { $set: { [key]: this.stepProgress } }, { upsert: true }, (err) => {
             if (err) {

@@ -72,7 +72,7 @@ class RedisStepLogger extends BaseStepLogger {
     }
 
     _reportStepProgress() {
-        this.writter.child('process').set(this.stepProgress);
+        this.writter.child('progress').set(this.stepProgress);
     }
 
     reportName() {

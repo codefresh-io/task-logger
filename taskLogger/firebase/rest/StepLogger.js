@@ -117,7 +117,7 @@ class FirebaseRestStepLogger extends FirebaseStepLogger {
     }
 
     _reportStepProgress() {
-        this.restClient.set(`${this.stepRef.ref().toString()}/process`, this.logProcess)
+        this.restClient.set(`${this.stepRef.ref().toString()}/progress`, this.stepProgress)
             .catch((err) => {
                 this.emit('error', err);
             });

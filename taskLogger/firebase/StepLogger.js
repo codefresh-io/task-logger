@@ -108,7 +108,7 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     _reportStepProgress() {
-        this.stepRef.child('process').set(this.stepProgress);
+        this.stepRef.child('progress').set(this.stepProgress);
     }
 
     reportName() {
