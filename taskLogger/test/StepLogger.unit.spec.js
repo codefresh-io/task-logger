@@ -35,6 +35,7 @@ const getStepLoggerInstance = (task = { accountId: 'accountId', jobId: 'jobId', 
     stepLogger._reportMemoryUsage = sinon.spy();
     stepLogger._reportCpuUsage = sinon.spy();
     stepLogger._reportLogSize = sinon.spy();
+    stepLogger._reportStepProgress = sinon.spy();
 
     stepLogger.setStatus(STATUS.PENDING);
     stepLogger.setStatus.resetHistory();
@@ -458,6 +459,20 @@ describe('Base StepLogger tests', () => {
             stepLogger.updateOutputUrl(url);
             expect(stepLogger._reportOutputUrl).to.have.been.calledWith();
             expect(stepLogger.outputUrl).to.equal(url);
+        });
+
+    });
+
+    describe('setStepProgress', () => {
+
+        it('should set log process', () => {
+            const stepLogger = getStepLoggerInstance();
+            stepLogger.stepProgress = 'First log';
+            const logMsg = 'Second log';
+            stepLogger.setStepProgress(logMsg);
+            expect(stepLogger._reportStepProgress).to.have.been.calledWith();
+            expect(stepLogger.stepProgress).to.equal(logMsg);
+
         });
 
     });

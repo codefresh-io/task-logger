@@ -114,6 +114,7 @@ class CompositionTaskLogger extends TaskLogger {
             logger._reportLogSize();
         });
     }
+
 }
 CompositionTaskLogger.TYPE = TYPES.COMPOSE;
 module.exports = CompositionTaskLogger;
