@@ -11,6 +11,7 @@ class StepLogger extends EventEmitter {
         super();
         this.taskLogger = taskLogger;
         this.opts = opts;
+        this.logSize = 0;
 
         if (!accountId && !opts.skipAccountValidation) {
             throw new CFError('failed to create stepLogger because accountId must be provided');
