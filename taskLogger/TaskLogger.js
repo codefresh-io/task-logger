@@ -59,7 +59,7 @@ class TaskLogger extends EventEmitter {
         if (!step) {
             step = this.createStepLogger(name, this.opts);
             step.on('writeCalls', this._handleWriteCallsEvent.bind(this));
-            step.on('flush', this._handleFlushEvent.bind(this));
+            step.on('flush', this._handleFlushEvent.bind(this, step));
             step.on('error', (err) => {
                 this.emit('error', err);
             });
@@ -215,7 +215,6 @@ class TaskLogger extends EventEmitter {
 
     setLogSize(size) {
         this.logSize = size;
-        this._reportLogSize();
     }
 
     async setVisibility(visibility) {
@@ -282,12 +281,16 @@ class TaskLogger extends EventEmitter {
         this.logsStatus.writeCalls += 1;
     }
 
-    _handleFlushEvent(err) {
+    _handleFlushEvent(err, step) {
         if (err) {
             this.logsStatus.rejectedCalls += 1;
         } else {
             this.logsStatus.resolvedCalls += 1;
         }
+        if (step) {
+            step._reportLogSize();
+        }
+        this._reportLogSize();
         this.emit('flush', err);
     }
 

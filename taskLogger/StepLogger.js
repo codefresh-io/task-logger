@@ -245,7 +245,6 @@ class StepLogger extends EventEmitter {
 
     setLogSize(size) {
         this.logSize = size;
-        this._reportLogSize();
     }
 
     markTerminating() {
