@@ -59,7 +59,7 @@ class TaskLogger extends EventEmitter {
         if (!step) {
             step = this.createStepLogger(name, this.opts);
             step.on('writeCalls', this._handleWriteCallsEvent.bind(this));
-            step.on('flush', this._handleFlushEvent.bind(this, step));
+            step.on('flush', this._handleStepFlushEvent.bind(this, step));
             step.on('error', (err) => {
                 this.emit('error', err);
             });
@@ -281,7 +281,7 @@ class TaskLogger extends EventEmitter {
         this.logsStatus.writeCalls += 1;
     }
 
-    _handleFlushEvent(err, step) {
+    _handleStepFlushEvent(err, step) {
         if (err) {
             this.logsStatus.rejectedCalls += 1;
         } else {
@@ -291,6 +291,23 @@ class TaskLogger extends EventEmitter {
             step._reportLogSize();
         }
         this._reportLogSize();
+        this.emit('flush', err);
+    }
+
+    _handleStreamFlushEvent(err, batchSize) {
+        // for logs status
+        this._updateCurrentLogSize(batchSize);
+        if (err) {
+            this.logsStatus.rejectedCalls += 1;
+        } else {
+            this.logsStatus.resolvedCalls += 1;
+        }
+
+        // update each step log size and last update
+        _.forEach(this.steps, step => step._reportLogSize());
+        this._reportLogSize();
+        this._reportLastUpdate(new Date().getTime());
+
         this.emit('flush', err);
     }
 

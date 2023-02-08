@@ -94,18 +94,19 @@ class StepLogger extends EventEmitter {
     write(message) {
         message = this.taskLogger._maskBlacklistWords(message);
         const writePromise = this._reportLog(message);
-        this.updateLastUpdate();
         this.emit('writeCalls');
         if (writePromise) {
             return writePromise
                 .then(() => {
                     this.taskLogger._updateCurrentLogSize(Buffer.byteLength(message));
+                    this.updateLastUpdate();
                     this.emit('flush');
                 })
                 .catch((err) => {
                     this.emit('flush', err);
                 });
         } else {
+            this.updateLastUpdate();
             this.emit('flush');
         }
 
@@ -113,7 +114,7 @@ class StepLogger extends EventEmitter {
     }
 
     writeStream() {
-        return this.streamLog().on('write', this.updateLastUpdate.bind(this));
+        return this.streamLog();
     }
 
     debug(message) {
@@ -176,6 +177,7 @@ class StepLogger extends EventEmitter {
         this.lastUpdate = new Date().getTime();
         this.emit('lastUpdateChanged', this.lastUpdate);
     }
+
     onLastUpdateChanged(handler) {
         this.addListener('lastUpdateChanged', () => {
             handler(this.lastUpdate);
