@@ -124,8 +124,7 @@ class FirebaseStepLogger extends BaseStepLogger {
     }
 
     stepNameTransformStream() {
-        return new StepNameTransformStream(this.name)
-            .on('writeCalls', this.taskLogger._handleWriteCallsEvent.bind(this.taskLogger));
+        return new StepNameTransformStream(this.name);
     }
 
     async delete() {
