@@ -44,7 +44,7 @@ class StepLogger extends EventEmitter {
             this.status = STATUS.RUNNING;
             this._reportStatus();
             this.setFinishTimestamp('');
-            this.setCreationTimestamp(+(new Date().getTime() / 1000).toFixed());
+            this.setCreationTimestamp(+(Date.now() / 1000).toFixed());
 
             if (eventReporting) {
                 const event = { action: 'new-progress-step', name: this.name };
@@ -175,7 +175,7 @@ class StepLogger extends EventEmitter {
     }
 
     updateLastUpdate() {
-        this.lastUpdate = new Date().getTime();
+        this.lastUpdate = Date.now();
         this.emit('lastUpdateChanged', this.lastUpdate);
     }
 

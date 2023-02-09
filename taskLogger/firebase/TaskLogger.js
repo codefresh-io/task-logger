@@ -33,7 +33,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                     admin: isAdmin
                 },
                 {
-                    expires: Math.floor((new Date()).getTime() / 1000) + (parseInt(sessionExpirationInSeconds, 10) || 1680) // default is 1680 - one day
+                    expires: Math.floor(Date.now() / 1000) + (parseInt(sessionExpirationInSeconds, 10) || 1680) // default is 1680 - one day
                 });
             return token;
         } catch (err) {

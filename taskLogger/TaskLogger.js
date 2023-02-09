@@ -282,11 +282,7 @@ class TaskLogger extends EventEmitter {
     }
 
     _handleStepFlushEvent(err, step) {
-        if (err) {
-            this.logsStatus.rejectedCalls += 1;
-        } else {
-            this.logsStatus.resolvedCalls += 1;
-        }
+        this._updateLogsStatusCalls(err);
         if (step) {
             step._reportLogSize();
         }
@@ -297,18 +293,22 @@ class TaskLogger extends EventEmitter {
     _handleStreamFlushEvent(err, batchSize) {
         // for logs status
         this._updateCurrentLogSize(batchSize);
+        this._updateLogsStatusCalls(err);
+
+        // update each step log size and last update
+        _.forEach(this.steps, step => step._reportLogSize());
+        this._reportLogSize();
+        this._reportLastUpdate(Date.now());
+
+        this.emit('flush', err);
+    }
+
+    _updateLogsStatusCalls(err) {
         if (err) {
             this.logsStatus.rejectedCalls += 1;
         } else {
             this.logsStatus.resolvedCalls += 1;
         }
-
-        // update each step log size and last update
-        _.forEach(this.steps, step => step._reportLogSize());
-        this._reportLogSize();
-        this._reportLastUpdate(new Date().getTime());
-
-        this.emit('flush', err);
     }
 
     _updateCurrentLogSize(size) {
