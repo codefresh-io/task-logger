@@ -17,7 +17,7 @@ class FirebaseWritableStream extends Writable {
         this._batchSize = options.batchSize;
 
         this._logsBatch = Object.create(null);
-        this._currentLogByteSize = 0;
+        this._currentLogByteSizeInTimeUnit = 0;
         this._currentBatchSize = 0;
         this._debounceTimeout = null;
     }
@@ -40,13 +40,13 @@ class FirebaseWritableStream extends Writable {
         // time unit (minute) has passed, reset current byte size
         if (msDelta > this._timeUnitLimitMs) {
             debug(`[${Date.now()}] FirebaseWritableStream._write: ${this._timeUnitLimitMs} has passed resetting current log byte size to 0`);
-            this._currentLogByteSize = 0;
+            this._currentLogByteSizeInTimeUnit = 0;
             this._previousTimestamp = now;
         }
 
         // current logs size during timeUnit exceeds limit (1MB/Second)
-        if (currentMessageSize + this._currentLogByteSize > this._messageSizeLimitPerTimeUnit) {
-            debug(`[${Date.now()}] FirebaseWritableStream._write: current log size + message [${currentMessageSize + this._currentLogByteSize}
+        if (currentMessageSize + this._currentLogByteSizeInTimeUnit > this._messageSizeLimitPerTimeUnit) {
+            debug(`[${Date.now()}] FirebaseWritableStream._write: current log size + message [${currentMessageSize + this._currentLogByteSizeInTimeUnit}
              / ${this._messageSizeLimitPerTimeUnit}] exceeded, flushing...`);
 
             this.emit('writeCalls');
@@ -70,11 +70,11 @@ class FirebaseWritableStream extends Writable {
             return;
         }
 
-        this._currentLogByteSize += currentMessageSize;
+        this._currentLogByteSizeInTimeUnit += currentMessageSize;
         this._currentBatchSize += currentMessageSize;
         this._logsBatch[`${newLogKey}`] = message.toString();
         debug(`[${Date.now()}] FirebaseWritableStream._write: updated logs batch with new key
-                 '${newLogKey}', current logs byte size ${this._currentLogByteSize / 1024} KB`);
+                 '${newLogKey}', current logs byte size ${this._currentLogByteSizeInTimeUnit / 1024} KB`);
 
         const hasMoreTime = msDelta < this._flushTimeLimitMs;
         if (hasMoreTime && _.size(this._logsBatch) < this._batchSize) {

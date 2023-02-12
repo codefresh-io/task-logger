@@ -281,7 +281,7 @@ class TaskLogger extends EventEmitter {
         this.logsStatus.writeCalls += 1;
     }
 
-    _handleStepFlushEvent(err, step) {
+    _handleStepFlushEvent(step, err) {
         this._updateLogsStatusCalls(err);
         if (step) {
             step._reportLogSize();

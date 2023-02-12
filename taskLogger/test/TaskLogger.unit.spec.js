@@ -49,6 +49,7 @@ const createMockedStepClass = () => {
             setFinishTimestamp: sinon.spy(),
             setCreationTimestamp: sinon.spy(),
             onLastUpdateChanged: sinon.spy(),
+            _reportLogSize: sinon.spy(),
         };
     });
     return StepClass;
@@ -215,14 +216,18 @@ describe('Base TaskLogger tests', () => {
             expect(taskLogger.logsStatus.avgKbps).to.be.equals(0.0);
         });
         it('flush calls from step loggers should be counted when resolved', () => {
-
             const taskLogger = getTaskLoggerInstance();
             const stepLogger = taskLogger.create('new-step');
             stepLogger.emit('flush');
             expect(taskLogger.logsStatus.writeCalls).to.be.equals(0);
             expect(taskLogger.logsStatus.resolvedCalls).to.be.equals(1);
             expect(taskLogger.logsStatus.rejectedCalls).to.be.equals(0);
-
+        });
+        it('should report step log size when on flush event', () => {
+            const taskLogger = getTaskLoggerInstance();
+            const stepLogger = taskLogger.create('new-step');
+            stepLogger.emit('flush');
+            expect(stepLogger._reportLogSize).to.have.been.calledOnce;
         });
         it('rejected flush calls from step loggers should be counted as rejceted', () => {
 
@@ -834,10 +839,12 @@ describe('Base TaskLogger tests', () => {
 
     describe('setLogSize', () => {
 
-        it('should set log size', () => {
+        it('should set log size on step flush event', () => {
             const taskLogger = getTaskLoggerInstance();
+            const stepLogger = taskLogger.create();
             const logSize = 'size';
             taskLogger.setLogSize(logSize);
+            stepLogger.emit('flush');
             expect(taskLogger.logSize).to.equal(logSize);
             expect(taskLogger._reportLogSize).to.have.been.calledWith();
         });
