@@ -11,6 +11,7 @@ class StepLogger extends EventEmitter {
         super();
         this.taskLogger = taskLogger;
         this.opts = opts;
+        this.logSize = 0;
 
         if (!accountId && !opts.skipAccountValidation) {
             throw new CFError('failed to create stepLogger because accountId must be provided');
@@ -43,7 +44,7 @@ class StepLogger extends EventEmitter {
             this.status = STATUS.RUNNING;
             this._reportStatus();
             this.setFinishTimestamp('');
-            this.setCreationTimestamp(+(new Date().getTime() / 1000).toFixed());
+            this.setCreationTimestamp(+(Date.now() / 1000).toFixed());
 
             if (eventReporting) {
                 const event = { action: 'new-progress-step', name: this.name };
@@ -94,18 +95,19 @@ class StepLogger extends EventEmitter {
     write(message) {
         message = this.taskLogger._maskBlacklistWords(message);
         const writePromise = this._reportLog(message);
-        this.updateLastUpdate();
         this.emit('writeCalls');
         if (writePromise) {
             return writePromise
                 .then(() => {
                     this.taskLogger._updateCurrentLogSize(Buffer.byteLength(message));
+                    this.updateLastUpdate();
                     this.emit('flush');
                 })
                 .catch((err) => {
                     this.emit('flush', err);
                 });
         } else {
+            this.updateLastUpdate();
             this.emit('flush');
         }
 
@@ -113,7 +115,7 @@ class StepLogger extends EventEmitter {
     }
 
     writeStream() {
-        return this.streamLog().on('write', this.updateLastUpdate.bind(this));
+        return this.streamLog();
     }
 
     debug(message) {
@@ -173,9 +175,10 @@ class StepLogger extends EventEmitter {
     }
 
     updateLastUpdate() {
-        this.lastUpdate = new Date().getTime();
+        this.lastUpdate = Date.now();
         this.emit('lastUpdateChanged', this.lastUpdate);
     }
+
     onLastUpdateChanged(handler) {
         this.addListener('lastUpdateChanged', () => {
             handler(this.lastUpdate);
@@ -245,7 +248,6 @@ class StepLogger extends EventEmitter {
 
     setLogSize(size) {
         this.logSize = size;
-        this._reportLogSize();
     }
 
     markTerminating() {

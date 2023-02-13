@@ -12,7 +12,6 @@ class StepNameTransformStream extends Transform {
         stepNameSizeHeader.writeUInt8(stepNameLengthHex, 0);
 
         const data = Buffer.concat([stepNameSizeHeader, Buffer.from(this.stepName), chunk]);
-        this.emit('writeCalls');
         done(null, data);
     }
 }

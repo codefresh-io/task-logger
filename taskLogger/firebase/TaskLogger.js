@@ -33,7 +33,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                     admin: isAdmin
                 },
                 {
-                    expires: Math.floor((new Date()).getTime() / 1000) + (parseInt(sessionExpirationInSeconds, 10) || 1680) // default is 1680 - one day
+                    expires: Math.floor(Date.now() / 1000) + (parseInt(sessionExpirationInSeconds, 10) || 1680) // default is 1680 - one day
                 });
             return token;
         } catch (err) {
@@ -101,15 +101,9 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         if (logsRateLimitConfig) {
             const fbStream = new FirebaseWritableStream(stepRef, logsRateLimitConfig);
             // override default taskLogger behavior because fbStream can flush n writeCalls at once
-            fbStream.on('flush', (err, nFlushed, batchSize) => {
-                taskLogger._updateCurrentLogSize(batchSize);
-                if (err) {
-                    taskLogger.logsStatus.rejectedCalls += nFlushed;
-                } else {
-                    taskLogger.logsStatus.resolvedCalls += nFlushed;
-                }
-                taskLogger.emit('flush', err, nFlushed, batchSize);
-            });
+            fbStream.on('flush', taskLogger._handleStreamFlushEvent.bind(taskLogger));
+            fbStream.on('writeCalls', taskLogger._handleWriteCallsEvent.bind(taskLogger));
+
             taskLogger.opts.firebaseWritableStream = fbStream;
         }
 

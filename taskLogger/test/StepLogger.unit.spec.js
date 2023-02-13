@@ -1,10 +1,10 @@
 const proxyquire = require('proxyquire').noCallThru();
-const chai       = require('chai');
+const chai = require('chai');
 const _ = require('lodash');
 
-const expect     = chai.expect;
-const sinon      = require('sinon');
-const sinonChai  = require('sinon-chai');
+const expect = chai.expect;
+const sinon = require('sinon');
+const sinonChai = require('sinon-chai');
 
 chai.use(sinonChai);
 const { STATUS } = require('../enums');
@@ -424,7 +424,7 @@ describe('Base StepLogger tests', () => {
             const stepLogger = getStepLoggerInstance();
             const logSize = 'size';
             stepLogger.setLogSize(logSize);
-            expect(stepLogger._reportLogSize).to.have.been.calledWith();
+            expect(stepLogger.logSize).to.be.equal('size');
         });
 
     });
