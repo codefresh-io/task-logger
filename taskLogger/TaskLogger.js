@@ -35,6 +35,7 @@ class TaskLogger extends EventEmitter {
         this.finished = false;
         this.steps = {};
         this._curLogSize = 0;
+        this.logSize = 0;
 
         this.logsStatus = {
             writeCalls: 0,
