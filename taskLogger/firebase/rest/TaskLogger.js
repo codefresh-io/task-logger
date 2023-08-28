@@ -84,7 +84,7 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
     }
 
     _reportMemoryUsage(time, memoryUsage) {
-        this.restClient.push(`${this.baseRef.ref().toString()}/metrics/memory`, { time, usage: memoryUsage })
+        return this.restClient.push(`${this.baseRef.ref().toString()}/metrics/memory`, { time, usage: memoryUsage })
             .catch((err) => {
                 this.emit('error', err);
             });
@@ -92,7 +92,7 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
 
     // TODO in original we are using push not set
     _reportMemoryLimit() {
-        this.restClient.set(`${this.baseRef.ref().toString()}/metrics/limits/memory`, this.memoryLimit)
+        return this.restClient.set(`${this.baseRef.ref().toString()}/metrics/limits/memory`, this.memoryLimit)
             .catch((err) => {
                 this.emit('error', err);
             });

@@ -197,12 +197,12 @@ class TaskLogger extends EventEmitter {
     }
 
     updateMemoryUsage(time, memoryUsage) {
-        this._reportMemoryUsage(time, memoryUsage);
+        return this._reportMemoryUsage(time, memoryUsage);
     }
 
     setMemoryLimit(memoryLimit) {
         this.memoryLimit = memoryLimit.replace('Mi', '');
-        this._reportMemoryLimit();
+        return this._reportMemoryLimit();
     }
 
     updateDiskState(time, diskState) {

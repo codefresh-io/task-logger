@@ -61,34 +61,12 @@ class Client extends EventEmitter {
         return finalOptions;
     }
 
-    _sendRequest(httpOpts, opts = { inOrder: true }) {
-        const deferred = Q.defer();
-
-        const func = async () => {
-            const finalOpts = this._getRequestOptions(httpOpts);
-            debug(`going to perform: ${JSON.stringify(finalOpts)}`);
-            return request(finalOpts)
-                .catch(this._catchHandler.bind(this))
-                .then(this._createResponseHandler(finalOpts))
-                .then(deferred.resolve.bind(deferred), deferred.reject.bind(deferred));
-        };
-
-        if (opts.inOrder) {
-            this.queue.push(func);
-            setTimeout(() => {
-                this.emit('task-added');
-            }, 1);
-        } else {
-            setTimeout(async () => {
-                try {
-                    await func();
-                } catch (err) {
-                    deferred.reject(err);
-                }
-            }, 1);
-        }
-
-        return deferred.promise;
+    _sendRequest(httpOpts, opts = { inOrder: false }) {
+        const finalOpts = this._getRequestOptions(httpOpts);
+        debug(`going to perform: ${JSON.stringify(finalOpts)}`);
+        return request(finalOpts)
+            .catch(this._catchHandler.bind(this))
+            .then(this._createResponseHandler(finalOpts));
     }
 
     async _onTaskAdded() {
