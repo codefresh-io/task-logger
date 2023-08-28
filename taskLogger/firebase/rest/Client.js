@@ -7,12 +7,13 @@ let request = require('requestretry');
 const RETRY_STATUS_CODES = [502, 503, 504];
 request = request.defaults(
     {
-        timeout: 5 * 1000,
+        timeout: process.env.FIREBASE_REQUEST_TIMEOUT || 5 * 1000,
         retryStrategy: (err, response = {}) => {
             return request.RetryStrategies.NetworkError(err, response) || RETRY_STATUS_CODES.includes(response.statusCode);
         },
         maxAttempts: 5,
-        retryDelay: process.env.RETRY_DELAY || 5000, // 'ECONNRESET', 'ENOTFOUND', 'ESOCKETTIMEDOUT', 'ETIMEDOUT', 'ECONNREFUSED', 'EHOSTUNREACH', 'EPIPE', 'EAI_AGAIN'
+        // 'ECONNRESET', 'ENOTFOUND', 'ESOCKETTIMEDOUT', 'ETIMEDOUT', 'ECONNREFUSED', 'EHOSTUNREACH', 'EPIPE', 'EAI_AGAIN'
+        retryDelay: process.env.FIREBASE_REQUEST_RETRY_DELAY || 5000,
         promiseFactory: (resolver) => {
             return Q.promise(resolver);
         }
