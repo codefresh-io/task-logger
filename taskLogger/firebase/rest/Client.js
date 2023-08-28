@@ -7,7 +7,7 @@ let request = require('requestretry');
 const RETRY_STATUS_CODES = [502, 503, 504];
 request = request.defaults(
     {
-        timeout: process.env.FIREBASE_REQUEST_TIMEOUT || 5 * 1000,
+        timeout: process.env.FIREBASE_REQUEST_TIMEOUT || 20 * 1000,
         retryStrategy: (err, response = {}) => {
             return request.RetryStrategies.NetworkError(err, response) || RETRY_STATUS_CODES.includes(response.statusCode);
         },
