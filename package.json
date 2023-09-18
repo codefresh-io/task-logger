@@ -37,9 +37,9 @@
     "jsonwebtoken": "^8.4.0",
     "lodash": "^4.17.21",
     "mongodb": "^3.1.13",
-    "node-redis-pubsub": "^4.0.0",
+    "node-redis-pubsub": "^5.0.0",
     "q": "^1.4.1",
-    "redis": "^2.8.0",
+    "redis": "^4.6.8",
     "request": "^2.88.2",
     "requestretry": "^7.0.0",
     "retry": "^0.12.0"
