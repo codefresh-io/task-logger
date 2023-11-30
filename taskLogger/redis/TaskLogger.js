@@ -38,14 +38,14 @@ class RedisTaskLogger extends TaskLogger {
                 port,
                 db,
             }
-        } = opts
+        } = opts;
         const key = `${host}.${port}.${db}`;
         if (redisCacheMap.has(key)) {
             return redisCacheMap.get(key);
         }
 
         return new Promise(async (resolve, reject) => {
-            const client = await redis.createClient(config)
+            const client = await redis.createClient(opts.redis)
                 .on('error', (err) => {
                     debug(`redis client error ; ${err.message}`);
                     console.log(`error: ${err} `);
