@@ -32,30 +32,32 @@ class RedisTaskLogger extends TaskLogger {
     }
 
     static async createRedisConnection(task, opts) {
-        return new Promise((resolve, reject) => {
+        const {
+            redis: {
+                host,
+                port,
+                db,
+            }
+        } = opts
+        const key = `${host}.${port}.${db}`;
+        if (redisCacheMap.has(key)) {
+            return redisCacheMap.get(key);
+        }
 
-            const config = opts.redis;
-            const key = `${config.host}.${config.port}.${config.db}`;
-            if (!redisCacheMap.has(key)) {
-                const client = redis.createClient(config);
-                client.on('ready', () => {
-                    debug(`redis client initilzed from task : ${JSON.stringify(task)}`);
-                    redisCacheMap.set(key, client);
-                    resolve(client);
-                });
-                client.on('error', (err) => {
+        return new Promise(async (resolve, reject) => {
+            const client = await redis.createClient(config)
+                .on('error', (err) => {
                     debug(`redis client error ; ${err.message}`);
                     console.log(`error: ${err} `);
                     reject(new CFError({
                         cause: err,
                         message: `Failed to create redis taskLogger`
                     }));
-                });
-            } else {
-                resolve(redisCacheMap.get(key));
-            }
-
-
+                })
+                .connect();
+            debug(`redis client initilzed from task : ${JSON.stringify(task)}`);
+            redisCacheMap.set(key, client);
+            resolve(client);
         });
     }
 
