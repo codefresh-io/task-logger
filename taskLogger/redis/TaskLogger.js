@@ -1,11 +1,11 @@
-const TaskLogger                        = require('../TaskLogger');
-const redis                             = require('redis');
-const debug                            = require('debug')('codefresh:taskLogger:redis:taskLogger');
-const CFError                          = require('cf-errors');
+const TaskLogger        = require('../TaskLogger');
+const redis             = require('redis');
+const debug             = require('debug')('codefresh:taskLogger:redis:taskLogger');
+const CFError           = require('cf-errors');
 
-const RedisPubDecorator                = require('./redisPubDecorator');
-const RedisLogger                      = require('./RedisLogger');
-const { TYPES, STATUS }                        = require('../enums');
+const RedisPubDecorator = require('./redisPubDecorator');
+const RedisLogger       = require('./RedisLogger');
+const { TYPES, STATUS } = require('../enums');
 
 const STEPS_REFERENCES_KEY = 'stepsReferences';
 const redisCacheMap = new Map();
@@ -18,17 +18,15 @@ class RedisTaskLogger extends TaskLogger {
         this.writter = new RedisPubDecorator(extendOpts, new RedisLogger(redisConnection, extendOpts), extendOpts.key);
         this.writter.setStrategies(extendOpts.key);
         this.type = TYPES.REDIS;
-
-
     }
 
     static async factory(task, opts) {
         if (!opts || !opts.redis) {
             throw new CFError(CFError.Errors.Error, 'no config');
         }
-        const redisConnection = await RedisTaskLogger.createRedisConnection(task, opts);
-        return new RedisTaskLogger(task, opts, redisConnection);
 
+        const redisClient = await RedisTaskLogger.createRedisConnection(task, opts);
+        return new RedisTaskLogger(task, opts, redisClient);
     }
 
     static async createRedisConnection(task, opts) {
@@ -44,33 +42,25 @@ class RedisTaskLogger extends TaskLogger {
             return redisCacheMap.get(key);
         }
 
-        return new Promise(async (resolve, reject) => {
-            try {
-                const client = await redis.createClient(opts.redis)
+        try {
+            const client = await redis.createClient(opts.redis)
+                .on('error', (err) => {
                     // if it emits an error, it will try to reconnect automatically
-                    .on('error', (err) => {
-                        debug(`redis client error ; ${err.message}`);
-                        console.log(`error: ${err} `);
-                        reject(new CFError({
-                            cause: err,
-                            message: `Failed to create redis taskLogger`
-                        }));
-                    })
-                    .connect();
-                debug(`redis client initilzed from task : ${JSON.stringify(task)}`);
-                redisCacheMap.set(key, client);
-                resolve(client);
-            } catch (err) {
-                // if it throws an error, it probably means the socket was already opened,
-                // or it failed all retries
-                debug(`redis client error ; ${err.message}`);
-                console.log(`error: ${err} `);
-                reject(new CFError({
-                    cause: err,
-                    message: `Failed to create redis taskLogger`
-                }));
-            }
-        });
+                    debug(`redis client error ; ${err.message}; retrying...`);
+                })
+                .connect();
+            debug(`redis client initilzed from task : ${JSON.stringify(task)}`);
+            redisCacheMap.set(key, client);
+            return client;
+        } catch (err) {
+            // if it throws an error, it probably means the socket was already opened,
+            // or it failed all retries
+            debug(`redis client error ; ${err.message}`);
+            throw new CFError({
+                cause: err,
+                message: `Failed to create redis taskLogger`
+            });
+        }
     }
 
     static getRedisConnectionFromCache(opts) {
