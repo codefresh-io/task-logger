@@ -8,7 +8,7 @@ const RedisLogger       = require('./RedisLogger');
 const { TYPES, STATUS } = require('../enums');
 
 const STEPS_REFERENCES_KEY = 'stepsReferences';
-const CONNECTION_ATTEMPTS = 5
+const CONNECTION_ATTEMPTS = 5;
 const redisCacheMap = new Map();
 
 
