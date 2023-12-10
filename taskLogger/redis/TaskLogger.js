@@ -8,7 +8,9 @@ const RedisLogger       = require('./RedisLogger');
 const { TYPES, STATUS } = require('../enums');
 
 const STEPS_REFERENCES_KEY = 'stepsReferences';
+const CONNECTION_ATTEMPTS = 5
 const redisCacheMap = new Map();
+
 
 class RedisTaskLogger extends TaskLogger {
     constructor(task, opts, redisConnection) {
@@ -30,11 +32,14 @@ class RedisTaskLogger extends TaskLogger {
     }
 
     static async createRedisConnection(task, opts) {
+        console.log('inside createRedisConnection');
         const {
             redis: {
-                host,
                 port,
+                host,
+                password,
                 db,
+                tls,
             }
         } = opts;
         const key = `${host}.${port}.${db}`;
@@ -43,18 +48,46 @@ class RedisTaskLogger extends TaskLogger {
         }
 
         try {
-            const client = await redis.createClient(opts.redis)
-                .on('error', (err) => {
-                    // if it emits an error, it will try to reconnect automatically
-                    debug(`redis client error ; ${err.message}; retrying...`);
-                })
-                .connect();
-            debug(`redis client initilzed from task : ${JSON.stringify(task)}`);
+            const redisOptions = {
+                socket: {
+                    port: Number(port),
+                    host,
+                },
+                password,
+                database: db,
+                reconnectStrategy(retries, cause) {
+                    if (retries >= CONNECTION_ATTEMPTS) {
+                        debug(`redis client failed to connect after ${CONNECTION_ATTEMPTS} retries ; cause: ${cause}`);
+                        throw new CFError({
+                            cause,
+                            message: `Failed to connect to redis after ${CONNECTION_ATTEMPTS} retries`
+                        });
+                    }
+
+                    debug(`redis client reconnecting ; retries: ${retries}`);
+                    return Math.min(retries * 50, 1000);
+                }
+            };
+            if (tls) {
+                redisOptions.socket = {
+                    ...redisOptions.socket,
+                    tls: true,
+                    rejectUnauthorized: tls.rejectUnauthorized,
+                    ca: tls.ca,
+                    cert: tls.cert,
+                    key: tls.key,
+                };
+            }
+
+            debug(`creating redis client, opts: ${JSON.stringify(redisOptions)}`);
+            const client = await redis.createClient(redisOptions).connect();
+            debug(`redis client initialized from task : ${JSON.stringify(task)}`);
             redisCacheMap.set(key, client);
             return client;
         } catch (err) {
             // if it throws an error, it probably means the socket was already opened,
             // or it failed all retries
+            console.error(`redis client error ; ${err.message}`);
             debug(`redis client error ; ${err.message}`);
             throw new CFError({
                 cause: err,
