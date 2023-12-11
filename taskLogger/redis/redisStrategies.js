@@ -28,7 +28,11 @@ class RedisFlattenStrategy {
                 payload: obj,
                 time: syncId
             };
-            await redisClient.zAdd(`${this.baseKey}:${CONSOLIDATED}`, [syncId, JSON.stringify(objToPush)]).catch((err) => {
+            const member = {
+                score: syncId,
+                value: objToPush,
+            };
+            await redisClient.zAdd(`${this.baseKey}:${CONSOLIDATED}`, member).catch((err) => {
                 debug(`Error in redis zAdd: ${err.toString()}`);
             });
             return syncId;
