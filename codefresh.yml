@@ -8,7 +8,7 @@ steps:
 
   RunningUnitTests:
     title: Running Unit Tests
-    image: node:16.20.2
+    image: node:20.10.0
     commands:
     - yarn install
     - yarn eslint
