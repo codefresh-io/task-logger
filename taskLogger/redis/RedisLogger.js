@@ -4,14 +4,12 @@ const assert = require('assert').strict;
 const {
     RedisFlattenStrategy,
     RedisSetStratry,
-    ChainRedisStrategy
+    ChainRedisStrategy,
 } = require('./redisStrategies');
-
 
 const root = 'build-logs';
 
 class RedisLogger {
-
     constructor(redisClient, opts) {
         this.redisClient = redisClient;
         this.config = opts.redis;
@@ -22,11 +20,10 @@ class RedisLogger {
         this.redisClient.on('error', (err) => {
             const error = new CFError({
                 cause: err,
-                message: `Redis client error for job ${this.jobId} in account ${this.accountId}`
+                message: `Redis client error for job ${this.jobId} in account ${this.accountId}`,
             });
             debug(error.message);
         });
-
     }
 
     get redisClientIns() {
@@ -37,10 +34,9 @@ class RedisLogger {
         if (baseKey) {
             this.strategies = new ChainRedisStrategy([
                 new RedisFlattenStrategy(new Set(['logs', 'metrics']), `${root}:${baseKey}`),
-                new RedisSetStratry()
+                new RedisSetStratry(),
             ]);
         }
-
     }
 
     // This function wraps repetetive calls to logging (e.g. : logger.child(x).set(y) , logger.child(x).child(y).update(z)
@@ -54,12 +50,14 @@ class RedisLogger {
                 while (stackClone.length !== 0) {
                     fullKey = `${fullKey}:${stackClone.shift()}`;
                 }
+
                 const receveidId = this.strategies.push(obj, key, thisArg.redisClient, stack, syncId);
 
                 // Watch support:
                 if (this.watachedKeys.has(fullKey)) {
                     this.watachedKeys.get(fullKey).call(this, obj);
                 }
+
                 return {
                     key: fullKey.substr(root.length + 1),
                     id: receveidId
@@ -86,7 +84,7 @@ class RedisLogger {
             getHash: async () => {
                 wrapper._updateKeyFromStack();
                 return new Promise((resolve, reject) => {
-                    this.redisClient.hgetall(key, (err, keys) => {
+                    this.redisClient.hGetAll(key, (err, keys) => {
                         if (err) {
                             reject(err);
                         } else {
@@ -97,7 +95,7 @@ class RedisLogger {
             },
             get: async () => {
                 return new Promise((resolve, reject) => {
-                    this.redisClient.hget(`${key}`, stack[0], (err, value) => {
+                    this.redisClient.hGet(`${key}`, stack[0], (err, value) => {
                         if (err) {
                             reject(err);
                         } else {
@@ -129,7 +127,6 @@ class RedisLogger {
             this.redisClient.quit();
         });
     }
-
-
 }
+
 module.exports = RedisLogger;
