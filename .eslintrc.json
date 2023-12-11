@@ -7,20 +7,16 @@
   "extends": "airbnb",
   "env": {
     "node": true,
-    "mocha": true,
-    "es6": true
+    "mocha": true
   },
 
   "parserOptions": {
-    "ecmaVersion": 2017,
+    "ecmaVersion": 2020,
     "sourceType": "script",
     "ecmaFeatures": {
-      "jsx": true,
       "impliedStrict": true
     }
   },
-
-
 
   "plugins": [
     "chai-friendly",
@@ -31,6 +27,7 @@
   ],
 
   "rules": {
+    "no-return-await": "off",
     "indent": [
       "error",
       4,

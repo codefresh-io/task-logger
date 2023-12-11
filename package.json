@@ -10,27 +10,27 @@
   "author": "Codefresh",
   "license": "ISC",
   "devDependencies": {
-    "chai": "^4.2.0",
-    "eslint": "^3.19.0",
-    "eslint-config-airbnb": "^15.1.0",
-    "eslint-plugin-chai-friendly": "^0.3.6",
-    "eslint-plugin-import": "^2.7.0",
-    "eslint-plugin-jsx-a11y": "^5.1.1",
-    "eslint-plugin-mocha": "^4.11.0",
-    "eslint-plugin-node": "^5.1.1",
-    "eslint-plugin-promise": "^3.5.0",
-    "eslint-plugin-react": "^7.1.0",
-    "mocha": "^6.0.2",
-    "nock": "^11.7.0",
-    "proxyquire": "^1.7.4",
-    "sinon": "^7.2.4",
+    "chai": "^4.3.10",
+    "eslint": "^8.55.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-plugin-chai-friendly": "^0.7.2",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-mocha": "^10.2.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-react": "^7.33.2",
+    "mocha": "^10.2.0",
+    "nock": "^13.4.0",
+    "proxyquire": "^2.1.3",
+    "sinon": "^17.0.1",
     "sinon-chai": "^3.3.0"
   },
   "resolutions": {
     "websocket-extensions": "0.1.4"
   },
   "dependencies": {
-    "cf-errors": "^0.1.16",
+    "cf-errors": "^0.1.17",
     "debug": "^4.1.1",
     "firebase": "git+https://github.com/codefresh-io/firebase.git#80b2ed883ff281cd67b53bd0f6a0bbd6f330fed5",
     "firebase-token-generator": "^2.0.0",
@@ -45,6 +45,6 @@
     "retry": "^0.12.0"
   },
   "engines": {
-    "node": ">=9.10.0"
+    "node": ">=20.8.0"
   }
 }

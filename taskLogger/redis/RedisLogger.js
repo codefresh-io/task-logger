@@ -22,7 +22,7 @@ class RedisLogger {
                 cause: err,
                 message: `Redis client error for job ${this.jobId} in account ${this.accountId}`,
             });
-            debug(error.message);
+            debug(error.toString());
         });
     }
 
@@ -43,7 +43,7 @@ class RedisLogger {
     // the stack is kept as part of the clouse call and an isolated object is created for each call (wrapper object)
     _wrapper(key, thisArg, stack) {
         const wrapper = {
-            push: (obj, syncId) => {
+            push: async (obj, syncId) => {
                 // TODO:HIGH:stack is internal data strcture of the logger , don't pass it
                 const stackClone = stack.slice(0);
                 let fullKey = key;
@@ -51,7 +51,7 @@ class RedisLogger {
                     fullKey = `${fullKey}:${stackClone.shift()}`;
                 }
 
-                const receveidId = this.strategies.push(obj, key, thisArg.redisClient, stack, syncId);
+                const receveidId = await this.strategies.push(obj, key, thisArg.redisClient, stack, syncId);
 
                 // Watch support:
                 if (this.watachedKeys.has(fullKey)) {
@@ -67,11 +67,11 @@ class RedisLogger {
                 stack.push(path);
                 return thisArg._wrapper(`${key}`, thisArg, stack);
             },
-            set: (value) => {
-                return wrapper.push(value);
+            set: async (value) => {
+                return await wrapper.push(value);
             },
-            update: (value) => {
-                return wrapper.set(value);
+            update: async (value) => {
+                return await wrapper.set(value);
             },
             toString() {
                 wrapper._updateKeyFromStack();
@@ -83,25 +83,13 @@ class RedisLogger {
             },
             getHash: async () => {
                 wrapper._updateKeyFromStack();
-                return new Promise((resolve, reject) => {
-                    this.redisClient.hGetAll(key, (err, keys) => {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            resolve(keys);
-                        }
-                    });
+                return await this.redisClient.hGetAll(key).catch((err) => {
+                    debug(`Error in redis getHash: ${err.toString()}`);
                 });
             },
             get: async () => {
-                return new Promise((resolve, reject) => {
-                    this.redisClient.hGet(`${key}`, stack[0], (err, value) => {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            resolve(value);
-                        }
-                    });
+                return await this.redisClient.get(key, stack[0]).catch((err) => {
+                    debug(`Error in redis get: ${err.toString()}`);
                 });
             },
             children: () => {
@@ -113,10 +101,10 @@ class RedisLogger {
                     key = `${key}:${stack.shift()}`;
                 }
             }
-
         };
         return wrapper;
     }
+
     child(name) {
         assert(this.defaultLogKey, 'no default log key');
         return this._wrapper(`${this.defaultLogKey}`, this, [name]);
@@ -124,7 +112,9 @@ class RedisLogger {
 
     cleanConnectionOnexit() {
         process.on('exit', () => {
-            this.redisClient.quit();
+            this.redisClient.quit().catch((err) => {
+                debug(`Error in redis quit: ${err.toString()}`);
+            });
         });
     }
 }
