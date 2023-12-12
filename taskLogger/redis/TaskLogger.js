@@ -31,7 +31,6 @@ class RedisTaskLogger extends TaskLogger {
     }
 
     static async createRedisConnection(task, opts) {
-        console.log('inside createRedisConnection');
         const {
             redis: {
                 port,
