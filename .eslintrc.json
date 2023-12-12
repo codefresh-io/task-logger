@@ -20,8 +20,6 @@
     }
   },
 
-
-
   "plugins": [
     "chai-friendly",
     "import",
@@ -31,6 +29,7 @@
   ],
 
   "rules": {
+    "no-return-await": "off",
     "indent": [
       "error",
       4,

@@ -10,73 +10,73 @@ class RedisStepLogger extends BaseStepLogger {
         const extendOpts = Object.assign({}, step, opts);
         extendOpts.key = `${step.accountId}:${step.jobId}:steps:${step.name}`;
         const redisConnection = RedisTaskLogger.getRedisConnectionFromCache(extendOpts);
-        this.writter = new RedisPubDecorator(extendOpts, new RedisLogger(redisConnection, extendOpts), `${step.accountId}:${step.jobId}`);
-        this.writter.setStrategies(`${step.accountId}:${step.jobId}`);
+        this.writer = new RedisPubDecorator(extendOpts, new RedisLogger(redisConnection, extendOpts), `${step.accountId}:${step.jobId}`);
+        this.writer.setStrategies(`${step.accountId}:${step.jobId}`);
     }
 
     async restore() {
-        this.status = await this.writter.child('status').get();
+        this.status = await this.writer.child('status').get();
         this.pendingApproval = this.status === STATUS.PENDING_APPROVAL;
     }
 
-    _reportLog(message, syncId = Date.now()) {
-        this.writter.child('logs').push(message, syncId);
+    async _reportLog(message, syncId = Date.now()) {
+        await this.writer.child('logs').push(message, syncId);
     }
 
-    _reportOutputUrl() {
-        this.writter.child('data').child('outputUrl').set(this.outputUrl);
+    async _reportOutputUrl() {
+        await this.writer.child('data').child('outputUrl').set(this.outputUrl);
     }
 
-    _reportEnvironmentName() {
-        this.writter.child('data').child('environmentName').set(this.environmentName);
+    async _reportEnvironmentName() {
+        await this.writer.child('data').child('environmentName').set(this.environmentName);
     }
 
-    _reportEnvironmentId() {
-        this.writter.child('data').child('environmentId').set(this.environmentId);
+    async _reportEnvironmentId() {
+        await this.writer.child('data').child('environmentId').set(this.environmentId);
     }
 
-    _reportActivityId() {
-        this.writter.child('data').child('activityId').set(this.activityId);
+    async _reportActivityId() {
+        await this.writer.child('data').child('activityId').set(this.activityId);
     }
 
-    _reportLastUpdate() {
-        this.writter.child('lastUpdate').set(this.lastUpdate);
+    async _reportLastUpdate() {
+        await this.writer.child('lastUpdate').set(this.lastUpdate);
     }
 
-    _reportPrevioulyExecuted() {
-        this.writter.child('previouslyExecuted').set(this.previouslyExecuted);
+    async _reportPrevioulyExecuted() {
+        await this.writer.child('previouslyExecuted').set(this.previouslyExecuted);
     }
 
     async _reportStatus() {
-        return this.writter.child('status').set(this.status);
+        return await this.writer.child('status').set(this.status);
     }
 
     async _reportFinishTimestamp() {
-        return this.writter.child('finishTimeStamp').set(this.finishTimeStamp);
+        return await this.writer.child('finishTimeStamp').set(this.finishTimeStamp);
     }
 
-    _reportCreationTimestamp() {
-        this.writter.child('creationTimeStamp').set(this.creationTimeStamp);
+    async _reportCreationTimestamp() {
+        await this.writer.child('creationTimeStamp').set(this.creationTimeStamp);
     }
 
-    _reportMemoryUsage(time, memoryUsage, syncId = Date.now()) {
-        this.writter.child('metrics').child('memory').push({ time, usage: memoryUsage }, syncId);
+    async _reportMemoryUsage(time, memoryUsage, syncId = Date.now()) {
+        await this.writer.child('metrics').child('memory').push({ time, usage: memoryUsage }, syncId);
     }
 
-    _reportCpuUsage(time, cpuUsage, syncId = Date.now()) {
-        this.writter.child('metrics').child('cpu').push({ time, usage: cpuUsage }, syncId);
+    async _reportCpuUsage(time, cpuUsage, syncId = Date.now()) {
+        await this.writer.child('metrics').child('cpu').push({ time, usage: cpuUsage }, syncId);
     }
 
     _reportLogSize() {
-        this.writter.child('metrics.logs.total').set(this.logSize);
+        this.writer.child('metrics.logs.total').set(this.logSize);
     }
 
-    _reportStepProgress() {
-        this.writter.child('progress').set(this.stepProgress);
+    async _reportStepProgress() {
+        await this.writer.child('progress').set(this.stepProgress);
     }
 
-    reportName() {
-        this.writter.child('name').set(this.name);
+    async reportName() {
+        await this.writer.child('name').set(this.name);
     }
 
     clearLogs() {
@@ -84,7 +84,7 @@ class RedisStepLogger extends BaseStepLogger {
     }
 
     async delete() {
-        return this.writter.remove();
+        return await this.writer.remove();
     }
 }
 
