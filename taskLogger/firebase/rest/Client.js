@@ -12,7 +12,7 @@ request = request.defaults(
             // workaround after we discovered that this started to happen under huge load,
             // should be removed after we better understand the root cause 
             if (err && err.code === 'CERT_HAS_EXPIRED') {
-                return true
+                return true;
             }
             return request.RetryStrategies.NetworkError(err, response) || RETRY_STATUS_CODES.includes(response.statusCode);
         },
