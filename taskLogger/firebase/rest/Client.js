@@ -10,7 +10,7 @@ request = request.defaults(
         timeout: process.env.FIREBASE_REQUEST_TIMEOUT || 20 * 1000,
         retryStrategy: (err, response = {}) => {
             // workaround after we discovered that this started to happen under huge load,
-            // should be removed after we better understand the root cause 
+            // should be removed after we better understand the root cause
             if (err && err.code === 'CERT_HAS_EXPIRED') {
                 return true;
             }
