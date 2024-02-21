@@ -41,7 +41,7 @@
     "q": "^1.4.1",
     "redis": "^4.6.11",
     "request": "^2.88.2",
-    "requestretry": "^7.0.0",
+    "requestretry": "^7.1.0",
     "retry": "^0.12.0"
   },
   "engines": {
