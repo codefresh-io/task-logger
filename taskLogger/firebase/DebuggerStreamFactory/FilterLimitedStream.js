@@ -11,7 +11,7 @@ const MATCH = {
     // command [...args] || command [...args]
     // command [...args] | command [...args]
     // return true if matched
-    isSequence: str => !!str.match(/&{2}|\|{1,2}/),
+    isSequence: (str) => !!str.match(/&{2}|\|{1,2}/),
     // Check for single control codes ('^C' for brake, 'Bell' for ping)
     // Can take as code as string. Converts in correct escape code
     mapEscapes: (str) => {
@@ -24,7 +24,7 @@ const MATCH = {
     // check for single escape sequence for terminal resizing
     // Example: \x1b[8;25;80t
     // return true if resizing detected
-    isResize: str => !!str.match(/^\x1b\[8;\d+;\d+t$/), // eslint-disable-line no-control-regex
+    isResize: (str) => !!str.match(/^\x1b\[8;\d+;\d+t$/), // eslint-disable-line no-control-regex
     // check if command is allowed (the first word of passed string)
     // return false if command is absent in the list
     // return prepared command in case of success

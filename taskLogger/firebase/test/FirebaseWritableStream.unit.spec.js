@@ -1,10 +1,10 @@
-const FireBaseWritableStream = require('../step-streams/FirebaseWritableStream');
-const StepNameTransformStream = require('../step-streams/StepNameTransformStream');
 const { Readable } = require('stream');
 const chai = require('chai');
 const Q = require('q');
 const sinon = require('sinon');
 const sinonChai = require('sinon-chai');
+const StepNameTransformStream = require('../step-streams/StepNameTransformStream');
+const FireBaseWritableStream = require('../step-streams/FirebaseWritableStream');
 
 const { expect } = chai;
 
@@ -17,7 +17,6 @@ const fireBaseWritableStreamOpts = Object.create({
     debounceDelay: 500, // flush every 500 ms
     flushTimeLimitMs: 700,
 });
-
 
 describe('Firebase Writable Stream Tests', () => {
     let fireBaseWritableStream;
@@ -120,7 +119,6 @@ describe('Firebase Writable Stream Tests', () => {
         expect(Object.keys(fireBaseWritableStream._logsBatch).length).to.be.equal(3);
         expect(fireBaseWritableStream._currentBatchSize).to.be.equal(Buffer.byteLength(message) * 3);
         await Q.delay(300);
-
 
         // even though there is more space in batch and we reset debounce delay
         // we expect this next chunk to cause flush because we ran out of time

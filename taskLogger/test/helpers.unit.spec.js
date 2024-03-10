@@ -1,7 +1,7 @@
 const Q                 = require('q');
 const chai              = require('chai');
 
-const expect            = chai.expect;
+const { expect } = chai;
 const sinon             = require('sinon');
 const { wrapWithRetry } = require('../helpers');
 

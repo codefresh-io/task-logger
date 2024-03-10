@@ -1,10 +1,10 @@
-const TaskLogger        = require('../TaskLogger');
 const redis             = require('redis');
 const debug             = require('debug')('codefresh:taskLogger:redis:taskLogger');
 const CFError           = require('cf-errors');
 
 const RedisPubDecorator = require('./redisPubDecorator');
 const RedisLogger       = require('./RedisLogger');
+const TaskLogger        = require('../TaskLogger');
 const { TYPES, STATUS } = require('../enums');
 
 const STEPS_REFERENCES_KEY = 'stepsReferences';
@@ -14,7 +14,7 @@ const redisCacheMap = new Map();
 class RedisTaskLogger extends TaskLogger {
     constructor(task, opts, redisConnection) {
         super(task, opts);
-        const extendOpts = Object.assign({}, task, opts);
+        const extendOpts = { ...task, ...opts };
         extendOpts.key = `${task.accountId}:${task.jobId}`;
         this.writer = new RedisPubDecorator(extendOpts, new RedisLogger(redisConnection, extendOpts), extendOpts.key);
         this.writer.setStrategies(extendOpts.key);
@@ -117,8 +117,7 @@ class RedisTaskLogger extends TaskLogger {
             const stepFromRedis = Object.keys(keyToStatus);
             const StepLogger = require('./StepLogger'); // eslint-disable-line
             this.steps = stepFromRedis.reduce((acc, current) => {
-                acc[current] =
-                new StepLogger({
+                acc[current] =                new StepLogger({
                     name: current,
                     jobId: this.jobId,
                     accountId: this.accountId
@@ -189,4 +188,3 @@ class RedisTaskLogger extends TaskLogger {
 RedisTaskLogger.TYPE = TYPES.REDIS;
 
 module.exports = RedisTaskLogger;
-

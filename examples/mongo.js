@@ -22,7 +22,6 @@ const main = async () => {
     mongoTaskLogger.updateMemoryUsage(new Date(), 'sd');
     await mongoTaskLogger.setData({ key: 'value' });
 
-
     const stepLoggerMongo = mongoTaskLogger.create('stepName', undefined, undefined, true);
     stepLoggerMongo.start();
     stepLoggerMongo.write('hey');
@@ -62,7 +61,6 @@ const main = async () => {
     });
     const mongoStepLoggerForRestore = mongoTaskLoggerForStepRestore.create('stepName', undefined, undefined, false);
     await mongoStepLoggerForRestore.restore();
-
 
     const mongoTaskLoggerRestored = await MONGO({
         accountId: 'accountId',

@@ -23,7 +23,6 @@ const main = async () => {
     await redisTaskLogger.setData({ key: 'value' });
     redisTaskLogger.setLogSize(100);
 
-
     const stepLoggerRedis = redisTaskLogger.create('stepName', undefined, undefined, true);
     stepLoggerRedis.start();
     stepLoggerRedis.write('hey');
@@ -66,7 +65,6 @@ const main = async () => {
     });
     const redisStepLoggerForRestore = redisTaskLoggerForStepRestore.create('stepName', undefined, undefined, false);
     await redisStepLoggerForRestore.restore();
-
 
     const redisRestoredTaskLogger = await REDIS({
         accountId: 'accountId',

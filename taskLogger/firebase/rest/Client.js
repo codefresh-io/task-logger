@@ -22,7 +22,8 @@ request = request.defaults(
         promiseFactory: (resolver) => {
             return Q.promise(resolver);
         }
-    });
+    }
+);
 
 class Client extends EventEmitter {
 

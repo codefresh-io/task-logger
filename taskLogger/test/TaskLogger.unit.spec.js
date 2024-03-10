@@ -2,7 +2,7 @@ const proxyquire = require('proxyquire').noCallThru();
 const chai = require('chai');
 const Q = require('q');
 
-const expect = chai.expect;
+const { expect } = chai;
 const sinon = require('sinon');
 const sinonChai = require('sinon-chai');
 const { Readable, Writable } = require('stream');
@@ -257,7 +257,9 @@ describe('Base TaskLogger tests', () => {
             stepLogger.emit('writeCalls');
 
             return Promise.race([
-                new Promise(resolve => setTimeout(resolve, 3000, 'timeout')),
+                new Promise((resolve) => {
+                    setTimeout(resolve, 3000, 'timeout');
+                }),
                 taskLogger.awaitLogsFlushed().then(
                     () => { throw Error('unexpectedly resolved'); },
                     () => { throw Error('unexpectedly rejected'); }
@@ -286,7 +288,7 @@ describe('Base TaskLogger tests', () => {
             const prependTimestampsStream = new PrependTimestampsStream();
 
             const ts = new Date().toISOString();
-            prependTimestampsStream._prependTimestamp = sinon.stub(logMessage => `${ts} ${logMessage}`);
+            prependTimestampsStream._prependTimestamp = sinon.stub((logMessage) => `${ts} ${logMessage}`);
 
             const containerOutput = [
                 { sent: 'Hello world\n', expected: `${ts} Hello world\n` },
@@ -331,7 +333,7 @@ describe('Base TaskLogger tests', () => {
             const prependTimestampsStream = new PrependTimestampsStream({ chunkFlushTimeout: 50 });
 
             const ts = new Date().toISOString();
-            prependTimestampsStream._prependTimestamp = sinon.stub(logMessage => `${ts} ${logMessage}`);
+            prependTimestampsStream._prependTimestamp = sinon.stub((logMessage) => `${ts} ${logMessage}`);
 
             const containerOutput = [
                 { sent: 'Hello1', delay: 0 },
@@ -707,7 +709,7 @@ describe('Base TaskLogger tests', () => {
             taskLogger.addNewMask({ key: 'SOME_SECRET3', value: 'xyz1234' });
 
             const expectedMasksValues = ['xyz1234', 'xyz123', 'xyz', 'xy', 'x'];
-            const actualMasksValues = taskLogger.blacklistMasks.map(mask => mask.word);
+            const actualMasksValues = taskLogger.blacklistMasks.map((mask) => mask.word);
 
             expect(actualMasksValues).to.be.deep.equal(expectedMasksValues);
         });
@@ -744,7 +746,7 @@ describe('Base TaskLogger tests', () => {
                 'a b',
                 'xyz'
             ];
-            const actualMasksValues = taskLogger.blacklistMasks.map(mask => mask.word);
+            const actualMasksValues = taskLogger.blacklistMasks.map((mask) => mask.word);
 
             expect(actualMasksValues).to.be.deep.equal(expectedMasksValues);
         });

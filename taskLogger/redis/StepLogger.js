@@ -7,7 +7,7 @@ const { STATUS }                       = require('../enums');
 class RedisStepLogger extends BaseStepLogger {
     constructor(step, opts, taskLogger) {
         super(step, opts, taskLogger);
-        const extendOpts = Object.assign({}, step, opts);
+        const extendOpts = { ...step, ...opts };
         extendOpts.key = `${step.accountId}:${step.jobId}:steps:${step.name}`;
         const redisConnection = RedisTaskLogger.getRedisConnectionFromCache(extendOpts);
         this.writer = new RedisPubDecorator(extendOpts, new RedisLogger(redisConnection, extendOpts), `${step.accountId}:${step.jobId}`);

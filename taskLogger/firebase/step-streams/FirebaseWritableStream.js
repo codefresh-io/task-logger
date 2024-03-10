@@ -5,7 +5,6 @@ const debug = require('debug')('verbose:codefresh:firebase:firebaseWritableStrea
 
 // const FIREBASE_MESSAGE_SIZE_LIMIT = 10 * 1024 * 1024; // 10 MB Maximum size of a string
 
-
 class FirebaseWritableStream extends Writable {
     constructor(_firebaseClient, options) {
         super(options);

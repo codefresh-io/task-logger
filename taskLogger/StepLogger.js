@@ -3,8 +3,8 @@ const _ = require('lodash');
 const Q = require('q');
 const CFError = require('cf-errors');
 const EventEmitter = require('events');
-const { STATUS } = require('./enums');
 const request = require('request');
+const { STATUS } = require('./enums');
 
 class StepLogger extends EventEmitter {
     constructor({ accountId, jobId, name }, opts, taskLogger) {
@@ -144,8 +144,8 @@ class StepLogger extends EventEmitter {
         if (this.fatal) {
             return;
         }
-        if (this.status === STATUS.RUNNING || this.status === STATUS.PENDING || this.status ===
-            STATUS.PENDING_APPROVAL || this.status === STATUS.TERMINATING) {
+        if (this.status === STATUS.RUNNING || this.status === STATUS.PENDING || this.status
+            === STATUS.PENDING_APPROVAL || this.status === STATUS.TERMINATING) {
             this.finishTimeStamp = +((finishTime || new Date()).getTime() / 1000).toFixed();
             if (err) {
                 this.status = (this.status === STATUS.TERMINATING ? STATUS.TERMINATED : (this.pendingApproval ? STATUS.DENIED : STATUS.ERROR)); // eslint-disable-line
@@ -255,8 +255,10 @@ class StepLogger extends EventEmitter {
             this.status = STATUS.TERMINATING;
             this._reportStatus();
         } else {
-            this.emit('error',
-                new CFError(`markTerminating is only allowed to step in running state status , current status : ${this.status}`));
+            this.emit(
+                'error',
+                new CFError(`markTerminating is only allowed to step in running state status , current status : ${this.status}`)
+            );
         }
     }
 

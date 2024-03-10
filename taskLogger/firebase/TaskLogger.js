@@ -3,13 +3,13 @@ const Firebase = require('firebase');
 const debug = require('debug')('codefresh:firebase:taskLogger');
 const Q = require('q');
 const CFError = require('cf-errors');
+const FirebaseTokenGenerator = require('firebase-token-generator');
 const BaseTaskLogger = require('../TaskLogger');
 const StepLogger = require('./StepLogger');
 const DebuggerStreamFactory = require('./DebuggerStreamFactory');
 const { TYPES } = require('../enums');
 const { wrapWithRetry } = require('../helpers');
 const RestClient = require('./rest/Client');
-const FirebaseTokenGenerator = require('firebase-token-generator');
 const FirebaseWritableStream = require('./step-streams/FirebaseWritableStream');
 
 const defaultFirebaseTimeout = 60000;
@@ -34,7 +34,8 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                 },
                 {
                     expires: Math.floor(Date.now() / 1000) + (parseInt(sessionExpirationInSeconds, 10) || 1680) // default is 1680 - one day
-                });
+                }
+            );
             return token;
         } catch (err) {
             throw new CFError({
@@ -77,7 +78,9 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             taskLogger = new FirebaseTaskLogger(task, opts);
         }
 
-        const { baseFirebaseUrl, firebaseSecret, logsRateLimitConfig, firebaseTimeout } = opts;
+        const {
+            baseFirebaseUrl, firebaseSecret, logsRateLimitConfig, firebaseTimeout
+        } = opts;
 
         if (!baseFirebaseUrl) {
             throw new CFError('failed to create taskLogger because baseFirebaseUrl must be provided');
@@ -410,7 +413,8 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             const startTime = Date.now();
             debug(`running health check number ${counter}`);
             try {
-                await wrapWithRetry(this.healthCheck,
+                await wrapWithRetry(
+                    this.healthCheck,
                     {
                         retries,
                         errorAfterTimeout,
@@ -418,16 +422,22 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                             number: counter,
                             baseRef: this.baseRef,
                         }
-                    });
-                this.emit('healthCheckStatus', { status: 'succeed', id: counter, duration: Date.now() - startTime, startTime: new Date(startTime) });
+                    }
+                );
+                this.emit('healthCheckStatus', {
+                    status: 'succeed', id: counter, duration: Date.now() - startTime, startTime: new Date(startTime)
+                });
 
             } catch (error) {
-                this.emit('healthCheckStatus', { status: 'failed', id: counter, error: error.message, duration: Date.now() - startTime, startTime: new Date(startTime) });
+                this.emit('healthCheckStatus', {
+                    status: 'failed', id: counter, error: error.message, duration: Date.now() - startTime, startTime: new Date(startTime)
+                });
             }
 
         }, interval);
         this.emit('healthCheckStatus', { status: 'started' });
     }
+
     async healthCheck({ number, baseRef }) {
 
         const deferred = Q.defer();
@@ -444,6 +454,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         });
         return deferred.promise;
     }
+
     _stopHealthCheck() {
         const callOnce = _.get(this.opts, 'healthCheckCallOnce', false);
         const func = callOnce ? clearTimeout : clearInterval;
@@ -459,6 +470,5 @@ class FirebaseTaskLogger extends BaseTaskLogger {
 FirebaseTaskLogger.TYPE = TYPES.FIREBASE;
 FirebaseTaskLogger.authenticated = false;
 FirebaseTaskLogger.STEPS_REFERENCES_KEY = 'stepsReferences';
-
 
 module.exports = FirebaseTaskLogger;

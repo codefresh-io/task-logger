@@ -1,8 +1,8 @@
-const TaskLogger = require('../TaskLogger');
 const CFError = require('cf-errors');
-const MongoClient = require('mongodb').MongoClient;
-const { TYPES, STATUS } = require('../enums');
+const { MongoClient } = require('mongodb');
 const EventEmitter = require('events');
+const TaskLogger = require('../TaskLogger');
+const { TYPES, STATUS } = require('../enums');
 
 const mongoCacheMap = new Map();
 
@@ -15,6 +15,7 @@ class MongoTaskLogger extends TaskLogger {
         this.type = TYPES.MONGO;
         this.emitter = new EventEmitter();
     }
+
     static async factory(task, opts) {
         if (!opts || !opts.mongo) {
             throw new CFError(CFError.Errors.Error, 'no config');
@@ -65,7 +66,8 @@ class MongoTaskLogger extends TaskLogger {
         const key = 'name';
         const dbSteps = await new Promise((resolve, reject) => {
             this.db.collection(this.getCollection(key)).find(
-                Object.assign({ 'name': { $exists: true } }, this.getFilter()))
+                { 'name': { $exists: true }, ...this.getFilter() }
+            )
                 .toArray((err, docs) => {
                     if (err) {
                         reject(err);
@@ -79,13 +81,12 @@ class MongoTaskLogger extends TaskLogger {
             // const stepFromRedis = Object.keys(keyToStatus);
             const StepLogger = require('./StepLogger'); // eslint-disable-line
             this.steps = dbSteps.reduce((acc, current) => {
-                const name = current.name;
-                acc[name] =
-                    new StepLogger({
-                        name: current.name,
-                        jobId: this.jobId,
-                        accountId: this.accountId
-                    }, this.opts, this);
+                const { name } = current;
+                acc[name] =                    new StepLogger({
+                    name: current.name,
+                    jobId: this.jobId,
+                    accountId: this.accountId
+                }, this.opts, this);
                 acc[name].pendingApproval = current.status === STATUS.PENDING_APPROVAL;
                 acc[name].status = current.status;
                 return acc;
@@ -106,7 +107,8 @@ class MongoTaskLogger extends TaskLogger {
         const key = 'lastUpdate';
         return new Promise((resolve, reject) => {
             this.db.collection(this.getCollection(key)).find(
-                this.getFilter())
+                this.getFilter()
+            )
                 .toArray((err, docs) => {
                     if (err) {
                         reject(err);
@@ -120,128 +122,164 @@ class MongoTaskLogger extends TaskLogger {
     _reportLastUpdate(value) {
         const key = 'lastUpdate';
         const filter = this.getFilter();
-        this.db.collection(this.getCollection(key)).updateOne(filter,
-            { $set: Object.assign({ [key]: value }, filter) }, { upsert: true }, (err) => {
+        this.db.collection(this.getCollection(key)).updateOne(
+            filter,
+            { $set: { [key]: value, ...filter } },
+            { upsert: true },
+            (err) => {
                 if (err) {
                     this.emitter.emit('ERROR', err);
                 }
-            });
+            }
+        );
     }
 
     async reportId() {
         const key = 'id';
         const filter = this.getFilter();
-        return this.db.collection(this.getCollection(key)).updateOne(filter,
-            { $set: Object.assign({ [key]: this.jobId }, filter) }, { upsert: true }, (err) => {
+        return this.db.collection(this.getCollection(key)).updateOne(
+            filter,
+            { $set: { [key]: this.jobId, ...filter } },
+            { upsert: true },
+            (err) => {
                 if (err) {
                     this.emitter.emit('ERROR', err);
                 }
-            });
+            }
+        );
     }
+
     async reportAccountId() {
         const key = 'accountId';
         const filter = this.getFilter();
-        return this.db.collection(this.getCollection(key)).updateOne(filter,
-            { $set: Object.assign({ [key]: this.accountId }, filter) }, { upsert: true }, (err) => {
+        return this.db.collection(this.getCollection(key)).updateOne(
+            filter,
+            { $set: { [key]: this.accountId, ...filter } },
+            { upsert: true },
+            (err) => {
                 if (err) {
                     this.emitter.emit('ERROR', err);
                 }
-            });
+            }
+        );
     }
+
     _reportMemoryUsage(time, memoryUsage) {
         const key = 'metrics.memory';
         const filter = this.getFilter();
-        this.db.collection(this.getCollection(key)).insertOne(
-            Object.assign({ 'slot': 'metrics.memory', 'payload': { time, usage: memoryUsage } }, filter), { upsert: true }, (err) => {
-                if (err) {
-                    this.emitter.emit('ERROR', err);
-                }
-            });
+        this.db.collection(this.getCollection(key)).insertOne({ 'slot': 'metrics.memory', 'payload': { time, usage: memoryUsage }, ...filter }, { upsert: true }, (err) => {
+            if (err) {
+                this.emitter.emit('ERROR', err);
+            }
+        });
     }
 
     _reportMemoryLimit() {
         const key = 'metrics.limits.memory';
-        this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
-            { $set: { 'metrics.limits.memory': { 'value': this.memoryLimit } } }, { upsert: true }, (err) => {
+        this.db.collection(this.getCollection(key)).updateOne(
+            this.getFilter(),
+            { $set: { 'metrics.limits.memory': { 'value': this.memoryLimit } } },
+            { upsert: true },
+            (err) => {
                 if (err) {
                     this.emitter.emit('ERROR', err);
                 }
-            });
+            }
+        );
 
     }
 
     _reportDiskState(time, diskState) {
         const key = 'metrics.disk';
         const filter = this.getFilter();
-        this.db.collection(this.getCollection(key)).insertOne(
-            Object.assign({ 'slot': 'metrics.diskSpace', 'payload': { time, ...diskState } }, filter), { upsert: true }, (err) => {
-                if (err) {
-                    this.emitter.emit('ERROR', err);
-                }
-            });
+        this.db.collection(this.getCollection(key)).insertOne({ 'slot': 'metrics.diskSpace', 'payload': { time, ...diskState }, ...filter }, { upsert: true }, (err) => {
+            if (err) {
+                this.emitter.emit('ERROR', err);
+            }
+        });
     }
 
     _reportDiskSpaceUsageLimit() {
         const key = 'metrics.limits.diskSpaceUsage';
-        this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
-            { $set: { 'metrics.limits.diskSpaceUsage': { 'value': this.diskSpaceUsageLimit } } }, { upsert: true }, (err) => {
+        this.db.collection(this.getCollection(key)).updateOne(
+            this.getFilter(),
+            { $set: { 'metrics.limits.diskSpaceUsage': { 'value': this.diskSpaceUsageLimit } } },
+            { upsert: true },
+            (err) => {
                 if (err) {
                     this.emitter.emit('ERROR', err);
                 }
-            });
+            }
+        );
     }
 
     async _reportVisibility() {
         const key = 'visibility';
-        return this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
-            { $set: { [key]: this.visibility } }, { upsert: true }, (err) => {
+        return this.db.collection(this.getCollection(key)).updateOne(
+            this.getFilter(),
+            { $set: { [key]: this.visibility } },
+            { upsert: true },
+            (err) => {
                 if (err) {
                     this.emitter.emit('ERROR', err);
                 }
-            });
+            }
+        );
     }
 
     async _reportData() {
         const key = 'data';
-        return this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
-            { $set: { 'data': this.data } }, { upsert: true }, (err) => {
+        return this.db.collection(this.getCollection(key)).updateOne(
+            this.getFilter(),
+            { $set: { 'data': this.data } },
+            { upsert: true },
+            (err) => {
                 if (err) {
                     this.emitter.emit('ERROR', err);
                 }
-            });
+            }
+        );
     }
 
     async _reportStatus() {
         const key = 'data';
-        return this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
-            { $set: { 'status': this.status } }, { upsert: true }, (err) => {
+        return this.db.collection(this.getCollection(key)).updateOne(
+            this.getFilter(),
+            { $set: { 'status': this.status } },
+            { upsert: true },
+            (err) => {
                 if (err) {
                     this.emitter.emit('ERROR', err);
                 }
-            });
+            }
+        );
     }
+
     _reportLogSize() {
         const key = 'metrics';
-        this.db.collection(this.getCollection(key)).updateOne(this.getFilter(),
-            { $set: { 'metrics.logs.total': this.logSize } }, { upsert: true }, (err) => {
+        this.db.collection(this.getCollection(key)).updateOne(
+            this.getFilter(),
+            { $set: { 'metrics.logs.total': this.logSize } },
+            { upsert: true },
+            (err) => {
                 if (err) {
                     this.emitter.emit('ERROR', err);
                 }
-            });
+            }
+        );
     }
 
     async _getStepsName() {
         const key = 'name';
         return new Promise((resolve, reject) => {
-            this.db.collection(this.getCollection(key)).findOne(
-                this.getFilter(), (err, doc) => {
-                    if (err) {
-                        reject(err);
-                    } else {
+            this.db.collection(this.getCollection(key)).findOne(this.getFilter(), (err, doc) => {
+                if (err) {
+                    reject(err);
+                } else {
 
-                        resolve(doc);
-                    }
-                });
+                    resolve(doc);
+                }
+            });
         });
     }
 
@@ -267,7 +305,7 @@ class MongoTaskLogger extends TaskLogger {
             const step = steps[idx] || [];
             return {
                 name,
-                logs: step.map(record => record.payload)
+                logs: step.map((record) => record.payload)
             };
         }, {});
         // eslint-disable-next-line consistent-return
@@ -275,7 +313,6 @@ class MongoTaskLogger extends TaskLogger {
             steps: stepWithLogs,
             id: this.jobId,
         };
-
 
     }
 
