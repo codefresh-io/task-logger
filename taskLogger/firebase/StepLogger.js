@@ -1,6 +1,6 @@
 const Q = require('q');
 const debug = require('debug')('codefresh:firebase:stepLogger');
-const Firebase = require('firebase');
+const Firebase = require('legacy-firebase');
 const CFError = require('cf-errors');
 const { STATUS } = require('../enums');
 const BaseStepLogger = require('../StepLogger');

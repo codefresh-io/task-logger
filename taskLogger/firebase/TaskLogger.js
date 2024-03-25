@@ -1,9 +1,15 @@
 const _ = require('lodash');
-const Firebase = require('firebase');
+const Firebase = require('legacy-firebase');
 const debug = require('debug')('codefresh:firebase:taskLogger');
 const Q = require('q');
 const CFError = require('cf-errors');
 const FirebaseTokenGenerator = require('firebase-token-generator');
+const { initializeApp: initializeAppAdmin } = require('firebase-admin/app');
+const { getAuth: getAuthAdmin } = require('firebase-admin/auth');
+const firebaseAdmin = require('firebase-admin');
+
+const { initializeApp } = require('firebase/app');
+const { getAuth, signInWithCustomToken } = require('firebase/auth');
 const BaseTaskLogger = require('../TaskLogger');
 const StepLogger = require('./StepLogger');
 const DebuggerStreamFactory = require('./DebuggerStreamFactory');
@@ -12,9 +18,93 @@ const { wrapWithRetry } = require('../helpers');
 const RestClient = require('./rest/Client');
 const FirebaseWritableStream = require('./step-streams/FirebaseWritableStream');
 
+/**
+ * @typedef {import('firebase-admin/app').App} FirebaseAdminApp
+ * @typedef {import('firebase/app').FirebaseApp} FirebaseApp
+ *
+ *
+ * @typedef {object} PrivilegedClaims Claims for a privileged token
+ * that is generated for in-platform use.
+ * @property {true} isPrivileged
+ * @property {string} accountId
+ * @property {boolean} isAdmin
+ * @property {string} userId
+ *
+ * @typedef {object} UnprivilegedClaims Claims for a token with limited access
+ *      that is generated for userland use.
+ * @property {false} isPrivileged
+ * @property {string} accountId
+ * @property {boolean} isAdmin
+ * @property {string} userId
+ *
+ * @typedef {PrivilegedClaims | UnprivilegedClaims} Claims Token claims.
+ *
+ *
+ * @typedef {object} PlatformGetTokensOptions Options for token generation
+ *      from inside the platform, with access to the Service Account JSON.
+ * @property {true} isPlatform `true` if requesting a token from inside
+ *      the platform. Service Account JSON will be used for token generation.
+ * @property {string} firebaseServiceAccountPath Path to Service Account JSON.
+ * @property {object} firebaseConfig
+ * @property {Claims} claims
+ *
+ * @typedef {object} UserlandGetTokensOptions Options for token generation
+ *      from userland, with *no* access to the Service Account JSON.
+ *      Platform API will be called for token generation.
+ * @property {false} isPlatform `false` if requesting a token from userland,
+ *      with *no* access to Service Account JSON.
+ *      Platform API will be called for token generation.
+ * @property {string} progressId
+ *
+ * @typedef {PlatformGetTokensOptions | UserlandGetTokensOptions} GetTokensOptions
+ *
+ *
+ * @typedef {object} PlatformFactoryOptions
+ * @property {true} isPlatform
+ * @property {Claims} claims
+ *
+ * @typedef {object} UserlandFactoryOptions
+ * @property {false} isPlatform
+ * @property {Claims} claims
+ * @property {string} codefreshApiUrl
+ * @property {string} codefreshApiKey
+ *
+ * @typedef {PlatformFactoryOptions | UserlandFactoryOptions} FactoryOptions
+ *
+ *
+ * @typedef {Omit<PlatformGetTokensOptions, 'firebaseServiceAccountPath' | 'firebaseConfig'>
+ * | UserlandGetTokensOptions} GetConfigurationOptions
+ *
+ *
+ * @typedef {object} LegacyGetConfigurationOptions
+ * @property {boolean} skipTokenCreation
+ * @property {string} userId
+ * @property {string} isAdmin
+ *
+ *
+ * @typedef {object} FirebaseTokens
+ * @property {string} firebaseSdkToken Token that is used by Firebase SDK.
+ * @property {string} firebaseIdToken ID Token that is used by Firebase API.
+ */
+
 const defaultFirebaseTimeout = 60000;
 
 class FirebaseTaskLogger extends BaseTaskLogger {
+    /**
+     * @type {import('got/dist/source/index').Got}
+     */
+    static #codefreshHttpClient;
+
+    /**
+     * @type {Map<string, FirebaseAdminApp>}
+     */
+    static #firebaseAdminApps = new Map();
+
+    /**
+     * @type {Map<string, FirebaseApp>}
+     */
+    static #firebaseApps = new Map();
+
     constructor(task, opts) {
         super(task, opts);
         this.type = TYPES.FIREBASE;
@@ -22,6 +112,11 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         this.useLogsTimestamps = opts.useLogsTimestamps || false;
     }
 
+    /**
+     * @deprecated This provisions custom tokens basing on
+     * deprecated Database Secrets.
+     * @returns {string}
+     */
     static provisionToken(accountId, userId, firebaseSecret, sessionExpirationInSeconds, isAdmin) {
         try {
             const tokenGenerator = new FirebaseTokenGenerator(firebaseSecret);
@@ -45,10 +140,98 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         }
     }
 
-    getConfiguration(userId, isAdmin, skipTokenCreation) {
-        const firebaseSecret = skipTokenCreation
-            ? this.firebaseSecret
-            : FirebaseTaskLogger.provisionToken(this.accountId, userId, this.firebaseSecret, this.opts.sessionExpirationInSeconds, isAdmin);
+    /**
+     * @param {GetTokensOptions} options
+     * @returns {Promise<FirebaseTokens>}
+     */
+    static async getTokens(options) {
+        try {
+            if (options.isPlatform === false) {
+                const { firebaseSdkToken, firebaseIdToken } = await this.#codefreshHttpClient.get('user/firebaseAuth', {
+                    searchParams: { progressId: options.progressId },
+                }).json();
+                return { firebaseSdkToken, firebaseIdToken };
+            }
+
+            const { databaseURL } = options.firebaseConfig;
+
+            let firebaseAdminApp = this.#firebaseAdminApps.get(databaseURL);
+            if (!firebaseAdminApp) {
+                firebaseAdminApp = initializeAppAdmin({
+                    ...options.firebaseConfig,
+                    credential: firebaseAdmin.credential.cert(options.firebaseServiceAccountPath),
+                });
+                this.#firebaseAdminApps.set(databaseURL, firebaseAdminApp);
+            }
+            const uid = options.claims.isPrivileged
+                ? options.claims.accountId
+                : options.claims.userId;
+            const firebaseSdkToken = await getAuthAdmin(firebaseAdminApp).createCustomToken(
+                uid,
+                options.claims,
+            );
+
+            let firebaseApp = this.#firebaseApps.get(databaseURL);
+            if (!firebaseApp) {
+                firebaseApp = initializeApp(options.firebaseConfig);
+                this.#firebaseApps.set(databaseURL, firebaseApp);
+            }
+            const userCredential = await signInWithCustomToken(
+                getAuth(firebaseApp),
+                firebaseSdkToken,
+            );
+            const firebaseIdToken = await userCredential.user.getIdToken();
+
+            return { firebaseSdkToken, firebaseIdToken };
+        } catch (error) {
+            throw new CFError({
+                cause: error,
+                message: `Failed to get Firebase tokens, is platform: ${options.isPlatform}`,
+            });
+        }
+    }
+
+    /**
+     * @param {GetTokensOptions} options
+     * @returns {Promise<string>}
+     */
+    static async #getIdToken(options) {
+        const { firebaseIdToken } = await FirebaseTaskLogger.getTokens(options);
+        return firebaseIdToken;
+    }
+
+    /**
+     * @param {GetConfigurationOptions} options
+     * @param {LegacyGetConfigurationOptions} [legacyOptions]
+     * @returns
+     */
+    async getConfiguration(options, legacyOptions) {
+        /**
+         * @deprecated This token is used by older clients
+         * and can be removed after migration.
+         */
+        let firebaseSecret;
+        if (legacyOptions) {
+            firebaseSecret = legacyOptions.skipTokenCreation
+                ? this.firebaseSecret
+                : FirebaseTaskLogger.provisionToken(this.accountId, legacyOptions.userId, this.firebaseSecret, this.opts.sessionExpirationInSeconds, legacyOptions.isAdmin);
+        }
+
+        /**
+         * @type {GetTokensOptions}
+         */
+        const getTokensOptions = options.isPlatform
+            ? {
+                isPlatform: true,
+                firebaseConfig: this.opts.firebaseConfig,
+                firebaseServiceAccountPath: this.firebaseServiceAccountPath,
+                claims: options.claims,
+            }
+            : {
+                isPlatform: false,
+                progressId: this.jobId,
+            };
+        const { firebaseSdkToken, firebaseIdToken } = await FirebaseTaskLogger.getTokens(getTokensOptions);
 
         return {
             task: {
@@ -58,17 +241,41 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             opts: {
                 type: this.opts.type,
                 baseFirebaseUrl: this.opts.baseFirebaseUrl,
-                firebaseSecret,
                 ...(this.opts.logsRateLimitConfig && { logsRateLimitConfig: this.opts.logsRateLimitConfig }),
                 ...(this.opts.healthCheckConfig && { healthCheckConfig: this.opts.healthCheckConfig }),
                 ...(this.opts.blacklist && { blacklist: this.opts.blacklist }),
-                ...(this.opts.useLogsTimestamps && { useLogsTimestamps: this.opts.useLogsTimestamps })
+                ...(this.opts.useLogsTimestamps && { useLogsTimestamps: this.opts.useLogsTimestamps }),
+                firebaseSecret,
+                firebaseSdkToken,
+                firebaseIdToken,
+                firebaseConfig: this.opts.firebaseConfig,
             }
         };
     }
 
-    static async factory(task, opts) {
-        const { restInterface } = opts;
+    /**
+     * @param {FactoryOptions} factoryOptions
+     * @returns
+     */
+    static async factory(task, opts, factoryOptions) {
+        // eslint-disable-next-line import/no-unresolved
+        const { default: httpClient } = await import('got');
+
+        const {
+            baseFirebaseUrl,
+            firebaseConfig,
+            firebaseSecret,
+            firebaseTimeout,
+            logsRateLimitConfig,
+            restInterface,
+        } = opts;
+
+        if (factoryOptions.isPlatform === false) {
+            this.#codefreshHttpClient ??= httpClient.extend({
+                headers: { 'Authorization': factoryOptions.codefreshApiKey },
+                prefixUrl: factoryOptions.codefreshApiUrl,
+            });
+        }
 
         let taskLogger;
         if (restInterface) {
@@ -77,10 +284,6 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         } else {
             taskLogger = new FirebaseTaskLogger(task, opts);
         }
-
-        const {
-            baseFirebaseUrl, firebaseSecret, logsRateLimitConfig, firebaseTimeout
-        } = opts;
 
         if (!baseFirebaseUrl) {
             throw new CFError('failed to create taskLogger because baseFirebaseUrl must be provided');
@@ -92,6 +295,17 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         }
         taskLogger.firebaseSecret = firebaseSecret;
 
+        if (!firebaseConfig) {
+            throw new CFError('failed to create taskLogger because "firebaseConfig" must be provided');
+        }
+        taskLogger.firebaseConfig = firebaseConfig;
+
+        const firebaseServiceAccountPath = process.env.FIREBASE_SA_PATH;
+        if (factoryOptions.isPlatform === true && !firebaseServiceAccountPath) {
+            throw new CFError('failed to create taskLogger because "FIREBASE_SA_PATH" env variable must be provided');
+        }
+        taskLogger.firebaseServiceAccountPath = firebaseServiceAccountPath;
+
         taskLogger.baseUrl = `${taskLogger.baseFirebaseUrl}/${taskLogger.jobId}`;
         taskLogger.baseRef = new Firebase(taskLogger.baseUrl);
 
@@ -101,6 +315,20 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         taskLogger.stepsUrl = `${taskLogger.baseUrl}/steps`;
         const stepRef = new Firebase(taskLogger.stepsUrl);
         taskLogger.stepsRef = stepRef;
+
+        const getTokensOptions = factoryOptions.isPlatform
+            ? {
+                isPlatform: true,
+                firebaseServiceAccountPath,
+                firebaseConfig,
+                claims: factoryOptions.claims,
+            }
+            : {
+                isPlatform: false,
+                progressId: task.jobId,
+            };
+        const { firebaseSdkToken, firebaseIdToken } = await FirebaseTaskLogger.getTokens(getTokensOptions);
+
         if (logsRateLimitConfig) {
             const fbStream = new FirebaseWritableStream(stepRef, logsRateLimitConfig);
             // override default taskLogger behavior because fbStream can flush n writeCalls at once
@@ -111,7 +339,25 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         }
 
         if (restInterface) {
-            taskLogger.restClient = new RestClient(taskLogger.firebaseSecret);
+            const restClientOptions = factoryOptions.isPlatform
+                ? {
+                    isPlatform: factoryOptions.isPlatform,
+                    firebaseIdToken,
+                    getNewFirebaseIdToken: FirebaseTaskLogger.#getIdToken.bind(FirebaseTaskLogger, {
+                        isPlatform: factoryOptions.isPlatform,
+                        firebaseServiceAccountPath,
+                        firebaseConfig,
+                        claims: factoryOptions.claims,
+                    }),
+                }
+                : {
+                    isPlatform: factoryOptions.claims,
+                    firebaseIdToken,
+                    codefreshApiUrl: factoryOptions.codefreshApiUrl,
+                    codefreshApiKey: factoryOptions.codefreshApiKey,
+                    progressId: task.jobId,
+                };
+            taskLogger.restClient = new RestClient(httpClient, restClientOptions);
         } else {
             // establishing connection is only rqeuired in case of stream interface
             try {

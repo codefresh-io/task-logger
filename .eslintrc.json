@@ -20,6 +20,10 @@
     }
   },
 
+  "globals": {
+    "globalThis": "readonly"
+  },
+
   "plugins": [
     "chai-friendly",
     "import",

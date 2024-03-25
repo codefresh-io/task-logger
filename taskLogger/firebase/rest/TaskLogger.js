@@ -1,5 +1,4 @@
 const _                                = require('lodash');
-const Q                                = require('q');
 const CFError                          = require('cf-errors');
 const FirebaseTaskLogger               = require('../TaskLogger');
 const StepLogger                       = require('./StepLogger');
@@ -50,7 +49,8 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
     }
 
     async restore() {
-        return Q.resolve();
+        // eslint-disable-next-line no-useless-return
+        return;
     }
 
     _updateCurrentStepReferences() {
@@ -66,7 +66,8 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
     }
 
     async addErrorMessageToEndOfSteps(message) { // eslint-disable-line
-        return Q.resolve();
+        // eslint-disable-next-line no-useless-return
+        return;
         /* const inProgressSteps = _.filter(this.steps, step => ['running', 'terminating'].includes(step.status));
         if (!inProgressSteps.length && this.steps[0]) {
             inProgressSteps.push(this.steps[0]);
@@ -176,8 +177,9 @@ class FirebaseRestTaskLogger extends FirebaseTaskLogger {
         }
     }
 
-    syncStepsByWorkflowContextRevision() {
-        return Q.resolve();
+    async syncStepsByWorkflowContextRevision() {
+        // eslint-disable-next-line no-useless-return
+        return;
     }
 }
 
