@@ -169,10 +169,15 @@ class Client extends EventEmitter {
      */
     #logErrors(error) {
         const { response } = error;
-        const logMessage = response
-            ? `Failed to write to ${this.#maskTokenInURL(response.url)} with error: ${response.body?.error ? response.body.error : response.body}`
-            : `Failed to perform HTTP request: ${error}`;
-        debug(logMessage);
+        error.message = `Failed to perform HTTP request: ${response
+            ? JSON.stringify({
+                path: this.#maskTokenInURL(response.url),
+                error: response.body?.error ? response.body.error : response.body,
+                statusCode: response.statusCode,
+            })
+            : error
+        }`;
+        debug(error.message);
         return error;
     }
 
