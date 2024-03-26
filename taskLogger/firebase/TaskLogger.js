@@ -72,10 +72,6 @@ const FirebaseWritableStream = require('./step-streams/FirebaseWritableStream');
  * @typedef {PlatformFactoryOptions | UserlandFactoryOptions} FactoryOptions
  *
  *
- * @typedef {Omit<PlatformGetTokensOptions, 'firebaseServiceAccountPath' | 'firebaseConfig'>
- * | UserlandGetTokensOptions} GetConfigurationOptions
- *
- *
  * @typedef {object} LegacyGetConfigurationOptions
  * @property {boolean} skipTokenCreation
  * @property {string} userId
@@ -201,11 +197,10 @@ class FirebaseTaskLogger extends BaseTaskLogger {
     }
 
     /**
-     * @param {GetConfigurationOptions} options
      * @param {LegacyGetConfigurationOptions} [legacyOptions]
      * @returns
      */
-    async getConfiguration(options, legacyOptions) {
+    async getConfiguration(legacyOptions) {
         /**
          * @deprecated This token is used by older clients
          * and can be removed after migration.
@@ -220,12 +215,12 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         /**
          * @type {GetTokensOptions}
          */
-        const getTokensOptions = options.isPlatform
+        const getTokensOptions = this.isPlatform
             ? {
                 isPlatform: true,
-                firebaseConfig: this.opts.firebaseConfig,
+                firebaseConfig: this.firebaseConfig,
                 firebaseServiceAccountPath: this.firebaseServiceAccountPath,
-                claims: options.claims,
+                claims: this.claims,
             }
             : {
                 isPlatform: false,
@@ -240,7 +235,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
             },
             opts: {
                 type: this.opts.type,
-                baseFirebaseUrl: this.opts.baseFirebaseUrl,
+                baseFirebaseUrl: this.baseFirebaseUrl,
                 ...(this.opts.logsRateLimitConfig && { logsRateLimitConfig: this.opts.logsRateLimitConfig }),
                 ...(this.opts.healthCheckConfig && { healthCheckConfig: this.opts.healthCheckConfig }),
                 ...(this.opts.blacklist && { blacklist: this.opts.blacklist }),
@@ -248,7 +243,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                 firebaseSecret,
                 firebaseSdkToken,
                 firebaseIdToken,
-                firebaseConfig: this.opts.firebaseConfig,
+                firebaseConfig: this.firebaseConfig,
             }
         };
     }
@@ -284,6 +279,9 @@ class FirebaseTaskLogger extends BaseTaskLogger {
         } else {
             taskLogger = new FirebaseTaskLogger(task, opts);
         }
+
+        taskLogger.isPlatform = factoryOptions.isPlatform;
+        taskLogger.claims = factoryOptions.claims;
 
         if (!baseFirebaseUrl) {
             throw new CFError('failed to create taskLogger because baseFirebaseUrl must be provided');
