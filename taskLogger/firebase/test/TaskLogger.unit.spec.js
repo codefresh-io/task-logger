@@ -3,7 +3,7 @@ const Q = require('q');
 const proxyquire = require('proxyquire').noCallThru();
 const chai = require('chai');
 
-const expect = chai.expect;
+const { expect } = chai;
 const sinon = require('sinon');
 const sinonChai = require('sinon-chai');
 
@@ -23,8 +23,10 @@ let createTokenSpy = sinon.spy((opts) => {
 const originalTokenSpy = createTokenSpy;
 const initHealthCheckSpy = sinon.spy();
 
-const getTaskLoggerInstance = async (task = { accountId: 'accountId', jobId: 'jobId' },
-    opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }) => {
+const getTaskLoggerInstance = async (
+    task = { accountId: 'accountId', jobId: 'jobId' },
+    opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }
+) => {
     Firebase = createFirebaseStub();
 
     const TaskLogger = proxyquire('../TaskLogger', {
@@ -43,9 +45,11 @@ const getTaskLoggerInstance = async (task = { accountId: 'accountId', jobId: 'jo
     return taskLogger;
 };
 
-const getTaskLoggerInstanceWithHealthCheck = async (task = { accountId: 'accountId', jobId: 'jobId' },
+const getTaskLoggerInstanceWithHealthCheck = async (
+    task = { accountId: 'accountId', jobId: 'jobId' },
     opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' },
-    testingOpts = { onceTimeout: 10 }) => {
+    testingOpts = { onceTimeout: 10 }
+) => {
     Firebase = createFirebaseStubWithHealthCheck(testingOpts);
 
     const TaskLogger = proxyquire('../TaskLogger', {
@@ -63,9 +67,10 @@ const getTaskLoggerInstanceWithHealthCheck = async (task = { accountId: 'account
     return taskLogger;
 };
 
-
-const getTaskLoggerInstanceWithDebugger = async (task = { accountId: 'accountId', jobId: 'jobId' },
-    opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }) => {
+const getTaskLoggerInstanceWithDebugger = async (
+    task = { accountId: 'accountId', jobId: 'jobId' },
+    opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }
+) => {
     const deferred = Q.defer();
     Firebase = createFirebaseStubWithDebugger(deferred);
 
@@ -284,7 +289,7 @@ _.forEach(interfaces, (int) => {
                 it('should stop pause debugger by timeout', async () => {
                     const taskLogger = await getTaskLoggerInstanceWithDebugger(undefined, undefined, {
                         value: () => ({
-                            val: arg => ({ pause: arg }),
+                            val: (arg) => ({ pause: arg }),
                         }),
                     });
                     taskLogger.useDebugger = true;
@@ -501,7 +506,6 @@ _.forEach(interfaces, (int) => {
 
         if (!int.opts.restInterface) {
 
-
             describe('healthCheck', () => {
 
                 beforeEach(() => {
@@ -649,7 +653,6 @@ _.forEach(interfaces, (int) => {
                     });
 
                 });
-
 
             });
         }

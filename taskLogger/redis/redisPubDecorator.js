@@ -8,10 +8,10 @@ class RedisPubDecorator {
         this.jobId = opts.jobId;
         this.redisLogger = redisLogger;
         this.keyPrefixToRemove = keyPrefixToRemove;
-        this.nrp = RedisPubDecorator.getConnectionFromCache(Object.assign({},
-            opts.redis,
-            { scope }
-       ));
+        this.nrp = RedisPubDecorator.getConnectionFromCache({
+            ...opts.redis,
+            scope
+        });
         this.keyToAction = opts.keyToMapper || {
             'logs': 'e',
             'memory': 'e',
@@ -89,7 +89,7 @@ class RedisPubDecorator {
             key = key.substr(this.keyPrefixToRemove.length + 1);
         }
 
-        return key.replace(new RegExp(':', 'g'), '.').replace('.[', '[');
+        return key.replace(/:/g, '.').replace('.[', '[');
     }
 
     _getAction(key = '') {

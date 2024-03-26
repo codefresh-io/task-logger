@@ -1,10 +1,9 @@
-
 const debug = require('debug')('codefresh:taskLogger');
 const _ = require('lodash');
 const CFError = require('cf-errors');
 const EventEmitter = require('events');
-const { STATUS, VISIBILITY } = require('./enums');
 const Q = require('q');
+const { STATUS, VISIBILITY } = require('./enums');
 const MaskingStream = require('./MaskingStream');
 const PrependTimestampsStream = require('./PrependTimestampsStream');
 
@@ -240,6 +239,7 @@ class TaskLogger extends EventEmitter {
     startHealthCheck() {
         this._startHealthCheck && this._startHealthCheck();
     }
+
     stopHealthCheck() {
         this._stopHealthCheck && this._stopHealthCheck();
     }
@@ -297,7 +297,7 @@ class TaskLogger extends EventEmitter {
         this._updateLogsStatusCalls(err);
 
         // update each step log size and last update
-        _.forEach(this.steps, step => step._reportLogSize());
+        _.forEach(this.steps, (step) => step._reportLogSize());
         this._reportLogSize();
         this._reportLastUpdate(Date.now());
 
@@ -363,7 +363,7 @@ class TaskLogger extends EventEmitter {
     _prepareBlacklistMasks() {
         const blacklist = this.opts.blacklist || {};
         return _.chain(blacklist)
-            .omitBy(value => !value.length || value.length === 0) // ignore empty string secrets
+            .omitBy((value) => !value.length || value.length === 0) // ignore empty string secrets
             .map((value, key) => {
                 const masks = [this._newMask({ key, value })];
                 if (value.includes && value.includes(' ')) {

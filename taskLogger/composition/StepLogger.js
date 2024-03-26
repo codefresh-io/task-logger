@@ -12,7 +12,7 @@ class CompositionStepLogger extends BaseStepLogger {
     }
 
     async restore() {
-        const restorePromises = this.loggers.map(logger => logger.restore());
+        const restorePromises = this.loggers.map((logger) => logger.restore());
         await Promise.all(restorePromises);
         this.status = this.loggers[0].status;
         this.pendingApproval = this.status === STATUS.PENDING_APPROVAL;
@@ -49,7 +49,7 @@ class CompositionStepLogger extends BaseStepLogger {
 
     _reportLog(message) {
         const syncId = Date.now();
-        this.loggers.forEach(logger => logger._reportLog(message, syncId));
+        this.loggers.forEach((logger) => logger._reportLog(message, syncId));
 
     }
 
@@ -93,13 +93,13 @@ class CompositionStepLogger extends BaseStepLogger {
 
     _reportMemoryUsage(time, memoryUsage) {
         const syncId = Date.now();
-        this.loggers.forEach(logger => logger._reportMemoryUsage(time, memoryUsage, syncId));
+        this.loggers.forEach((logger) => logger._reportMemoryUsage(time, memoryUsage, syncId));
 
     }
 
     _reportCpuUsage(time, cpuUsage) {
         const syncId = Date.now();
-        this.loggers.forEach(logger => logger._reportCpuUsage(time, cpuUsage, syncId));
+        this.loggers.forEach((logger) => logger._reportCpuUsage(time, cpuUsage, syncId));
 
     }
 
@@ -119,7 +119,7 @@ class CompositionStepLogger extends BaseStepLogger {
     }
 
     reportName() {
-        this.loggers.forEach(logger => logger.reportName());
+        this.loggers.forEach((logger) => logger.reportName());
 
     }
 

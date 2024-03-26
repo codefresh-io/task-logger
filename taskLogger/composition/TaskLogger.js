@@ -2,7 +2,6 @@ const _                                 = require('lodash');
 const TaskLogger                        = require('../TaskLogger');
 const { TYPES }                         = require('../enums');
 
-
 class CompositionTaskLogger extends TaskLogger {
 
     constructor(loggers, task, opts) {
@@ -11,22 +10,24 @@ class CompositionTaskLogger extends TaskLogger {
         this.type = TYPES.COMPOSE;
 
     }
+
     static async factory(task, opts) {
         const loggers = await Promise.all(opts.loggersDefs.map(async logger => require('../taskLoggerFactory')(task, logger.opts))); // eslint-disable-line
         return new CompositionTaskLogger(loggers, task, opts);
     }
+
     newStepAdded(step) {
-        this.loggers.forEach(logger => logger.newStepAdded(step));
+        this.loggers.forEach((logger) => logger.newStepAdded(step));
     }
 
     async restore() {
-        const restorePromises = this.loggers.map(logger => logger.restore());
+        const restorePromises = this.loggers.map((logger) => logger.restore());
         return Promise.all(restorePromises);
     }
 
     async addErrorMessageToEndOfSteps(message) {
 
-        const promises = this.loggers.map(logger => logger.addErrorMessageToEndOfSteps(message));
+        const promises = this.loggers.map((logger) => logger.addErrorMessageToEndOfSteps(message));
         return Promise.all(promises);
     }
 
@@ -35,20 +36,20 @@ class CompositionTaskLogger extends TaskLogger {
     }
 
     _reportLastUpdate(value) {
-        this.loggers.forEach(logger => logger._reportLastUpdate(value));
+        this.loggers.forEach((logger) => logger._reportLastUpdate(value));
     }
 
     async reportId() {
-        return _.map(this.loggers, logger => logger.reportId());
+        return _.map(this.loggers, (logger) => logger.reportId());
     }
 
     async reportAccountId() {
-        return _.map(this.loggers, logger => logger.reportAccountId());
+        return _.map(this.loggers, (logger) => logger.reportAccountId());
     }
 
     _reportMemoryUsage(time, memoryUsage) {
         const syncId = Date.now();
-        this.loggers.forEach(logger => logger._reportMemoryUsage(time, memoryUsage, syncId));
+        this.loggers.forEach((logger) => logger._reportMemoryUsage(time, memoryUsage, syncId));
 
     }
 
@@ -58,12 +59,11 @@ class CompositionTaskLogger extends TaskLogger {
             logger._reportMemoryLimit();
         });
 
-
     }
 
     _reportDiskState(time, diskState) {
         const syncId = Date.now();
-        this.loggers.forEach(logger => logger._reportDiskState(time, diskState, syncId));
+        this.loggers.forEach((logger) => logger._reportDiskState(time, diskState, syncId));
     }
 
     _reportDiskSpaceUsageLimit() {
@@ -93,6 +93,7 @@ class CompositionTaskLogger extends TaskLogger {
             return logger._reportStatus();
         });
     }
+
     async getRaw() {
 
         const promises = [];
@@ -104,7 +105,7 @@ class CompositionTaskLogger extends TaskLogger {
 
         // return the first logger that return data
 
-        return arr.find(steps => !!steps);
+        return arr.find((steps) => !!steps);
 
     }
 

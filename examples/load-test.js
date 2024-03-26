@@ -10,7 +10,6 @@ const main = async () => {
         firebaseSecret: ''
     });
 
-
     const stepLogger = taskLogger.create('itai-test', undefined, undefined, true);
     stepLogger.start();
     stepLogger.info('hey');
@@ -25,10 +24,9 @@ const main = async () => {
         stepLogger.info('hey');
     }
 
-/*    setInterval(() => {
+    /*    setInterval(() => {
         stepLogger.info('hey');
     }, 10); */
-
 
 };
 

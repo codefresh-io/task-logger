@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 const { Transform } = require('stream');
 // eslint-disable-next-line no-unused-vars
 const TaskLogger = require('./TaskLogger');

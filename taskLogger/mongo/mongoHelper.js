@@ -1,9 +1,11 @@
-const keyMapper =  { 'logs': 'logs',
+const keyMapper =  {
+    'logs': 'logs',
     'metrics': 'logs',
     'metrics.memory': 'logs',
     'metrics.cpu': 'logs',
     'metrics.logs.total': 'logs',
-    'default': 'metadata' };
+    'default': 'metadata'
+};
 
 class MongoHelper {
 

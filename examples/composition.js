@@ -41,7 +41,6 @@ const main = async () => {
     composeTaskLogger.updateMemoryUsage(new Date(), 'sd');
     await composeTaskLogger.setData({ key: 'value' });
 
-
     const stepLoggerCompose = composeTaskLogger.create('stepName', undefined, undefined, true);
     stepLoggerCompose.start();
     stepLoggerCompose.write('hey');
@@ -68,7 +67,6 @@ const main = async () => {
     // stepLogger.finish();
 
     // await stepLogger.delete();
-
 
     const composeTaskLoggerForStepRestore = await COMPOSE({
         accountId: 'accountId',
@@ -102,7 +100,6 @@ const main = async () => {
     });
     const composeStepLoggerForRestore = composeTaskLoggerForStepRestore.create('stepName', undefined, undefined, false);
     await composeStepLoggerForRestore.restore();
-
 
     const composeTaskLoggerRestored = await COMPOSE({
         accountId: 'accountId',

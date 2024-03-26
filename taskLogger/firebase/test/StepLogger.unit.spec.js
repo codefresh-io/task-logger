@@ -2,7 +2,7 @@ const _ = require('lodash');
 const proxyquire = require('proxyquire').noCallThru();
 const chai       = require('chai');
 
-const expect     = chai.expect;
+const { expect } = chai;
 const sinon      = require('sinon');
 const sinonChai  = require('sinon-chai');
 
@@ -12,8 +12,10 @@ const { RestClientStub } = require('./RestClientStub');
 
 let Firebase;
 
-const getStepLoggerInstance = async (step = { accountId: 'accountId', jobId: 'jobId', name: 'name' },
-    opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }) => {
+const getStepLoggerInstance = async (
+    step = { accountId: 'accountId', jobId: 'jobId', name: 'name' },
+    opts = { baseFirebaseUrl: 'url', firebaseSecret: 'secret' }
+) => {
 
     if (!opts.restClient) {
         opts.restClient = new RestClientStub();

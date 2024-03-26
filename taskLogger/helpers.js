@@ -2,17 +2,22 @@ const debug = require('debug')('codefresh:helpers');
 const Q     = require('q');
 const retry = require('retry');
 
-
 /**
  * wrap a function with retry.
  * default will be 60 attempts spread over 2 (60 * 2) minutes
  */
 
-const defaultRetryOptions = { retries: 60, factor: 1, minTimeout: 1, errorAfterTimeout: 2000 };
+const defaultRetryOptions = {
+    retries: 60, factor: 1, minTimeout: 1, errorAfterTimeout: 2000
+};
 
-const wrapWithRetry = (funcToRetry,
-    opts = defaultRetryOptions, extraPrintData = {}, invocationParams = {}) => {
-    const finalRetryOptions = Object.assign({}, defaultRetryOptions, opts, invocationParams);
+const wrapWithRetry = (
+    funcToRetry,
+    opts = defaultRetryOptions,
+    extraPrintData = {},
+    invocationParams = {}
+) => {
+    const finalRetryOptions = { ...defaultRetryOptions, ...opts, ...invocationParams };
 
     const deferred = Q.defer();
 
