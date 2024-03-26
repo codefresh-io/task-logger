@@ -81,7 +81,7 @@ class Client extends EventEmitter {
                 const body = await this.#codefreshClient.get('user/firebaseAuth', {
                     searchParams: { progressId: this.#progressId },
                 }).json();
-                return body.accessToken;
+                return body.firebaseIdToken;
             };
         }
 
