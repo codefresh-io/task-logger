@@ -8,9 +8,14 @@ const sinonChai  = require('sinon-chai');
 chai.use(sinonChai);
 const RestClient = require('../rest/Client');
 
+const mockIdToken = 'mockIdToken';
+const mockNewIdToken = `new_${mockIdToken}`;
+const mockGetNewFirebaseIdToken = sinon.stub().resolves(mockNewIdToken);
+
 const restClientOptions = {
     isPlatform: true,
-    firebaseIdToken: 'mockIdToken',
+    firebaseIdToken: mockIdToken,
+    getNewFirebaseIdToken: mockGetNewFirebaseIdToken,
 };
 let httpClient;
 
@@ -26,6 +31,7 @@ describe('Firebase rest Client', () => {
 
     beforeEach(() => {
         nock.cleanAll();
+        mockGetNewFirebaseIdToken.resetHistory();
     });
 
     describe('retries', () => {
@@ -557,6 +563,107 @@ describe('Firebase rest Client', () => {
             expect(finalScopesOrder[0]).to.equal(scope1);
             expect(finalScopesOrder[1]).to.equal(scope3);
             expect(finalScopesOrder[2]).to.equal(scope2);
+        });
+
+    });
+
+    describe('refresh token', () => {
+
+        it('should receive new ID Token if previous one has expired, then retry request (isPlatform: true)', async () => {
+            const clientOptions = {
+                isPlatform: true,
+                firebaseIdToken: mockIdToken,
+                getNewFirebaseIdToken: mockGetNewFirebaseIdToken,
+            };
+
+            const initCall = nock('http://firebase.com', {
+                reqheaders: {
+                    'user-agent': 'codefresh-task-logger',
+                    'host': 'firebase.com',
+                    'accept': 'application/json'
+                },
+            })
+                .get('/path.json')
+                .query({ auth: mockIdToken })
+                .reply(401, 'Unauthorized');
+
+            const secondCallResponse = { key: 'val' };
+            const secondCall = nock('http://firebase.com', {
+                reqheaders: {
+                    'user-agent': 'codefresh-task-logger',
+                    'host': 'firebase.com',
+                    'accept': 'application/json'
+                },
+            })
+                .get('/path.json')
+                .query({ auth: mockNewIdToken })
+                .reply(200, secondCallResponse);
+
+            const restClient = new RestClient(httpClient, clientOptions);
+            const uri = 'http://firebase.com/path';
+            const qs = {};
+            const opts = { inOrder: true };
+            const data = await restClient.get(uri, qs, opts);
+            expect(data).to.deep.equal(secondCallResponse);
+            expect(mockGetNewFirebaseIdToken.callCount).to.equal(1);
+            expect(initCall.isDone()).to.equal(true);
+            expect(secondCall.isDone()).to.equal(true);
+        });
+
+        it('should receive new ID Token if previous one has expired, then retry request (isPlatform: false)', async () => {
+            const clientOptions = {
+                isPlatform: false,
+                firebaseIdToken: mockIdToken,
+                codefreshApiUrl: 'https://fake.codefresh.io/api',
+                codefreshApiKey: 'mockApiKey',
+                progressId: 'mockProgressId',
+            };
+
+            const initCall = nock('http://firebase.com', {
+                reqheaders: {
+                    'user-agent': 'codefresh-task-logger',
+                    'host': 'firebase.com',
+                    'accept': 'application/json'
+                },
+            })
+                .get('/path.json')
+                .query({ auth: mockIdToken })
+                .reply(401, 'Unauthorized');
+
+            const getNewTokenResponse = { firebaseIdToken: mockNewIdToken };
+            const getNewTokenCall = nock(clientOptions.codefreshApiUrl, {
+                reqheaders: {
+                    'user-agent': 'codefresh-task-logger',
+                    'accept': 'application/json',
+                    'Authorization': clientOptions.codefreshApiKey,
+                }
+            })
+                .get('/user/firebaseAuth')
+                .query({ progressId: clientOptions.progressId })
+                .reply(200, getNewTokenResponse);
+
+            const secondCallResponse = { key: 'val' };
+            const secondCall = nock('http://firebase.com', {
+                reqheaders: {
+                    'user-agent': 'codefresh-task-logger',
+                    'host': 'firebase.com',
+                    'accept': 'application/json'
+                },
+            })
+                .get('/path.json')
+                .query({ auth: mockNewIdToken })
+                .reply(200, secondCallResponse);
+
+            const restClient = new RestClient(httpClient, clientOptions);
+            const uri = 'http://firebase.com/path';
+            const qs = {};
+            const opts = { inOrder: true };
+            const data = await restClient.get(uri, qs, opts);
+            expect(data).to.deep.equal(secondCallResponse);
+            expect(mockGetNewFirebaseIdToken.callCount).to.equal(0);
+            expect(initCall.isDone()).to.equal(true);
+            expect(getNewTokenCall.isDone()).to.equal(true);
+            expect(secondCall.isDone()).to.equal(true);
         });
 
     });
