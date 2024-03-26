@@ -4,7 +4,9 @@ const debug = require('debug')('codefresh:firebase:taskLogger');
 const Q = require('q');
 const CFError = require('cf-errors');
 const FirebaseTokenGenerator = require('firebase-token-generator');
+// eslint-disable-next-line import/no-unresolved
 const { initializeApp: initializeAppAdmin } = require('firebase-admin/app');
+// eslint-disable-next-line import/no-unresolved
 const { getAuth: getAuthAdmin } = require('firebase-admin/auth');
 const firebaseAdmin = require('firebase-admin');
 
@@ -327,6 +329,7 @@ class FirebaseTaskLogger extends BaseTaskLogger {
                 isPlatform: false,
                 progressId: task.jobId,
             };
+        // eslint-disable-next-line no-unused-vars
         const { firebaseSdkToken, firebaseIdToken } = await FirebaseTaskLogger.getTokens(getTokensOptions);
 
         if (logsRateLimitConfig) {
